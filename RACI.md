@@ -1,6 +1,6 @@
-R - Responsible
-A - Accountable
-C - Consulted
+R - Responsible, 
+A - Accountable, 
+C - Consulted, 
 I - Informed
 
 | Requirement | Owner | Helper | Reviewers |
