@@ -4,6 +4,7 @@ image: "rust:1.95"
 
 test:ensure-compiles:
   script:
+    - rustup
     - rustc --version && cargo --version
     - cargo check
 
