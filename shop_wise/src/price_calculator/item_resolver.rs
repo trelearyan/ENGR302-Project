@@ -1,4 +1,4 @@
-use crate::ShoppingItem;
+use crate::price_calculator::ShoppingItem;
 /// Resolve a string into a ShoppingItem
 /// <br>
 /// Returns:

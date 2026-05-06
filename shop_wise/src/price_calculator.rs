@@ -3,7 +3,10 @@ pub mod shopping_list_parser;
 pub mod item_resolver;
 
 pub mod calculator {
-    use crate::{ShoppingItem, Supermarket};
+    use crate::{
+        price_calculator::{ShoppingItem, Supermarket},
+        route_planner::Route,
+    };
 
     pub fn calculate(
         items: &[Option<ShoppingItem>],
