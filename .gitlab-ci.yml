@@ -19,6 +19,7 @@ ensure-formatted-correctly:
 
 ensure-no-warnings:
   script:
+    - systemctl status docker
     - rustc --version && cargo --version
     - export RUSTFLAGS="-D warnings"
     - cargo check
