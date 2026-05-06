@@ -4,7 +4,6 @@ image: "rust:1.95"
 
 test:ensure-compiles:
   script:
-    - rustup update
     - rustc --version && cargo --version
     - cargo check
 
@@ -20,11 +19,10 @@ ensure-formatted-correctly:
 
 ensure-no-warnings:
   script:
-    - systemctl status docker
     - rustc --version && cargo --version
     - export RUSTFLAGS="-D warnings"
     - cargo check
 
 default:
   tags:
-    - shell
+    - docker
