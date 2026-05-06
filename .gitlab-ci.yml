@@ -1,0 +1,28 @@
+# Official language image. Look for the different tagged releases at:
+# https://hub.docker.com/r/library/rust/tags/
+image: "rust:latest"
+
+ensure-compiles:
+  script:
+    - rustc --version && cargo --version
+    - cargo check
+
+ensure-tests-pass:
+  script:
+    - rustc --version && cargo --version
+    - cargo test --workspace --verbose
+
+ensure-formatted-correctly:
+  script:
+    - rustc --version && cargo --version
+    - cargo fmt --check
+
+ensure-no-warnings:
+  script:
+    - rustc --version && cargo --version
+    - export RUSTFLAGS="-D warnings"
+    - cargo check
+
+default:
+  tags:
+    - shell
