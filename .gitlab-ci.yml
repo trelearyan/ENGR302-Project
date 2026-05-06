@@ -26,4 +26,3 @@ ensure-no-warnings:
 default:
   tags:
     - docker
-    - rust:1.95
