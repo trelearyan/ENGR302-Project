@@ -27,4 +27,4 @@ ensure-no-warnings:
 
 default:
   tags:
-    - docker
+    - shell
