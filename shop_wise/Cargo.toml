@@ -1,0 +1,8 @@
+[package]
+name = "shop_wise"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+database = {path = "../database"}
+map = {path = "../map"}

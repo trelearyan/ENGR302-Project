@@ -1,0 +1,3 @@
+[workspace]
+resolver = "3"
+members = ["database", "map", "shop_wise", "util"]
