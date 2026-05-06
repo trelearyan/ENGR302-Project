@@ -2,7 +2,7 @@
 # https://hub.docker.com/r/library/rust/tags/
 image: "rust:1.95"
 
-ensure-compiles:
+test:ensure-compiles:
   image: "rust:1.95"
   script:
     - rustc --version && cargo --version
