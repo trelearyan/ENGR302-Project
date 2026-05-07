@@ -1,6 +1,5 @@
 # Official language image. Look for the different tagged releases at:
 # https://hub.docker.com/r/library/rust/tags/
-image: "rust:1.95"
 
 test:ensure-compiles:
   script:
@@ -13,6 +12,7 @@ ensure-tests-pass:
     - cargo test --workspace --verbose
 
 ensure-formatted-correctly:
+  image: rustfmt
   script:
     - rustc --version && cargo --version
     - cargo fmt --check
@@ -24,5 +24,6 @@ ensure-no-warnings:
     - cargo check
 
 default:
+  image: "rust:1.95"
   tags:
     - docker
