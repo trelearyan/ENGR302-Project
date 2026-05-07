@@ -12,7 +12,7 @@ ensure-tests-pass:
     - cargo test --workspace --verbose
 
 ensure-formatted-correctly:
-  image: "https://hub.docker.com/r/rustdocker/rustfmt:latest"
+  image: "https://hub.docker.com/r/rustdocker/rustfmt"
   script:
     - rustc --version && cargo --version
     - cargo fmt --check
