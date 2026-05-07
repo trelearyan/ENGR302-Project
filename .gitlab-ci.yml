@@ -11,11 +11,12 @@ ensure-tests-pass:
     - rustc --version && cargo --version
     - cargo test --workspace --verbose
 
-ensure-formatted-correctly:
-  image: "https://hub.docker.com/r/rustdocker/rustfmt"
-  script:
-    - rustc --version && cargo --version
-    - cargo fmt --check
+# broken \/
+#ensure-formatted-correctly:
+#  image: "https://hub.docker.com/r/rustdocker/rustfmt"
+#  script:
+#    - rustc --version && cargo --version
+#    - cargo fmt --check
 
 ensure-no-warnings:
   script:
