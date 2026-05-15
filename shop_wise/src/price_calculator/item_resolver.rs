@@ -1,4 +1,5 @@
-use crate::ShoppingItem;
+pub struct ShoppingItem; // TODO: this struct, probably belongs in Util
+
 /// Resolve a string into a ShoppingItem
 /// <br>
 /// Returns:
@@ -7,14 +8,7 @@ use crate::ShoppingItem;
 /// ShoppingItem
 /// <br>
 /// None if the string could not be resolved
-///
-/// if the 'a is confusing, thats called a lifetime. here, all it means is
-/// that the returned ShoppingItem will contain a &str that 'lives' (will
-/// not be destroyed) as long as the ShoppingItem itself lives. This means
-/// that you will never see a ShoppingItem that contains a reference to a
-/// string that has been destroyed. (this is the problem that java solves
-/// via the garbage collector)
-pub fn resolve<'a>(item: &'a str) -> Option<ShoppingItem<'a>> {
+pub fn resolve<'a>(item: &'a str) -> Option<ShoppingItem> {
     let _shut_up_warning = item;
     todo!()
 }
