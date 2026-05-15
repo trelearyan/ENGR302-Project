@@ -3,6 +3,15 @@ name = "shop_wise"
 version = "0.1.0"
 edition = "2024"
 
+[lints]
+workspace = true
+
 [dependencies]
 database = {path = "../database"}
 map = {path = "../map"}
+util = {path = "../util"}
+nalgebra = "0.34.2"
+ordered-float = "5.3.0"
+strum = "0.28.0"
+strum_macros = "0.28.0"
+

@@ -3,6 +3,12 @@ name = "util"
 version = "0.1.0"
 edition = "2024"
 
+[lints]
+workspace = true
+
 [dependencies]
 bigdecimal = "0.4.10"
 derive_more = { version = "2.1.1", features = ["full"] }
+nalgebra = "0.34.2"
+strum = "0.28.0"
+strum_macros = "0.28.0"
