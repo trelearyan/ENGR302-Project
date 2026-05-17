@@ -61,7 +61,7 @@ impl StoreFiltersBuilder {
             // default: all brands allowed
             self.allowed_brands
                 .clone() // unavoidable, to allow for using builder multiple times
-                .unwrap_or(HashSet::from_iter(StoreBrand::iter())),
+                .unwrap_or(StoreBrand::iter().collect::<HashSet<_>>()),
         )
     }
 
@@ -69,17 +69,24 @@ impl StoreFiltersBuilder {
         self.location = Some(location);
     }
 
-    pub fn add_brand(&mut self, location: Coordinate) {
-        self.location = Some(location)
+    pub fn add_brand(&mut self, brand: StoreBrand) {
+        match self.allowed_brands {
+            Some(ref mut set) => {
+                set.insert(brand);
+            }
+            None => {
+                self.allowed_brands = Some(HashSet::from([brand]));
+            }
+        }
     }
 
     pub fn set_brands(&mut self, brands: &[StoreBrand]) {
         // just plain enum variants so copy is fine
-        self.allowed_brands = Some(HashSet::from_iter(brands.iter().copied()))
+        self.allowed_brands = Some(brands.iter().collect::<HashSet<_>>());
     }
 
     pub fn all_brands(&mut self) {
-        self.allowed_brands = Some(HashSet::from_iter(StoreBrand::iter()))
+        self.allowed_brands = Some(HashSet::from_iter(StoreBrand::iter()));
     }
 }
 
