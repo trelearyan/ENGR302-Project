@@ -1,6 +1,7 @@
 use nalgebra::Vector3;
+use serde::{Deserialize, Serialize};
 
-#[derive(Default, Debug, PartialEq, PartialOrd, Clone, Copy)]
+#[derive(Default, Debug, PartialEq, PartialOrd, Clone, Copy, Serialize, Deserialize)]
 pub struct Coordinate {
     longitude: f32,
     latitude: f32,
@@ -23,7 +24,8 @@ impl Coordinate {
         )
     }
 
-    pub fn distance_between(&self, other: Self) -> f32 {
+    #[must_use]
+    pub fn distance_to(&self, other: Self) -> f32 {
         const EARTH_RADIUS_METRES: f32 = 6_371_000.;
         // https://en.wikipedia.org/wiki/N-vector#Example_1:_Great_circle_distance
         let a = self.geodetic_normal();
@@ -31,15 +33,15 @@ impl Coordinate {
 
         let theta = (a.cross(&b).magnitude() / a.dot(&b)).atan();
 
-        let result = theta * EARTH_RADIUS_METRES;
-
-        result
+        theta * EARTH_RADIUS_METRES
     }
 
+    #[must_use]
     pub fn within_range(&self, other: Self, range_metres: f32) -> bool {
-        self.distance_between(other) <= range_metres
+        self.distance_to(other) <= range_metres
     }
 
+    #[must_use]
     // Order is degree, min, second. If mins or seconds is negative, that works to subtract from degrees or mins respectively
     pub const fn with_degrees_minutes_seconds(
         longitude: (f32, f32, f32),
@@ -51,17 +53,18 @@ impl Coordinate {
         )
     }
 
+    #[must_use]
     pub const fn with_decimal_degrees(longitude: f32, latitude: f32) -> Self {
         Self::new(longitude, latitude)
     }
 
-    pub const WELLINGTON: Self = Coordinate::with_decimal_degrees(-41.294_769, 174.771_973);
-    pub const AUCKLAND: Self = Coordinate::with_decimal_degrees(-36.848_461, 174.763_336);
-    pub const CHRISTCHURCH: Self = Coordinate::with_decimal_degrees(-43.525_650, 172.639_847);
+    pub const WELLINGTON: Self = Coordinate::with_decimal_degrees(-41.294_77, 174.771_97);
+    pub const AUCKLAND: Self = Coordinate::with_decimal_degrees(-36.848_46, 174.763_34);
+    pub const CHRISTCHURCH: Self = Coordinate::with_decimal_degrees(-43.525_65, 172.639_85);
 }
 #[cfg(test)]
 mod coordinate_tests {
-    use super::Coordinate;
+    use super::*;
     #[test]
     fn test_wellington_conversion() {
         let wellington_dd = Coordinate::with_decimal_degrees(-41.28664, 174.77557);
@@ -69,5 +72,23 @@ mod coordinate_tests {
         let wellington_dms =
             Coordinate::with_degrees_minutes_seconds((-41., 17., 11.), (174., 46., 32.));
         assert_eq!(wellington_dms, wellington_dd);
+    }
+
+    #[test]
+    fn test_distance_wellington_auckl() {
+        assert_eq!(
+            494_459.2f32,
+            Coordinate::WELLINGTON.distance_to(Coordinate::AUCKLAND)
+        );
+    }
+
+    #[test]
+    fn test_distance_one_min_latitude_at_equator() {
+        assert_eq!(
+            0.,
+            Coordinate::with_degrees_minutes_seconds((0., 0., 0.), (0., 0., 0.)).distance_to(
+                Coordinate::with_degrees_minutes_seconds((0., 0., 0.), (0., 1., 0.))
+            )
+        );
     }
 }
