@@ -25,7 +25,7 @@ pub fn parse(csv_of_shopping_list_items: &str) -> Result<&[&str], ListParserErro
 
 #[cfg(test)]
 mod tests {
-    use crate::shopping_list_parser::{ListParserError, parse};
+    use super::*;
 
     // TODO: add more tests
 
