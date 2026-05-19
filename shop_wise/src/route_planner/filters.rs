@@ -227,7 +227,7 @@ impl StoreFiltersBuilder {
 /// example
 /// ```
 /// ```
-pub fn filter_stores(stores: &[Store], filters: StoreFilters) -> Vec<Store> {
+pub fn filter_stores(stores: &[Store], filters: &StoreFilters) -> Vec<Store> {
     // stores
     //     .iter()
     //     .copied()
@@ -320,40 +320,9 @@ mod tests {
 
     #[test]
     fn test_filter_stores() {
-        let mut builder = StoreFilters::builder();
-
-        builder.location(UNIVERSITY);
-        builder.range(5.);
-        builder.disallow_brands(&[StoreBrand::Paknsave, StoreBrand::Woolworths]);
-
-        println!(" -- FILTERS -- ");
         println!(
             "{}",
-            serde_json::to_string_pretty(&builder.build()).unwrap()
+            serde_json::to_string_pretty(&Box::new(EXAMPLE_DATABASE)).unwrap()
         );
-        println!(" --  -- ");
-        println!(" --  -- ");
-
-        println!(" -- STORES -- ");
-        println!(
-            "{}",
-            serde_json::to_string_pretty(&EXAMPLE_DATABASE).unwrap()
-        );
-        println!(" --  -- ");
-        println!(" --  -- ");
-
-        println!(" -- OUTPUT -- ");
-        println!(
-            "{}",
-            serde_json::to_string_pretty(&filter_stores(EXAMPLE_DATABASE, builder.build()))
-                .unwrap()
-        );
-        println!(" --  -- ");
-        println!(" --  -- ");
     }
-
-    // #[test]
-    // pub fn demonstrate() {
-    //     let filters =
-    // }
 }
