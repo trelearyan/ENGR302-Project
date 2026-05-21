@@ -1,6 +1,17 @@
 [package]
-name = "database"
+name    = "database"
 version = "0.1.0"
-edition = "2024"
+edition = "2021"
 
 [dependencies]
+# `bundled` ships SQLite source inside the binary, so users don't
+# need libsqlite3 installed on their machine. This also makes the
+# crate WASM-portable later, per design doc section 6.3.
+rusqlite = { version = "0.31", features = ["bundled"] }
+
+# A small example binary so we can prove the crate works end-to-end
+# without waiting for the Price Calculator. This mocks the role of
+# Samuel's Price Calculator for FR-04 demonstration purposes.
+[[bin]]
+name = "fr04_demo"
+path = "src/main.rs"
