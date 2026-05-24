@@ -26,14 +26,21 @@ impl Coordinate {
 
     #[must_use]
     pub fn distance_to(&self, other: Self) -> f32 {
-        const EARTH_RADIUS_METRES: f32 = 6_371_000.;
-        // https://en.wikipedia.org/wiki/N-vector#Example_1:_Great_circle_distance
-        let a = self.geodetic_normal();
-        let b = other.geodetic_normal();
+        // const EARTH_RADIUS_METRES: f32 = 6_371_000.;
+        // // https://en.wikipedia.org/wiki/N-vector#Example_1:_Great_circle_distance
+        // let a = self.geodetic_normal();
+        // let b = other.geodetic_normal();
 
-        let theta = (a.cross(&b).magnitude() / a.dot(&b)).atan();
+        // let theta = (a.cross(&b).magnitude() / a.dot(&b)).atan();
 
-        theta * EARTH_RADIUS_METRES
+        // theta * EARTH_RADIUS_METRES
+        //
+
+        ((self.latitude - other.latitude).powf(2.) + (self.longitude - other.longitude).powf(2.))
+            .sqrt()
+            .abs()
+            * 60.0 // to minutes/nautical miles
+            * 1852.0 // to km
     }
 
     #[must_use]

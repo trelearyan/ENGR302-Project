@@ -266,12 +266,14 @@ pub fn filter_stores(stores: &[Store], filters: &StoreFilters) -> Vec<Store> {
         .iter()
         .copied()
         .filter(|store| !filters.disallowed_brands.contains(&store.brand))
-        .filter(|_store| true)
-        //     match filters.max_range_metres {
-        //     // TODO: fix this
-        //     Some(range) => filters.location.within_range(store.location, range),
-        //     None => true,
-        // })
+        .filter(|store| match filters.max_range_metres {
+            // TODO: fix this
+            Some(range) => {
+                // dbg!(filters.max_range_metres);
+                filters.location.within_range(store.location, range)
+            }
+            None => panic!(),
+        })
         .collect::<Vec<_>>()
 }
 
