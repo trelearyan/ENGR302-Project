@@ -37,7 +37,9 @@ pub mod calculator {
         _items: &[ShoppingItem],
         _supermarkets: &[Supermarket],
         _database: &HashMap<StoreId, HashMap<ItemId, i32>>) {
-            // Will call calculate cheapest
+            /* Will call calculate cheapest, best and fastest
+            with their respective closures and then return
+            their results */
         }
 
     pub fn calculate_cheapest(
