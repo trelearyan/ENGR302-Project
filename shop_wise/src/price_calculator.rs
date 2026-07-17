@@ -22,16 +22,6 @@ pub struct BestPlan {
 //pub mod item_resolver;
 
 pub mod calculator {
-<<<<<<< Updated upstream
-    use crate::{ShoppingItem, Supermarket};
-
-    pub fn calculate(
-        items: &[Option<ShoppingItem>],
-        valid_supermarkets: &[Supermarket],
-        possible_routes: &[Route],
-        /* database: idfk what type this should be */
-    ) {
-=======
     use crate::price_calculator::*;
     pub fn calculate(
         _items: &[ShoppingItem],
@@ -154,7 +144,6 @@ pub mod calculator {
                 current_plan.current_travel_cost = old_travel_cost;
             }
         }
->>>>>>> Stashed changes
     }
 }
 
