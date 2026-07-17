@@ -95,7 +95,7 @@ impl Database {
         );
 
         // Combine the chain names and the LIKE pattern into one
-        // parameter iterator.
+        // parameter iterator. Extra WORD
         let pattern = format!("%{item_query}%");
         let mut params: Vec<&dyn rusqlite::ToSql> = in_range_chains
             .iter()
