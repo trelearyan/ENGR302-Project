@@ -71,7 +71,9 @@ pub mod calculator {
         );
 
         if best_plan.best_cost == i32::MAX {
-            // Panic! Couldn't buy all the items
+            /* Couldn't buy all the items and return None,
+            need to work out how to deal with certain errors
+            and some of this needs to be done in a pre-check */
             return None;
         }
         return Some(best_plan);
