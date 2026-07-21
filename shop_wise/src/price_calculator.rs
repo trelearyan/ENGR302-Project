@@ -12,6 +12,7 @@ pub struct CurrentPlan {
     current_travel_cost: i32,
 }
 
+#[derive(PartialEq, Debug)]
 pub struct BestPlan {
     best_shop_plan: ShoppingPlan,
     best_cost: i32,
@@ -152,10 +153,9 @@ pub struct ShoppingItem<'a> {
 }
 
 // Maybe this belongs in Database?
-pub struct Supermarket {/* id: ??? */}
-
-pub fn add(left: u64, right: u64) -> u64 {
-    left + right
+pub struct Supermarket<'a> {
+    name: &'a str,
+    id: i32,
 }
 
 #[cfg(test)]
@@ -163,13 +163,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
-
-    #[test]
-    fn empty() {
+    fn demo_test() {
         let items = vec![0, 1, 2];
         let supermarkets = vec![0, 1];
         let mut routes:  HashMap<RoutePlan, i32> = HashMap::new();
@@ -194,16 +188,13 @@ mod tests {
             &routes,
             &database
         );
-
-        // Print result
-        match result {
-            Some(plan) => {
-                println!("Best cost: {}", plan.best_cost);
-                println!("Shopping plan: {:#?}", plan.best_shop_plan);
-            }
-            None => {
-                println!("No valid shopping plan found");
-            }
-        }
+        let mut correct_shop = HashMap::new();
+        correct_shop.insert(0, vec![0,1]);
+        correct_shop.insert(1, vec![2]);
+        let correct_result: Option<BestPlan> = Some(BestPlan {
+            best_shop_plan: correct_shop,
+            best_cost: 2913,
+        });
+        assert_eq!(result,correct_result);
     }
 }
