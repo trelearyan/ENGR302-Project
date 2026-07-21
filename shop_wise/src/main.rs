@@ -4,9 +4,12 @@ use util::store::Store;
 
 use crate::route_planner::filters::{StoreFilters, filter_stores};
 
-mod gui;
+mod input_gui;
 mod price_calculator;
 mod route_planner;
+
+use eframe::egui;
+use input_gui::MyApp;
 
 fn demo_route_planner() {
     let filters: StoreFilters =
@@ -35,19 +38,18 @@ fn print_bar() {
     let terminal_cols = termsize::get().unwrap().cols;
     for _ in 0..terminal_cols {
         print!("=");
-mod input_gui;
-use input_gui::MyApp;
-use eframe::egui;
+    }
+}
 
 impl eframe::App for MyApp {
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
         egui::Panel::left("left_panel")
             .resizable(true)
             .show_inside(ui, |ui| {
-                egui::ScrollArea::vertical().show(ui, |ui|{
+                egui::ScrollArea::vertical().show(ui, |ui| {
                     // fr 10
                     self.filters(ui);
-                }); 
+                });
             });
 
         egui::CentralPanel::default().show_inside(ui, |ui| {
@@ -78,10 +80,7 @@ fn main() {
     eframe::WebLogger::init(log::LevelFilter::Debug).ok();
 
     spawn_local(async {
-        let document = web_sys::window()
-            .unwrap()
-            .document()
-            .unwrap();
+        let document = web_sys::window().unwrap().document().unwrap();
 
         let canvas = document
             .get_element_by_id("the_canvas_id")
@@ -98,9 +97,6 @@ fn main() {
             .await
             .unwrap();
 
-        document
-            .get_element_by_id("loading_text")
-            .unwrap()
-            .remove();
+        document.get_element_by_id("loading_text").unwrap().remove();
     });
 }
