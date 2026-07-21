@@ -1,16 +1,55 @@
+use std::fs::read_to_string;
+
+use util::store::Store;
+
+use crate::route_planner::filters::{StoreFilters, filter_stores};
+
 mod input_gui;
-use input_gui::MyApp;
+mod price_calculator;
+mod route_planner;
+
 use eframe::egui;
+use input_gui::MyApp;
+
+fn demo_route_planner() {
+    let filters: StoreFilters =
+        serde_json::from_str(read_to_string("filters.json").unwrap().as_str()).unwrap();
+
+    let stores: Vec<Store> =
+        serde_json::from_str(read_to_string("stores.json").unwrap().as_str()).unwrap();
+
+    let output = filter_stores(&stores, &filters);
+
+    print_bar();
+    println!("List of all stores:");
+    println!("{}", read_to_string("stores.json").unwrap().as_str());
+
+    print_bar();
+    println!("List of current user filters:");
+    println!("{}", read_to_string("filters.json").unwrap().as_str());
+
+    print_bar();
+    println!("Filtered stores:");
+    println!("{}", serde_json::to_string_pretty(&output).unwrap());
+    print_bar();
+}
+
+fn print_bar() {
+    let terminal_cols = termsize::get().unwrap().cols;
+    for _ in 0..terminal_cols {
+        print!("=");
+    }
+}
 
 impl eframe::App for MyApp {
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
         egui::Panel::left("left_panel")
             .resizable(true)
             .show_inside(ui, |ui| {
-                egui::ScrollArea::vertical().show(ui, |ui|{
+                egui::ScrollArea::vertical().show(ui, |ui| {
                     // fr 10
                     self.filters(ui);
-                }); 
+                });
             });
 
         egui::CentralPanel::default().show_inside(ui, |ui| {
@@ -41,10 +80,7 @@ fn main() {
     eframe::WebLogger::init(log::LevelFilter::Debug).ok();
 
     spawn_local(async {
-        let document = web_sys::window()
-            .unwrap()
-            .document()
-            .unwrap();
+        let document = web_sys::window().unwrap().document().unwrap();
 
         let canvas = document
             .get_element_by_id("the_canvas_id")
@@ -61,9 +97,6 @@ fn main() {
             .await
             .unwrap();
 
-        document
-            .get_element_by_id("loading_text")
-            .unwrap()
-            .remove();
+        document.get_element_by_id("loading_text").unwrap().remove();
     });
 }
