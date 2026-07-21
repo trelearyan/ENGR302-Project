@@ -4,6 +4,7 @@ members = ["database", "map", "shop_wise", "util"]
 
 [workspace.lints.rust]
 unsafe_code = "forbid"
+unused = "allow" # TODO: delete
 
 [workspace.lints.clippy]
 all = "warn"
