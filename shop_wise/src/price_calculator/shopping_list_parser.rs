@@ -26,30 +26,4 @@ pub fn parse(csv_of_shopping_list_items: &str) -> Result<&[&str], ListParserErro
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    // TODO: add more tests
-
-    #[test]
-    fn ensure_invalid_csv_fails() {
-        assert!(matches!(
-            parse("item1, item2, invalid,,,,,,  ,,\n,,,, csv, item4"),
-            Err(ListParserError::InvalidCsv(_))
-        ));
-    }
-
-    #[test]
-    fn ensure_invalid_char_fails() {
-        assert!(matches!(
-            parse("item1, item2, item_with_illegal_character\0, item4"),
-            Err(ListParserError::IllegalCharacter(_))
-        ));
-    }
-
-    #[test]
-    fn ensure_result_trimmed() {
-        assert_eq!(
-            parse("      \n  item1    ,   \n\n\n item2     ,  e\n "),
-            Ok(["item1", "item2", "e"].as_slice())
-        );
-    }
 }

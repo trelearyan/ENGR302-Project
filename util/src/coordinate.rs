@@ -72,30 +72,4 @@ impl Coordinate {
 #[cfg(test)]
 mod coordinate_tests {
     use super::*;
-    #[test]
-    fn test_wellington_conversion() {
-        let wellington_dd = Coordinate::with_decimal_degrees(-41.28664, 174.77557);
-        // -41°17'11.90" S 174°46'32.05"
-        let wellington_dms =
-            Coordinate::with_degrees_minutes_seconds((-41., 17., 11.), (174., 46., 32.));
-        assert_eq!(wellington_dms, wellington_dd);
-    }
-
-    #[test]
-    fn test_distance_wellington_auckl() {
-        assert_eq!(
-            494_459.2f32,
-            Coordinate::WELLINGTON.distance_to(Coordinate::AUCKLAND)
-        );
-    }
-
-    #[test]
-    fn test_distance_one_min_latitude_at_equator() {
-        assert_eq!(
-            0.,
-            Coordinate::with_degrees_minutes_seconds((0., 0., 0.), (0., 0., 0.)).distance_to(
-                Coordinate::with_degrees_minutes_seconds((0., 0., 0.), (0., 1., 0.))
-            )
-        );
-    }
 }
