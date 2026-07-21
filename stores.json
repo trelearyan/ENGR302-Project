@@ -1,0 +1,45 @@
+
+[
+  {
+    "brand": "Woolworths",
+    "location": {
+      "longitude": -41.28446,
+      "latitude": 174.77501
+    }
+  },
+  {
+    "brand": "Woolworths",
+    "location": {
+      "longitude": -41.307335,
+      "latitude": 174.77742
+    }
+  },
+  {
+    "brand": "Newworld",
+    "location": {
+      "longitude": -41.287785,
+      "latitude": 174.77525
+    }
+  },
+  {
+    "brand": "Newworld",
+    "location": {
+      "longitude": -41.29235,
+      "latitude": 174.78429
+    }
+  },
+  {
+    "brand": "Paknsave",
+    "location": {
+      "longitude": -41.318737,
+      "latitude": 174.79669
+    }
+  },
+  {
+    "brand": "Newworld",
+    "location": {
+      "longitude": -41.30747,
+      "latitude": 174.77748
+    }
+  }
+]

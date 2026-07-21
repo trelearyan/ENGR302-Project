@@ -35,7 +35,7 @@ pub struct Cost {
 impl Cost {
     // Per the Reserve Bank of New Zealand, 1-5c rounds down, 6-9c rounds up.
     // Source: https://web.archive.org/web/20111006085119/http://www.newcoins.govt.nz/1570749.html
-    fn round(&self) -> Cost {
+    pub fn round(&self) -> Cost {
         Self::new(self.inner.with_precision_round(
             NonZeroU64::new(2).expect("This should be a compile time constant 2"),
             RoundingMode::HalfDown,
