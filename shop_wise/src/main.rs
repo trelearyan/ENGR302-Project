@@ -47,6 +47,8 @@ impl eframe::App for MyApp {
             .resizable(true)
             .show_inside(ui, |ui| {
                 egui::ScrollArea::vertical().show(ui, |ui| {
+                    self.shopping_list_ui(ui);
+                    ui.separator();
                     // fr 10
                     self.filters(ui);
                 });

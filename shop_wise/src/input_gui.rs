@@ -25,7 +25,13 @@ struct ReverseResponse {
     display_name: String,
 }
 
+struct ShoppingItem{
+    name: String,
+    quantity: u32,
+    unit: String
+}
 pub struct MyApp {
+    shopping_items: Vec<ShoppingItem>,
     max_range: u32,
     max_stores: u32,
     include_paknsave: bool,
@@ -38,6 +44,7 @@ pub struct MyApp {
 
 impl MyApp {
     fn new(
+        shopping_items: Vec<ShoppingItem>,
         max_range: u32,
         max_stores: u32,
         include_paknsave: bool,
@@ -45,6 +52,7 @@ impl MyApp {
         include_woolies: bool,
     ) -> Self {
         Self {
+            shopping_items,
             max_range,
             max_stores,
             include_paknsave,
@@ -64,6 +72,37 @@ impl MyApp {
         ui.label(format!("Pak'nSave: {}", self.include_paknsave));
         ui.label(format!("New World: {}", self.include_newworld));
         ui.label(format!("Woolworths: {}", self.include_woolies));
+    }
+
+    /*
+    Your shopping list
+     */
+    pub fn shopping_list_ui(&mut self, ui: &mut egui::Ui){
+        ui.heading("Your shopping list");
+        // if the user clicks + Add Item button, creates an empty ShoppingingItem
+        if ui.button("+ Add Item").clicked(){
+            self.shopping_items.push(ShoppingItem { name: String::new(), quantity: 1, unit: "None".to_string()});
+        }
+
+        for item in &mut self.shopping_items{
+            ui.horizontal(|ui|{
+                ui.text_edit_singleline(&mut item.name);
+                ui.add(egui::DragValue::new(&mut item.quantity));
+
+                egui::ComboBox::from_id_salt(&item.name)
+                    .selected_text(&item.unit)
+                    .show_ui(ui, |ui|{
+                        ui.selectable_value(&mut item.unit, "None".to_string(), "None");
+                        ui.selectable_value(&mut item.unit, "g".to_string(), "g");
+                        ui.selectable_value(&mut item.unit, "kg".to_string(), "kg");
+                        ui.selectable_value(&mut item.unit, "mL".to_string(), "mL");
+                        ui.selectable_value(&mut item.unit, "L".to_string(), "L");
+                        ui.selectable_value(&mut item.unit, "pack".to_string(), "pack");
+                        ui.selectable_value(&mut item.unit, "ea".to_string(), "ea");
+                    });
+
+            });    
+        }
     }
 
     pub fn filters(&mut self, ui: &mut egui::Ui){
@@ -259,6 +298,7 @@ impl MyApp {
 impl Default for MyApp {
     fn default() -> Self {
         Self::new(
+            Vec::new(),
             10,
             3,
             true,
