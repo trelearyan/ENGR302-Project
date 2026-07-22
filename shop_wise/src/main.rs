@@ -53,6 +53,8 @@ impl eframe::App for MyApp {
             });
 
         egui::CentralPanel::default().show_inside(ui, |ui| {
+            self.location(ui);
+            self.search_button(ui);
             // for debugging
             self.print_filters(ui);
         });
