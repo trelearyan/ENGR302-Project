@@ -30,14 +30,17 @@ struct ShoppingItem{
     quantity: u32,
     unit: String
 }
-pub struct MyApp {
-    shopping_items: Vec<ShoppingItem>,
+
+struct Filters{
     max_range: u32,
     max_stores: u32,
     include_paknsave: bool,
     include_newworld: bool,
     include_woolies: bool,
-
+}
+pub struct MyApp {
+    shopping_items: Vec<ShoppingItem>,
+    filters: Filters,
     // Shared location state
     location_state: Rc<RefCell<LocationState>>,
 }
@@ -45,19 +48,12 @@ pub struct MyApp {
 impl MyApp {
     fn new(
         shopping_items: Vec<ShoppingItem>,
-        max_range: u32,
-        max_stores: u32,
-        include_paknsave: bool,
-        include_newworld: bool,
-        include_woolies: bool,
+        filters: Filters,
+
     ) -> Self {
         Self {
             shopping_items,
-            max_range,
-            max_stores,
-            include_paknsave,
-            include_newworld,
-            include_woolies,
+            filters,
 
             location_state: Rc::new(
                 RefCell::new(LocationState::default())
@@ -67,11 +63,11 @@ impl MyApp {
     // for debugging
     pub fn print_filters(&self, ui: &mut egui::Ui) {
         ui.label("=== Filter values ===");
-        ui.label(format!("Max Range: {}", self.max_range));
-        ui.label(format!("Max Stores: {}", self.max_stores));
-        ui.label(format!("Pak'nSave: {}", self.include_paknsave));
-        ui.label(format!("New World: {}", self.include_newworld));
-        ui.label(format!("Woolworths: {}", self.include_woolies));
+        ui.label(format!("Max Range: {}", self.filters.max_range));
+        ui.label(format!("Max Stores: {}", self.filters.max_stores));
+        ui.label(format!("Pak'nSave: {}", self.filters.include_paknsave));
+        ui.label(format!("New World: {}", self.filters.include_newworld));
+        ui.label(format!("Woolworths: {}", self.filters.include_woolies));
     }
 
     /*
@@ -109,19 +105,19 @@ impl MyApp {
         ui.heading("Filters");
 
         ui.label("Max Range");
-        ui.add(egui::Slider::new(&mut self.max_range, 1..=50).text("(km)"),);
+        ui.add(egui::Slider::new(&mut self.filters.max_range, 1..=50).text("(km)"),);
 
         ui.label("Max Stores per Trip");
-        ui.add(egui::Slider::new(&mut self.max_stores, 1..=10));
+        ui.add(egui::Slider::new(&mut self.filters.max_stores, 1..=10));
 
         ui.separator();
 
         ui.label("Supermarkets");
-        ui.checkbox(&mut self.include_paknsave, "Pak'nSave");
+        ui.checkbox(&mut self.filters.include_paknsave, "Pak'nSave");
 
-        ui.checkbox(&mut self.include_newworld, "New World");
+        ui.checkbox(&mut self.filters.include_newworld, "New World");
 
-        ui.checkbox(&mut self.include_woolies, "Woolworths");
+        ui.checkbox(&mut self.filters.include_woolies, "Woolworths");
     }
 
     pub fn location(&mut self, ui: &mut egui::Ui) {
@@ -191,9 +187,13 @@ impl MyApp {
                 log::info!("the search button is clicked!");
                 // First: check if both shopping list and location are not empty
         
-                // Second: API Call e.g. item_resolver(self.shopping_items) <Sam>
+                // Sam
+                //item_resolver(&self.shopping_items);
 
-                // Third: API Call e.g. route_planner(Location, Filters) <Alex>
+                // Alex
+                //let location = self.location_state.borrow();
+                //route_planner(&location, &self.filters);
+
             }
         }); 
     }
@@ -299,11 +299,13 @@ impl Default for MyApp {
     fn default() -> Self {
         Self::new(
             Vec::new(),
-            10,
-            3,
-            true,
-            true,
-            true,
+            Filters {
+                max_range: 10,
+                max_stores: 3,
+                include_paknsave: true,
+                include_newworld: true,
+                include_woolies: true,
+            },
         )
     }
 }
