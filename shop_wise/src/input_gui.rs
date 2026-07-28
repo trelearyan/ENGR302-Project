@@ -25,13 +25,13 @@ struct ReverseResponse {
     display_name: String,
 }
 
-struct ShoppingItem{
+struct ShoppingItem {
     name: String,
     quantity: u32,
-    unit: String
+    unit: String,
 }
 
-struct Filters{
+struct Filters {
     max_range: u32,
     max_stores: u32,
     include_paknsave: bool,
@@ -46,18 +46,12 @@ pub struct MyApp {
 }
 
 impl MyApp {
-    fn new(
-        shopping_items: Vec<ShoppingItem>,
-        filters: Filters,
-
-    ) -> Self {
+    fn new(shopping_items: Vec<ShoppingItem>, filters: Filters) -> Self {
         Self {
             shopping_items,
             filters,
 
-            location_state: Rc::new(
-                RefCell::new(LocationState::default())
-            )
+            location_state: Rc::new(RefCell::new(LocationState::default())),
         }
     }
     // for debugging
@@ -73,21 +67,25 @@ impl MyApp {
     /*
     Your shopping list
      */
-    pub fn shopping_list_ui(&mut self, ui: &mut egui::Ui){
+    pub fn shopping_list_ui(&mut self, ui: &mut egui::Ui) {
         ui.heading("Your shopping list");
         // if the user clicks + Add Item button, creates an empty ShoppingingItem
-        if ui.button("+ Add Item").clicked(){
-            self.shopping_items.push(ShoppingItem { name: String::new(), quantity: 1, unit: "None".to_string()});
+        if ui.button("+ Add Item").clicked() {
+            self.shopping_items.push(ShoppingItem {
+                name: String::new(),
+                quantity: 1,
+                unit: "None".to_string(),
+            });
         }
 
-        for item in &mut self.shopping_items{
-            ui.horizontal(|ui|{
+        for (i, item) in &mut self.shopping_items.iter_mut().enumerate() {
+            ui.horizontal(|ui| {
                 ui.text_edit_singleline(&mut item.name);
                 ui.add(egui::DragValue::new(&mut item.quantity));
 
-                egui::ComboBox::from_id_salt(&item.name)
+                egui::ComboBox::from_id_salt(i)
                     .selected_text(&item.unit)
-                    .show_ui(ui, |ui|{
+                    .show_ui(ui, |ui| {
                         ui.selectable_value(&mut item.unit, "None".to_string(), "None");
                         ui.selectable_value(&mut item.unit, "g".to_string(), "g");
                         ui.selectable_value(&mut item.unit, "kg".to_string(), "kg");
@@ -96,16 +94,15 @@ impl MyApp {
                         ui.selectable_value(&mut item.unit, "pack".to_string(), "pack");
                         ui.selectable_value(&mut item.unit, "ea".to_string(), "ea");
                     });
-
-            });    
+            });
         }
     }
 
-    pub fn filters(&mut self, ui: &mut egui::Ui){
+    pub fn filters(&mut self, ui: &mut egui::Ui) {
         ui.heading("Filters");
 
         ui.label("Max Range");
-        ui.add(egui::Slider::new(&mut self.filters.max_range, 1..=50).text("(km)"),);
+        ui.add(egui::Slider::new(&mut self.filters.max_range, 1..=50).text("(km)"));
 
         ui.label("Max Stores per Trip");
         ui.add(egui::Slider::new(&mut self.filters.max_stores, 1..=10));
@@ -135,12 +132,14 @@ impl MyApp {
         let mut state = self.location_state.borrow_mut();
 
         ui.horizontal(|ui| {
-            ui.add(egui::TextEdit::singleline(&mut state.address).hint_text("Enter an address"),);
+            ui.add(egui::TextEdit::singleline(&mut state.address).hint_text("Enter an address"));
 
-            let response = ui.add_enabled(!state.address.trim().is_empty(), egui::Button::new("Find Location"));
+            let response = ui.add_enabled(
+                !state.address.trim().is_empty(),
+                egui::Button::new("Find Location"),
+            );
 
             if response.clicked() {
-
                 #[cfg(target_arch = "wasm32")]
                 {
                     use wasm_bindgen_futures::spawn_local;
@@ -150,12 +149,11 @@ impl MyApp {
 
                     spawn_local(async move {
                         match MyApp::geocode(&address).await {
-
                             Ok((lat, lon, display_name)) => {
                                 log::info!("User entered location: {}", address);
                                 log::info!("Latitude: {}, Longitude: {}", lat, lon);
                                 log::info!("Formatted address: {}", display_name);
-                                
+
                                 let mut state = state_clone.borrow_mut();
 
                                 if display_name == "Location not found" {
@@ -170,9 +168,7 @@ impl MyApp {
                             }
 
                             Err(err) => {
-                                log::error!(
-                                    "Failed to geocode address: {}",err
-                                );
+                                log::error!("Failed to geocode address: {}", err);
                             }
                         }
                     });
@@ -181,21 +177,20 @@ impl MyApp {
         });
     }
 
-    pub fn search_button(&self, ui: &mut egui::Ui){
-        ui.horizontal(|ui|{
-            if ui.button("Search").clicked(){
+    pub fn search_button(&self, ui: &mut egui::Ui) {
+        ui.horizontal(|ui| {
+            if ui.button("Search").clicked() {
                 log::info!("the search button is clicked!");
                 // First: check if both shopping list and location are not empty
-        
+
                 // Sam
                 //item_resolver(&self.shopping_items);
 
                 // Alex
                 //let location = self.location_state.borrow();
                 //route_planner(&location, &self.filters);
-
             }
-        }); 
+        });
     }
 
     /*
@@ -203,8 +198,8 @@ impl MyApp {
      */
     #[cfg(target_arch = "wasm32")]
     fn get_current_location(&self, state: Rc<RefCell<LocationState>>) {
-        use wasm_bindgen::closure::Closure;
         use wasm_bindgen::JsCast;
+        use wasm_bindgen::closure::Closure;
         // get browser window
         let window = web_sys::window().unwrap();
 
@@ -213,8 +208,8 @@ impl MyApp {
         let geolocation = navigator.geolocation().unwrap();
 
         // call back
-        let success = Closure::<dyn FnMut(web_sys::Position)>::new(
-            move |position: web_sys::Position| {
+        let success =
+            Closure::<dyn FnMut(web_sys::Position)>::new(move |position: web_sys::Position| {
                 use wasm_bindgen_futures::spawn_local;
 
                 log::info!("SUCCESS CALLBACK CALLED"); // debug
@@ -228,7 +223,7 @@ impl MyApp {
                     state.latitude = Some(latitude);
                     state.longitude = Some(longitude);
                 }
-                log::info!("Latitude: {}, Longitude: {}",latitude,longitude); // debug
+                log::info!("Latitude: {}, Longitude: {}", latitude, longitude); // debug
                 let state_clone = state.clone();
                 spawn_local(async move {
                     match MyApp::reverse_geocode(latitude, longitude).await {
@@ -246,22 +241,29 @@ impl MyApp {
                         }
                     }
                 });
-            },
-        );
+            });
 
-        geolocation.get_current_position(success.as_ref().unchecked_ref()).unwrap();
+        geolocation
+            .get_current_position(success.as_ref().unchecked_ref())
+            .unwrap();
         success.forget(); // keep this callback alive
     }
 
     // translate coords --> readable address
     #[cfg(target_arch = "wasm32")]
     async fn reverse_geocode(latitude: f64, longitude: f64) -> Result<String, reqwest::Error> {
+        let url = format!(
+            "https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat={}&lon={}",
+            latitude, longitude
+        );
 
-        let url = format!("https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat={}&lon={}",latitude,longitude);
+        let response = reqwest::Client::new()
+            .get(url)
+            .header("User-Agent", "ShopWise")
+            .send()
+            .await?;
 
-        let response = reqwest::Client::new().get(url).header("User-Agent","ShopWise").send().await?;
-
-        let result: ReverseResponse =response.json().await?;
+        let result: ReverseResponse = response.json().await?;
 
         Ok(result.display_name)
     }
@@ -271,10 +273,15 @@ impl MyApp {
         let encoded_address = encode(address);
 
         let url = format!(
-            "https://nominatim.openstreetmap.org/search?q={}&format=jsonv2&limit=1",encoded_address
+            "https://nominatim.openstreetmap.org/search?q={}&format=jsonv2&limit=1",
+            encoded_address
         );
 
-        let response = reqwest::Client::new().get(url).header("User-Agent", "ShopWise").send().await?;
+        let response = reqwest::Client::new()
+            .get(url)
+            .header("User-Agent", "ShopWise")
+            .send()
+            .await?;
 
         let result: Vec<GeocodeResponse> = response.json().await?;
 
@@ -282,11 +289,7 @@ impl MyApp {
             let latitude = first.lat.parse::<f64>().unwrap();
             let longitude = first.lon.parse::<f64>().unwrap();
 
-            Ok((
-                latitude,
-                longitude,
-                first.display_name.clone(),
-            ))
+            Ok((latitude, longitude, first.display_name.clone()))
         } else {
             log::error!("Location not found.");
 
