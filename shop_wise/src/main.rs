@@ -47,12 +47,16 @@ impl eframe::App for MyApp {
             .resizable(true)
             .show_inside(ui, |ui| {
                 egui::ScrollArea::vertical().show(ui, |ui| {
+                    self.shopping_list_ui(ui);
+                    ui.separator();
                     // fr 10
                     self.filters(ui);
                 });
             });
 
         egui::CentralPanel::default().show_inside(ui, |ui| {
+            self.location(ui);
+            self.search_button(ui);
             // for debugging
             self.print_filters(ui);
         });
