@@ -74,7 +74,7 @@ impl MyApp {
             self.shopping_items.push(ShoppingItem {
                 name: String::new(),
                 quantity: 1,
-                unit: "None".to_string(),
+                unit: "ea".to_string(),
             });
         }
 
@@ -86,13 +86,12 @@ impl MyApp {
                 egui::ComboBox::from_id_salt(i)
                     .selected_text(&item.unit)
                     .show_ui(ui, |ui| {
-                        ui.selectable_value(&mut item.unit, "None".to_string(), "None");
+                        ui.selectable_value(&mut item.unit, "ea".to_string(), "ea");
                         ui.selectable_value(&mut item.unit, "g".to_string(), "g");
                         ui.selectable_value(&mut item.unit, "kg".to_string(), "kg");
                         ui.selectable_value(&mut item.unit, "mL".to_string(), "mL");
                         ui.selectable_value(&mut item.unit, "L".to_string(), "L");
                         ui.selectable_value(&mut item.unit, "pack".to_string(), "pack");
-                        ui.selectable_value(&mut item.unit, "ea".to_string(), "ea");
                     });
             });
         }
