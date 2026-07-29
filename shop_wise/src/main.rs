@@ -51,6 +51,8 @@ impl eframe::App for MyApp {
                     ui.separator();
                     // fr 10
                     self.filters(ui);
+                    ui.separator();
+                    self.mileage(ui);
                 });
             });
 
