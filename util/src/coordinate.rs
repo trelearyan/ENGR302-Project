@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 use bigdecimal::BigDecimal;
 use num_traits::FromPrimitive;
 use num_traits::ToPrimitive;
@@ -19,6 +21,16 @@ impl Coordinate {
             latitude: latitude.into(),
             longitude: longitude.into(),
         }
+    }
+
+    pub fn from_lat_long_str(
+        latitude: &str,
+        longitude: &str,
+    ) -> Result<Self, <BigDecimal as FromStr>::Err> {
+        Ok(Self {
+            latitude: BigDecimal::from_str(latitude)?,
+            longitude: BigDecimal::from_str(longitude)?,
+        })
     }
 
     #[must_use]
@@ -43,11 +55,17 @@ impl Coordinate {
     }
 
     #[must_use]
-    pub fn within_range(&self, other: Self, range_metres: Distance) -> bool {
-        self.distance_to(other) <= range_metres
+    pub fn within_range(&self, other: Self, range_metres: &Distance) -> bool {
+        &self.distance_to(other) <= range_metres
+    }
+
+    pub fn wellington() -> Self {
+        Coordinate::from_lat_long_str("-41.2866", "174.7756").unwrap()
+    }
+    pub fn auckland() -> Self {
+        Coordinate::from_lat_long_str("-36.848461", "174.763336").unwrap()
     }
 }
-
 #[cfg(test)]
 mod coordinate_tests {
     use crate::float_absolute_compare;

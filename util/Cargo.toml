@@ -3,6 +3,9 @@ name = "util"
 version = "0.1.0"
 edition = "2024"
 
+[lints]
+workspace = true
+
 [dependencies]
 bigdecimal = { version = "0.4.10", features = ["serde"] }
 derive_more = { version = "2.1.1", features = ["full"] }

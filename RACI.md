@@ -17,6 +17,7 @@ I - Informed
 | FR-10 | Ben (A, R) | Ryan (R) | Alex (I), Samuel (I), Syon (I) |
 | FR-11 | Syon (A, R) | Ryan (R) | Alex (I), Ben (I), Samuel (I) |
 | FR-12 | Ryan (A, R) | Ben (R), Syon (R) | Alex (I), Samuel (I), Syon (I) |
+| FR-13 | Ben (A, R) | Samuel (R) | Alex (I), Syon (I), Ryan (I) |
 | NFR-01 | Ben (A) | Ryan (R) | Alex (I), Samuel (I), Syon (I) |
 | NFR-02 | Samuel (A, R) | Syon (R) | Alex (I), Ben (I), Ryan (I) |
 | NFR-03 | Samuel (A, R) | Syon (R) | Alex (I), Ben (I), Ryan (I) |
@@ -32,4 +33,4 @@ I - Informed
 | NFR-13 | Alex (A, R) | N/A | Ben (I), Ryan (I), Samuel (I), Syon (I) |
 | NFR-14 | Alex (A, R) | N/A | Ben (I), Ryan (I), Samuel (I), Syon (I) |
 | NFR-15 | Syon (A, R) | N/A | Alex (I), Ben (I), Ryan (I), Samuel (I) |
-
+| NFR-16 | Samuel (A, R) | N/A | Alex (I), Ben (I), Ryan (I), Syon (I) |

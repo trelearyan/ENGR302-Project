@@ -1,0 +1,11 @@
+{
+  "location": {
+    "longitude": -41.29038,
+    "latitude": 174.76794
+  },
+  "max_range_metres": 5000.0,
+  "disallowed_brands": [
+    "Paknsave",
+    "Woolworths"
+  ]
+}
