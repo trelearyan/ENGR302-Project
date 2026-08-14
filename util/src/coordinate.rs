@@ -7,10 +7,17 @@ use serde::{Deserialize, Serialize};
 
 use crate::distance::Distance;
 
-#[derive(Default, Debug, PartialEq, PartialOrd, Clone, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, PartialOrd, Clone, Serialize, Deserialize)]
 pub struct Coordinate {
     pub latitude: BigDecimal,
     pub longitude: BigDecimal,
+}
+
+impl Default for Coordinate {
+    fn default() -> Self {
+        // VUW
+        Self::from_lat_long_f64(-41.289_848_883_193, 174.767_827_737_626_22)
+    }
 }
 
 impl Coordinate {
@@ -20,6 +27,24 @@ impl Coordinate {
         Self {
             latitude: latitude.into(),
             longitude: longitude.into(),
+        }
+    }
+
+    /// Creates a new [`Coordinate`].
+    #[must_use]
+    pub fn from_lat_long_f64(latitude: f64, longitude: f64) -> Self {
+        Self {
+            latitude: BigDecimal::from_f64(latitude).unwrap(),
+            longitude: BigDecimal::from_f64(longitude).unwrap(),
+        }
+    }
+
+    /// Creates a new [`Coordinate`].
+    #[must_use]
+    pub fn from_lat_long_f32(latitude: f32, longitude: f32) -> Self {
+        Self {
+            latitude: BigDecimal::from_f32(latitude).unwrap(),
+            longitude: BigDecimal::from_f32(longitude).unwrap(),
         }
     }
 

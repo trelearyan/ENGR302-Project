@@ -1,5 +1,9 @@
+use std::ops::Mul;
+
 use bigdecimal::BigDecimal;
 use derive_more::{Add, AddAssign, Sub, SubAssign, Sum};
+use eframe::emath::Numeric;
+use num_traits::{FromPrimitive, ToPrimitive, Zero};
 use serde::{Deserialize, Serialize};
 
 #[derive(
@@ -24,6 +28,14 @@ pub struct Distance {
 }
 
 impl Distance {
+    pub fn from_metres_f64(metres: f64) -> Self {
+        Self::from_metres(BigDecimal::from_f64(metres).unwrap())
+    }
+
+    pub fn from_kilometres_f64(metres: f64) -> Self {
+        Self::from_metres(BigDecimal::from_f64(metres * 1000.).unwrap())
+    }
+
     /// if metres is negative, it becomes positive
     pub fn from_metres<T: Into<BigDecimal>>(metres: T) -> Self {
         Self {
@@ -31,8 +43,14 @@ impl Distance {
         }
     }
 
-    pub fn metres<T: From<BigDecimal>>(&self) -> T {
-        self.base_value_metres.clone().into()
+    pub fn metres<T: From<BigDecimal>>(&self) -> f64 {
+        self.base_value_metres.clone().to_f64().unwrap()
+    }
+
+    pub fn kilometres(&self) -> f64 {
+        (self.base_value_metres.clone() * BigDecimal::from(1000))
+            .to_f64()
+            .unwrap()
     }
 }
 
