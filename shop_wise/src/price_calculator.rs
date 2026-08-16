@@ -1,3 +1,6 @@
+mod shopping_list_parser;
+mod item_resolver;
+
 use std::collections::HashMap;
 
 pub type StoreId = i32;
