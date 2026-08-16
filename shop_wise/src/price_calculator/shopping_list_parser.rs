@@ -5,9 +5,9 @@ use util::search::ShoppingItemQuery;
 pub enum ListParserError {
     // use these u32's to return the exact place where invalidness was
     // found, this way we can present an error in the GUI if we want
-    InvalidCsv(u32),
-    IllegalCharacter(u32),
-    ImproperLinebreak(u32),
+    CSVInvalid(u32),
+    CSVIllegalCharacter(u32),
+    CSVImproperLinebreak(u32),
 }
 
 #[derive(Debug, Eq, PartialEq)]
@@ -68,7 +68,7 @@ fn parse_csv(csv: &str) -> Result<CSV, ListParserError> {
     'whole: for c in csv.chars() {
         if (quote_phase != 1 && c != '\n' && return_char) {
             // No \n after \r - invalid
-            return Err(ListParserError::ImproperLinebreak(err_counter));
+            return Err(ListParserError::CSVImproperLinebreak(err_counter));
         }
         match c {
             '"' => {
@@ -88,7 +88,7 @@ fn parse_csv(csv: &str) -> Result<CSV, ListParserError> {
                     }
                     _ => {
                         // Cannot have quotes if not within quotes - invalid
-                        return Err(ListParserError::IllegalCharacter(err_counter));
+                        return Err(ListParserError::CSVIllegalCharacter(err_counter));
                     }
                 }
             }
@@ -132,7 +132,7 @@ fn parse_csv(csv: &str) -> Result<CSV, ListParserError> {
                                 // End of file reached as empty line
                                 if field_len == 0 {
                                     // If field length not yet set whole file empty - invalid
-                                    return Err(ListParserError::InvalidCsv(err_counter));
+                                    return Err(ListParserError::CSVInvalid(err_counter));
                                 }
                                 break 'whole;
                             } else {
@@ -145,13 +145,13 @@ fn parse_csv(csv: &str) -> Result<CSV, ListParserError> {
                                     field_len = fields.len() as i32;
                                 } else if (fields.len() as i32) % field_len != 0 {
                                     // Records do not all have the same number of fields - invalid
-                                    return Err(ListParserError::InvalidCsv(err_counter));
+                                    return Err(ListParserError::CSVInvalid(err_counter));
                                 }
                             }
                             return_char = false;
                         } else {
                             // No \r before \n - invalid
-                            return Err(ListParserError::ImproperLinebreak(err_counter));
+                            return Err(ListParserError::CSVImproperLinebreak(err_counter));
                         }
                     }
                 }
@@ -165,7 +165,7 @@ fn parse_csv(csv: &str) -> Result<CSV, ListParserError> {
                     }
                     2 => {
                         // No second quote - invalid
-                        return Err(ListParserError::InvalidCsv(err_counter));
+                        return Err(ListParserError::CSVInvalid(err_counter));
                     }
                     _ => {
                         working.push(c);
@@ -191,7 +191,7 @@ fn parse_csv(csv: &str) -> Result<CSV, ListParserError> {
 
     if (fields.len() as i32) % field_len != 0 {
         // Records do not all have the same number of fields
-        return Err(ListParserError::InvalidCsv(err_counter));
+        return Err(ListParserError::CSVInvalid(err_counter));
     }
 
     // Return CSV
@@ -205,6 +205,7 @@ fn parse_csv(csv: &str) -> Result<CSV, ListParserError> {
 mod tests {
     use super::*;
 
+    // Convert string literals into owned strings for testing
     macro_rules! string_vec {
         ($($s:expr),* $(,)?) => {
             vec![$($s.to_owned()),*]
@@ -212,7 +213,7 @@ mod tests {
     }
 
     #[test]
-    fn test_basic() {
+    fn test_csvparse_basic() {
         let csvtext: &str = "id,name,email\r\n1,John,john.doe@example.com\
                             \r\n2,Jane,janey72@test.org";
         assert_eq!(Ok(CSV {
@@ -228,7 +229,7 @@ mod tests {
     }
 
     #[test]
-    fn test_oneliner() {
+    fn test_csvparse_oneliner() {
         let csvtext: &str = "id,name,email";
         assert_eq!(Ok(CSV {
                 field_len: 3,
@@ -241,7 +242,7 @@ mod tests {
     }
     
     #[test]
-    fn test_advanced() {
+    fn test_csvparse_advanced() {
         let csvtext: &str = "Year,Make,Model,Description,Price\r\n1997,Ford,E350,\
                             \"ac, abs, moon\",3000.00\r\n1999,Chevy,\"Venture \"\
                             \"Extended Edition\"\"\",\"\",4900.00\r\n1999,Chevy,\"\
@@ -261,4 +262,37 @@ mod tests {
             parse_csv(csvtext)
         );
     }
+
+    #[test]
+    fn test_csvparse_invalidcharacter() {
+        let csvtext: &str = "id,name,em\"ail";
+        assert_eq!(Err(ListParserError::CSVIllegalCharacter(10)),
+            parse_csv(csvtext)
+        );
+    }
+    
+    #[test]
+    fn test_csvparse_improperlinebreak() {
+        let csvtext: &str = "id,name,email\n1,John,john.doe@example.com";
+        assert_eq!(Err(ListParserError::CSVImproperLinebreak(13)),
+            parse_csv(csvtext)
+        );
+    }
+
+    #[test]
+    fn test_csvparse_invalidshape() {
+        let csvtext: &str = "a,b,c\r\n1,2,3,4";
+        assert_eq!(Err(ListParserError::CSVInvalid(14)),
+            parse_csv(csvtext)
+        );
+    }
+    
+    #[test]
+    fn test_csvparse_unclosedquotes() {
+        let csvtext: &str = "a,b,c\r\n1,\"2,3";
+        assert_eq!(Err(ListParserError::CSVInvalid(13)),
+            parse_csv(csvtext)
+        );
+    }
+    
 }
