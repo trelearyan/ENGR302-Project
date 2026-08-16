@@ -59,22 +59,22 @@ fn parse(csv_of_shopping_list_items: &str) -> Result<Vec<ShoppingItemQuery>, Lis
         }
         iline = 2;
     }
-    let shopping_query: Vec<ShoppingItemQuery> = Vec::new();
+    let mut shopping_query: Vec<ShoppingItemQuery> = Vec::new();
     while (iline < parsed.fields.len() / 3) {
         let name: String = parsed.fields.get(iline*3).unwrap().to_string();
         let quantity: Result<u32, std::num::ParseIntError>= parsed.fields.get(iline*3+1).unwrap().parse::<u32>();
         let unit: String = parsed.fields.get(iline*3+2).unwrap().to_string();
-        if (quantity.is_err() || match_to_unit(unit.as_ref()).is_none()) {
+        if (name.is_empty() || quantity.is_err() || match_to_unit(unit.as_ref()).is_none()) {
             return Err(ListParserError::LineNotReadable(iline as u32));
         }
-        let query: ShoppingItemQuery = ShoppingItemQuery {
+        shopping_query.push(ShoppingItemQuery {
             name: name,
             quantity: quantity.unwrap(),
             unit: unit
-        };
+        });
         iline += 1;
     }
-    todo!();
+    Ok(shopping_query)
 }
 
 /// Parse a csv into a vector of strings.
