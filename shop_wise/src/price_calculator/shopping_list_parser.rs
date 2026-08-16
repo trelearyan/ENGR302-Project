@@ -102,6 +102,7 @@ fn parse_csv(csv: &str) -> Result<CSV, ListParserError> {
                         // Close
                         fields.push(working.clone());
                         working.clear();
+                        quote_phase = 0;
                     }
                 }
             }
@@ -138,6 +139,7 @@ fn parse_csv(csv: &str) -> Result<CSV, ListParserError> {
                                 // Add record to file
                                 fields.push(working.clone());
                                 working.clear();
+                                quote_phase = 0;
                                 if field_len == 0 {
                                     // If field length not yet set, set it
                                     field_len = fields.len() as i32;
@@ -246,7 +248,6 @@ mod tests {
                             Venture \"\"Extended Edition, Very Large\"\"\",\"\",5\
                             000.00\r\n1996,Jeep,Grand Cherokee,\"MUST SELL!\r\nai\
                             r, moon roof, loaded\",4799.00\r\n";
-        println!("{}", csvtext);
         assert_eq!(Ok(CSV {
                 field_len: 5,
                 fields: string_vec![
