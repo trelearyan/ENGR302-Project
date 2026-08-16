@@ -8,9 +8,10 @@ pub enum ListParserError {
     CSVInvalid(u32),
     CSVIllegalCharacter(u32),
     CSVImproperLinebreak(u32),
-    // use these u32's to indicate the invalid parameter
+    // use this u32 to indicate the invalid parameter
     ParseInvalidShape(u32),
-    LineNotReadable(u32),
+    // use the String to indicate reason and the u32 for line number
+    LineNotReadable(String, u32),
 }
 
 #[derive(Debug, Eq, PartialEq)]
@@ -25,13 +26,19 @@ struct CSV {
 /// <br>
 /// Ok(&[&str]) if the list of queries could be produced
 /// <br>
-/// Err(ListParserError::InvalidCsv(column) if the parameter is invalid CSV.
+/// Err(ListParserError::CSVInvalid(column) if the parameter is invalid CSV.
 /// <br>
-/// Err(ListParserError::IllegalCharacter(column) if the parameter contains
+/// Err(ListParserError::CSVIllegalCharacter(column) if the parameter contains
 /// an illegal character.
 /// <br>
-/// Err(ImproperLinebreak::IllegalCharacter(column) if the parameter contains
+/// Err(ListParserError::CSVImproperLinebreak(column) if the parameter contains
 /// an invalid linebreak sequence
+/// <br>
+/// Err(ListParserError::ParseInvalidShape(width) if the csv is a different record
+/// size than the intended 3
+/// <br>
+/// Err(ListParserError::LineNotReadable(Reason, line) if a line cannot be parsed
+/// into a shopping query
 fn parse(csv_of_shopping_list_items: &str) -> Result<Vec<ShoppingItemQuery>, ListParserError> {
     // Parse input and validate parsing
     let parsed: CSV;
@@ -46,26 +53,32 @@ fn parse(csv_of_shopping_list_items: &str) -> Result<Vec<ShoppingItemQuery>, Lis
     if (parsed.field_len != 3) {
         return Err(ListParserError::ParseInvalidShape(parsed.field_len));
     }
-    // Check that their are enough fields - SHOULDN'T EVER FAIL
+    // Check that their are enough fields - SHOULDN'T EVER FAIL GIVEN ABOVE
     if (parsed.fields.len() < 3) {
-            return Err(ListParserError::LineNotReadable(0));
+            return Err(ListParserError::LineNotReadable("Not enough fields".to_owned(), 0));
     }
     // Second field should be a string representation of an integer, unless header
     let mut iline: usize = 0;
     if (parsed.fields.get(1).unwrap().parse::<u32>().is_err()) {
         // Assume header and so try 5th
         if (parsed.fields.len() < 6 || parsed.fields.get(4).unwrap().parse::<u32>().is_err()) {
-            return Err(ListParserError::LineNotReadable(1));
+            return Err(ListParserError::LineNotReadable("More than one header or malformed".to_owned(), 1));
         }
         iline = 1;
     }
     let mut shopping_query: Vec<ShoppingItemQuery> = Vec::new();
     while (iline < parsed.fields.len() / 3) {
         let name: String = parsed.fields.get(iline*3).unwrap().to_string();
+        if (name.is_empty()) {
+            return Err(ListParserError::LineNotReadable("Name is empty".to_owned(), iline as u32));
+        }
         let quantity: Result<u32, std::num::ParseIntError>= parsed.fields.get(iline*3+1).unwrap().parse::<u32>();
+        if (quantity.is_err()) {
+            return Err(ListParserError::LineNotReadable("Could not read quantity".to_owned(), iline as u32));
+        }
         let unit: String = parsed.fields.get(iline*3+2).unwrap().to_string();
-        if (name.is_empty() || quantity.is_err() || match_to_unit(unit.as_ref()).is_none()) {
-            return Err(ListParserError::LineNotReadable(iline as u32));
+        if (match_to_unit(unit.as_ref()).is_none()) {
+            return Err(ListParserError::LineNotReadable("Unit not valid".to_owned(), iline as u32));
         }
         shopping_query.push(ShoppingItemQuery {
             name: name,
@@ -85,12 +98,12 @@ fn parse(csv_of_shopping_list_items: &str) -> Result<Vec<ShoppingItemQuery>, Lis
 /// Ok(&[&str]) if the string could be parsed as valid CSV and split into
 /// an array of sanitised strings
 /// <br>
-/// Err(ListParserError::InvalidCsv(column) if the parameter is invalid CSV.
+/// Err(ListParserError::CSVInvalid(column) if the parameter is invalid CSV.
 /// <br>
-/// Err(ListParserError::IllegalCharacter(column) if the parameter contains
+/// Err(ListParserError::CSVIllegalCharacter(column) if the parameter contains
 /// an illegal character.
 /// <br>
-/// Err(ImproperLinebreak::IllegalCharacter(column) if the parameter contains
+/// Err(ListParserError::CSVImproperLinebreak(column) if the parameter contains
 /// an invalid linebreak sequence
 fn parse_csv(csv: &str) -> Result<CSV, ListParserError> {
     // begin with empty field length
