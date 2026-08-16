@@ -48,16 +48,16 @@ fn parse(csv_of_shopping_list_items: &str) -> Result<Vec<ShoppingItemQuery>, Lis
     }
     // Check that their are enough fields - SHOULDN'T EVER FAIL
     if (parsed.fields.len() < 3) {
-            return Err(ListParserError::LineNotReadable(1));
+            return Err(ListParserError::LineNotReadable(0));
     }
     // Second field should be a string representation of an integer, unless header
-    let mut iline: usize = 1;
-    if (parsed.fields.get(2).unwrap().parse::<u32>().is_err()) {
+    let mut iline: usize = 0;
+    if (parsed.fields.get(1).unwrap().parse::<u32>().is_err()) {
         // Assume header and so try 5th
-        if (parsed.fields.len() < 6 || parsed.fields.get(2).unwrap().parse::<u32>().is_err()) {
-            return Err(ListParserError::LineNotReadable(2));
+        if (parsed.fields.len() < 6 || parsed.fields.get(4).unwrap().parse::<u32>().is_err()) {
+            return Err(ListParserError::LineNotReadable(1));
         }
-        iline = 2;
+        iline = 1;
     }
     let mut shopping_query: Vec<ShoppingItemQuery> = Vec::new();
     while (iline < parsed.fields.len() / 3) {
@@ -338,7 +338,7 @@ mod tests {
     #[test]
     fn test_csvparse_lonequoute() {
         let csvtext: &str = "a,b,c\r\n1,\"2\"2\",3";
-        assert_eq!(Err(ListParserError::CSVInvalid(13)),
+        assert_eq!(Err(ListParserError::CSVInvalid(12)),
             parse_csv(csvtext)
         );
     }
@@ -366,11 +366,52 @@ mod tests {
     
     #[test]
     fn test_shopparse_advanced() {
-        let csvtext: &str = "Butter,1,ea\r\n\"Cheese, American\",2,kg\r\n\"\"\"Fred\"\"\",1800,ml\r\n\"Box of Newlines,\n\r\n\n\r\n\"\"100% Organic\",12,$";
+        let csvtext: &str = "Butter,1,ea\r\n\
+                            \"Cheese, American\",2,kg\r\n\
+                            \"\"\"Fred\"\"\",1800,mL\r\n\
+                            \"Box of Newlines,\n\r\n\n\r\n\"\"100% Organic\",12,$";
+        assert_eq!(Ok(vec![
+                ShoppingItemQuery { name: "Butter".to_owned(), quantity: 1, unit: "ea".to_owned()},
+                ShoppingItemQuery { name: "Cheese, American".to_owned(), quantity: 2, unit: "kg".to_owned()},
+                ShoppingItemQuery { name: "\"Fred\"".to_owned(), quantity: 1800, unit: "mL".to_owned()},
+                ShoppingItemQuery { name: "Box of Newlines,\n\r\n\n\r\n\"100% Organic".to_owned(), quantity: 12, unit: "$".to_owned()},
+            ]),
+            parse(csvtext)
+        );
+    }
+
+    #[test]
+    fn test_shopparse_basic_header() {
+        let csvtext: &str = "ItemName,Quantity,Unit\r\nButter,1,ea\r\nCheese,2,kg";
         assert_eq!(Ok(vec![
                 ShoppingItemQuery { name: "Butter".to_owned(), quantity: 1, unit: "ea".to_owned()},
                 ShoppingItemQuery { name: "Cheese".to_owned(), quantity: 2, unit: "kg".to_owned()},
-                ShoppingItemQuery { name: "\"Fred\"".to_owned(), quantity: 1800, unit: "ml".to_owned()},
+            ]),
+            parse(csvtext)
+        );
+    }
+    
+    #[test]
+    fn test_shopparse_oneliner_header() {
+        let csvtext: &str = "ItemName,Quantity,Unit\r\nButter,1,ea";
+        assert_eq!(Ok(vec![
+                ShoppingItemQuery { name: "Butter".to_owned(), quantity: 1, unit: "ea".to_owned()}
+            ]),
+            parse(csvtext)
+        );
+    }
+    
+    #[test]
+    fn test_shopparse_advanced_header() {
+        let csvtext: &str = "ItemName,Quantity,Unit\r\n\
+                            Butter,1,ea\r\n\
+                            \"Cheese, American\",2,kg\r\n\
+                            \"\"\"Fred\"\"\",1800,mL\r\n\
+                            \"Box of Newlines,\n\r\n\n\r\n\"\"100% Organic\",12,$";
+        assert_eq!(Ok(vec![
+                ShoppingItemQuery { name: "Butter".to_owned(), quantity: 1, unit: "ea".to_owned()},
+                ShoppingItemQuery { name: "Cheese, American".to_owned(), quantity: 2, unit: "kg".to_owned()},
+                ShoppingItemQuery { name: "\"Fred\"".to_owned(), quantity: 1800, unit: "mL".to_owned()},
                 ShoppingItemQuery { name: "Box of Newlines,\n\r\n\n\r\n\"100% Organic".to_owned(), quantity: 12, unit: "$".to_owned()},
             ]),
             parse(csvtext)
