@@ -45,6 +45,7 @@ pub fn match_to_unit(name: &str) -> Option<SearchUnits> {
     }
 }
 
+#[derive(Debug, Eq, PartialEq)]
 pub struct ShoppingItemQuery {
     pub name: String,
     pub quantity: u32,

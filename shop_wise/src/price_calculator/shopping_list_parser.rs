@@ -335,4 +335,46 @@ mod tests {
         );
     }
     
+    #[test]
+    fn test_csvparse_lonequoute() {
+        let csvtext: &str = "a,b,c\r\n1,\"2\"2\",3";
+        assert_eq!(Err(ListParserError::CSVInvalid(13)),
+            parse_csv(csvtext)
+        );
+    }
+
+    #[test]
+    fn test_shopparse_basic() {
+        let csvtext: &str = "Butter,1,ea\r\nCheese,2,kg";
+        assert_eq!(Ok(vec![
+                ShoppingItemQuery { name: "Butter".to_owned(), quantity: 1, unit: "ea".to_owned()},
+                ShoppingItemQuery { name: "Cheese".to_owned(), quantity: 2, unit: "kg".to_owned()},
+            ]),
+            parse(csvtext)
+        );
+    }
+    
+    #[test]
+    fn test_shopparse_oneliner() {
+        let csvtext: &str = "Butter,1,ea";
+        assert_eq!(Ok(vec![
+                ShoppingItemQuery { name: "Butter".to_owned(), quantity: 1, unit: "ea".to_owned()}
+            ]),
+            parse(csvtext)
+        );
+    }
+    
+    #[test]
+    fn test_shopparse_advanced() {
+        let csvtext: &str = "Butter,1,ea\r\n\"Cheese, American\",2,kg\r\n\"\"\"Fred\"\"\",1800,ml\r\n\"Box of Newlines,\n\r\n\n\r\n\"\"100% Organic\",12,$";
+        assert_eq!(Ok(vec![
+                ShoppingItemQuery { name: "Butter".to_owned(), quantity: 1, unit: "ea".to_owned()},
+                ShoppingItemQuery { name: "Cheese".to_owned(), quantity: 2, unit: "kg".to_owned()},
+                ShoppingItemQuery { name: "\"Fred\"".to_owned(), quantity: 1800, unit: "ml".to_owned()},
+                ShoppingItemQuery { name: "Box of Newlines,\n\r\n\n\r\n\"100% Organic".to_owned(), quantity: 12, unit: "$".to_owned()},
+            ]),
+            parse(csvtext)
+        );
+    }
+    
 }
