@@ -1,4 +1,5 @@
 use std::ops::Add;
+use util::search::ShoppingItemQuery;
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum ListParserError {
@@ -14,6 +15,27 @@ struct CSV {
     fields: Vec<String>,
 }
 
+/// Parse a csv into a list of queries
+/// <br>
+/// Returns:
+/// <br>
+/// Ok(&[&str]) if the list of queries could be produced
+/// <br>
+/// Err(ListParserError::InvalidCsv(column) if the parameter is invalid CSV.
+/// <br>
+/// Err(ListParserError::IllegalCharacter(column) if the parameter contains
+/// an illegal character.
+/// <br>
+/// Err(ImproperLinebreak::IllegalCharacter(column) if the parameter contains
+/// an invalid linebreak sequence
+fn parse(csv_of_shopping_list_items: &str) -> Result<Vec<ShoppingItemQuery>, ListParserError> {
+    let parsed: Result<CSV, ListParserError> = parse_csv(csv_of_shopping_list_items);
+    if (parsed.is_err()) {
+        return Err(parsed.err().unwrap());
+    }
+    todo!();
+}
+
 /// Parse a csv into a vector of strings.
 /// The Strings will be copied, and no references are made to the original csv str
 /// <br>
@@ -26,7 +48,10 @@ struct CSV {
 /// <br>
 /// Err(ListParserError::IllegalCharacter(column) if the parameter contains
 /// an illegal character.
-fn parse(csv_of_shopping_list_items: &str) -> Result<CSV, ListParserError> {
+/// <br>
+/// Err(ImproperLinebreak::IllegalCharacter(column) if the parameter contains
+/// an invalid linebreak sequence
+fn parse_csv(csv: &str) -> Result<CSV, ListParserError> {
     // begin with empty field length
     let mut field_len: i32 = 0;
     // Start working string with a reasonable capacity to avoid constant re-allocation
@@ -39,7 +64,7 @@ fn parse(csv_of_shopping_list_items: &str) -> Result<CSV, ListParserError> {
     let mut quote_phase: i32 = 0; 
     let mut return_char: bool = false;
     let mut err_counter: u32 = 0;
-    'whole: for c in csv_of_shopping_list_items.chars() {
+    'whole: for c in csv.chars() {
         if (quote_phase != 1 && c != '\n' && return_char) {
             // No \n after \r - invalid
             return Err(ListParserError::ImproperLinebreak(err_counter));
@@ -153,12 +178,11 @@ fn parse(csv_of_shopping_list_items: &str) -> Result<CSV, ListParserError> {
         return Err(ListParserError::InvalidCsv(err_counter));
     }
 
-    // Create CSV
-    let encoded: CSV = CSV {
+    // Return CSV
+    Ok(CSV {
         field_len,
         fields: fields,
-    };
-    Ok(encoded)
+    })
 }
 
 #[cfg(test)]

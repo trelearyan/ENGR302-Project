@@ -10,6 +10,7 @@ use strum::IntoEnumIterator;
 use strum_macros::EnumIter;
 use urlencoding::encode;
 use util::cost::{self, Cost};
+use util::search::ShoppingItemQuery;
 
 #[derive(Default)]
 struct LocationState {
@@ -32,12 +33,6 @@ struct ReverseResponse {
     display_name: String,
 }
 
-struct ShoppingItem {
-    name: String,
-    quantity: u32,
-    unit: String,
-}
-
 struct Filters {
     max_range: u32,
     max_stores: u32,
@@ -47,7 +42,7 @@ struct Filters {
 }
 
 pub struct MyApp {
-    shopping_items: Vec<ShoppingItem>,
+    shopping_items: Vec<ShoppingItemQuery>,
     filters: Filters,
     mileage_option: MileageOptions,
     mileage_scratch: String,
@@ -57,7 +52,7 @@ pub struct MyApp {
 
 impl MyApp {
     fn new(
-        shopping_items: Vec<ShoppingItem>,
+        shopping_items: Vec<ShoppingItemQuery>,
         filters: Filters,
         mileage_option: MileageOptions,
     ) -> Self {
@@ -87,7 +82,7 @@ impl MyApp {
         ui.heading("Your shopping list");
         // if the user clicks + Add Item button, creates an empty ShoppingingItem
         if ui.button("+ Add Item").clicked() {
-            self.shopping_items.push(ShoppingItem {
+            self.shopping_items.push(ShoppingItemQuery {
                 name: String::new(),
                 quantity: 1,
                 unit: "ea".to_string(),
