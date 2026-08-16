@@ -10,6 +10,7 @@ pub enum ListParserError {
     ImproperLinebreak(u32),
 }
 
+#[derive(Debug, Eq, PartialEq)]
 struct CSV {
     field_len: i32,
     fields: Vec<String>,
@@ -139,7 +140,7 @@ fn parse_csv(csv: &str) -> Result<CSV, ListParserError> {
                                 working.clear();
                                 if field_len == 0 {
                                     // If field length not yet set, set it
-                                    field_len = working.len() as i32;
+                                    field_len = fields.len() as i32;
                                 } else if (fields.len() as i32) % field_len != 0 {
                                     // Records do not all have the same number of fields - invalid
                                     return Err(ListParserError::InvalidCsv(err_counter));
@@ -172,6 +173,19 @@ fn parse_csv(csv: &str) -> Result<CSV, ListParserError> {
         }
         err_counter += 1;
     }
+    if (!working.is_empty()) {
+        fields.push(working.clone());
+        working.clear();
+        if field_len == 0 {
+            // If field length not yet set, set it
+            field_len = fields.len() as i32;
+        }
+    }
+
+    if (field_len == 0) {
+        // Field len has not been set
+        panic!();
+    }
 
     if (fields.len() as i32) % field_len != 0 {
         // Records do not all have the same number of fields
@@ -188,4 +202,62 @@ fn parse_csv(csv: &str) -> Result<CSV, ListParserError> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    macro_rules! string_vec {
+        ($($s:expr),* $(,)?) => {
+            vec![$($s.to_owned()),*]
+        };
+    }
+
+    #[test]
+    fn test_basic() {
+        let csvtext: &str = "id,name,email\r\n1,John,john.doe@example.com\
+                            \r\n2,Jane,janey72@test.org";
+        assert_eq!(Ok(CSV {
+                field_len: 3,
+                fields: string_vec![
+                    "id", "name", "email",
+                    "1", "John", "john.doe@example.com",
+                    "2", "Jane", "janey72@test.org"
+                ],
+            }),
+            parse_csv(csvtext)
+        );
+    }
+
+    #[test]
+    fn test_oneliner() {
+        let csvtext: &str = "id,name,email";
+        assert_eq!(Ok(CSV {
+                field_len: 3,
+                fields: string_vec![
+                    "id", "name", "email",
+                ],
+            }),
+            parse_csv(csvtext)
+        );
+    }
+    
+    #[test]
+    fn test_advanced() {
+        let csvtext: &str = "Year,Make,Model,Description,Price\r\n1997,Ford,E350,\
+                            \"ac, abs, moon\",3000.00\r\n1999,Chevy,\"Venture \"\
+                            \"Extended Edition\"\"\",\"\",4900.00\r\n1999,Chevy,\"\
+                            Venture \"\"Extended Edition, Very Large\"\"\",\"\",5\
+                            000.00\r\n1996,Jeep,Grand Cherokee,\"MUST SELL!\r\nai\
+                            r, moon roof, loaded\",4799.00\r\n";
+        println!("{}", csvtext);
+        assert_eq!(Ok(CSV {
+                field_len: 5,
+                fields: string_vec![
+                    "Year", "Make", "Model","Description","Price",
+                    "1997", "Ford", "E350","ac, abs, moon","3000.00",
+                    "1999", "Chevy", "Venture \"Extended Edition\"","","4900.00",
+                    "1999", "Chevy", "Venture \"Extended Edition, Very Large\"","","5000.00",
+                    "1996", "Jeep", "Grand Cherokee","MUST SELL!\r\nair, moon roof, loaded","4799.00",
+                ],
+            }),
+            parse_csv(csvtext)
+        );
+    }
 }
