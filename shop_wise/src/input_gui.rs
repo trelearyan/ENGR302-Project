@@ -2,6 +2,7 @@ use bigdecimal::BigDecimal;
 use derive_more::{Display, IsVariant};
 use eframe::egui;
 use serde::Deserialize;
+use util::search::SearchUnits::{DOLLAR, EACH, GRAM, KILOGRAM, LITRE, MILLILITRE};
 use std::fmt::Display;
 use std::rc::Rc;
 use std::sync::Arc;
@@ -10,7 +11,7 @@ use strum::IntoEnumIterator;
 use strum_macros::EnumIter;
 use urlencoding::encode;
 use util::cost::{self, Cost};
-use util::search::ShoppingItemQuery;
+use util::search::{ShoppingItemQuery, unit_to_str};
 
 #[derive(Default)]
 struct LocationState {
@@ -85,7 +86,7 @@ impl MyApp {
             self.shopping_items.push(ShoppingItemQuery {
                 name: String::new(),
                 quantity: 1,
-                unit: "ea".to_string(),
+                unit: unit_to_str(EACH).to_string(),
             });
         }
 
@@ -97,12 +98,12 @@ impl MyApp {
                 egui::ComboBox::from_id_salt(i)
                     .selected_text(&item.unit)
                     .show_ui(ui, |ui| {
-                        ui.selectable_value(&mut item.unit, "ea".to_string(), "ea");
-                        ui.selectable_value(&mut item.unit, "g".to_string(), "g");
-                        ui.selectable_value(&mut item.unit, "kg".to_string(), "kg");
-                        ui.selectable_value(&mut item.unit, "mL".to_string(), "mL");
-                        ui.selectable_value(&mut item.unit, "L".to_string(), "L");
-                        ui.selectable_value(&mut item.unit, "pack".to_string(), "pack");
+                        ui.selectable_value(&mut item.unit, unit_to_str(EACH).to_string(),unit_to_str(EACH));
+                        ui.selectable_value(&mut item.unit, unit_to_str(GRAM).to_string(), unit_to_str(GRAM));
+                        ui.selectable_value(&mut item.unit, unit_to_str(KILOGRAM).to_string(), unit_to_str(KILOGRAM));
+                        ui.selectable_value(&mut item.unit, unit_to_str(MILLILITRE).to_string(), unit_to_str(MILLILITRE));
+                        ui.selectable_value(&mut item.unit, unit_to_str(LITRE).to_string(), unit_to_str(LITRE));
+                        ui.selectable_value(&mut item.unit, unit_to_str(DOLLAR).to_string(), unit_to_str(DOLLAR));
                     });
             });
         }

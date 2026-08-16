@@ -1,5 +1,5 @@
 use std::ops::Add;
-use util::search::ShoppingItemQuery;
+use util::search::{ShoppingItemQuery, match_to_unit};
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum ListParserError {
@@ -8,11 +8,14 @@ pub enum ListParserError {
     CSVInvalid(u32),
     CSVIllegalCharacter(u32),
     CSVImproperLinebreak(u32),
+    // use these u32's to indicate the invalid parameter
+    ParseInvalidShape(u32),
+    LineNotReadable(u32),
 }
 
 #[derive(Debug, Eq, PartialEq)]
 struct CSV {
-    field_len: i32,
+    field_len: u32,
     fields: Vec<String>,
 }
 
@@ -30,9 +33,46 @@ struct CSV {
 /// Err(ImproperLinebreak::IllegalCharacter(column) if the parameter contains
 /// an invalid linebreak sequence
 fn parse(csv_of_shopping_list_items: &str) -> Result<Vec<ShoppingItemQuery>, ListParserError> {
-    let parsed: Result<CSV, ListParserError> = parse_csv(csv_of_shopping_list_items);
-    if (parsed.is_err()) {
-        return Err(parsed.err().unwrap());
+    // Parse input and validate parsing
+    let parsed: CSV;
+    {
+        let parse_result: Result<CSV, ListParserError> = parse_csv(csv_of_shopping_list_items);
+        if (parse_result.is_err()) {
+            return Err(parse_result.err().unwrap());
+        }
+        parsed = parse_result.unwrap();
+    }
+    // Check that has the expected field size
+    if (parsed.field_len != 3) {
+        return Err(ListParserError::ParseInvalidShape(parsed.field_len));
+    }
+    // Check that their are enough fields - SHOULDN'T EVER FAIL
+    if (parsed.fields.len() < 3) {
+            return Err(ListParserError::LineNotReadable(1));
+    }
+    // Second field should be a string representation of an integer, unless header
+    let mut iline: usize = 1;
+    if (parsed.fields.get(2).unwrap().parse::<u32>().is_err()) {
+        // Assume header and so try 5th
+        if (parsed.fields.len() < 6 || parsed.fields.get(2).unwrap().parse::<u32>().is_err()) {
+            return Err(ListParserError::LineNotReadable(2));
+        }
+        iline = 2;
+    }
+    let shopping_query: Vec<ShoppingItemQuery> = Vec::new();
+    while (iline < parsed.fields.len() / 3) {
+        let name: String = parsed.fields.get(iline*3).unwrap().to_string();
+        let quantity: Result<u32, std::num::ParseIntError>= parsed.fields.get(iline*3+1).unwrap().parse::<u32>();
+        let unit: String = parsed.fields.get(iline*3+2).unwrap().to_string();
+        if (quantity.is_err() || match_to_unit(unit.as_ref()).is_none()) {
+            return Err(ListParserError::LineNotReadable(iline as u32));
+        }
+        let query: ShoppingItemQuery = ShoppingItemQuery {
+            name: name,
+            quantity: quantity.unwrap(),
+            unit: unit
+        };
+        iline += 1;
     }
     todo!();
 }
@@ -54,7 +94,7 @@ fn parse(csv_of_shopping_list_items: &str) -> Result<Vec<ShoppingItemQuery>, Lis
 /// an invalid linebreak sequence
 fn parse_csv(csv: &str) -> Result<CSV, ListParserError> {
     // begin with empty field length
-    let mut field_len: i32 = 0;
+    let mut field_len: u32 = 0;
     // Start working string with a reasonable capacity to avoid constant re-allocation
     let mut fields: Vec<String> = Vec::new();
     let mut working: String = String::with_capacity(100);
@@ -142,8 +182,8 @@ fn parse_csv(csv: &str) -> Result<CSV, ListParserError> {
                                 quote_phase = 0;
                                 if field_len == 0 {
                                     // If field length not yet set, set it
-                                    field_len = fields.len() as i32;
-                                } else if (fields.len() as i32) % field_len != 0 {
+                                    field_len = fields.len() as u32;
+                                } else if (fields.len() as u32) % field_len != 0 {
                                     // Records do not all have the same number of fields - invalid
                                     return Err(ListParserError::CSVInvalid(err_counter));
                                 }
@@ -180,7 +220,7 @@ fn parse_csv(csv: &str) -> Result<CSV, ListParserError> {
         working.clear();
         if field_len == 0 {
             // If field length not yet set, set it
-            field_len = fields.len() as i32;
+            field_len = fields.len() as u32;
         }
     }
 
@@ -189,7 +229,7 @@ fn parse_csv(csv: &str) -> Result<CSV, ListParserError> {
         panic!();
     }
 
-    if (fields.len() as i32) % field_len != 0 {
+    if (fields.len() as u32) % field_len != 0 {
         // Records do not all have the same number of fields
         return Err(ListParserError::CSVInvalid(err_counter));
     }
