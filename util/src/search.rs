@@ -1,4 +1,4 @@
-use crate::search::SearchUnits::{DOLLAR, EACH, GRAM, KILOGRAM, LITRE, MILLILITRE};
+use crate::{search::SearchUnits::{DOLLAR, EACH, GRAM, KILOGRAM, LITRE, MILLILITRE}, store::Store};
 
 
 #[derive(Debug, Eq, PartialEq)]
@@ -50,6 +50,14 @@ pub struct ShoppingItemQuery {
     pub name: String,
     pub quantity: u32,
     pub unit: String,
+}
+
+pub struct ShoppingItem {
+    pub name: String,
+    pub quantity: u32,
+    pub unit: SearchUnits,
+    pub price: u32,
+    pub store: Store,
 }
 
 #[cfg(test)]

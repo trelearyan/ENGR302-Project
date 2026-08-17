@@ -90,8 +90,11 @@ fn parse(csv_of_shopping_list_items: &str) -> Result<Vec<ShoppingItemQuery>, Lis
     Ok(shopping_query)
 }
 
-/// Parse a csv into a vector of strings.
+/// Parse a string representation of a csv into same-size records represented by CSV
 /// The Strings will be copied, and no references are made to the original csv str
+/// (simplification made from Cow as some strings are sanitised, but short-lived so
+/// not neccessary to hold reference to original csv string -> ideally drop csv string
+/// immediately after parsing)
 /// <br>
 /// Returns:
 /// <br>
