@@ -9,7 +9,7 @@ use util::search::{ShoppingItem, ShoppingItemQuery};
 /// ShoppingItem
 /// <br>
 /// None if the string could not be resolved
-pub fn resolve<'a>(item_query: &'a ShoppingItemQuery) -> Vec<Option<ShoppingItem>> {
+pub fn resolve(item_query: &ShoppingItemQuery) -> Vec<Option<ShoppingItem>> {
     // Split item_query into search terms
     // For each supermarket (future narrow to allowed)
     // Get every item that matches some whole term of the query
@@ -23,9 +23,9 @@ pub fn resolve<'a>(item_query: &'a ShoppingItemQuery) -> Vec<Option<ShoppingItem
 
     // Score based on most popular category of high scoring items (narrow top results - need good already)
 
-    // Select best match - price, quantity
+    // Select best match - price, quantity matching
 
-
+    // Return best match per store
     todo!()
 }
 
