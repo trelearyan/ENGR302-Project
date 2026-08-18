@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use util::{
     coordinate::Coordinate,
+    distance::Distance,
     store::{Store, StoreBrand},
 };
 
@@ -18,8 +19,9 @@ use util::{
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 pub struct StoreFilters {
     pub location: Coordinate,
-    pub max_range_metres: Option<f32>,
+    pub max_range_metres: Option<Distance>,
     pub disallowed_brands: HashSet<StoreBrand>,
+    pub max_store_visits: usize,
 }
 
 impl StoreFilters {
@@ -33,15 +35,18 @@ impl StoreFilters {
     /// example
     /// ```
     /// ```
+    #[must_use]
     pub fn new(
         location: Coordinate,
-        max_range_metres: Option<f32>,
+        max_range_metres: Option<Distance>,
         disallowed_brands: HashSet<StoreBrand>,
+        max_store_visits: usize,
     ) -> Self {
         Self {
             location,
             max_range_metres,
             disallowed_brands,
+            max_store_visits,
         }
     }
 
@@ -90,8 +95,9 @@ impl Default for StoreFilters {
 #[derive(Default, Debug, PartialEq, Clone, Serialize, Deserialize)]
 pub struct StoreFiltersBuilder {
     location: Option<Coordinate>,
-    max_range_metres: Option<f32>,
+    max_range_metres: Option<Distance>,
     disallowed_brands: HashSet<StoreBrand>,
+    max_store_visits: Option<usize>,
 }
 
 impl StoreFiltersBuilder {
@@ -110,6 +116,7 @@ impl StoreFiltersBuilder {
             location: None,
             max_range_metres: None,
             disallowed_brands: HashSet::new(),
+            max_store_visits: None,
         }
     }
 
@@ -123,14 +130,14 @@ impl StoreFiltersBuilder {
     /// example
     /// ```
     /// ```
-    pub fn build(&mut self) -> StoreFilters {
+    pub fn build(self) -> StoreFilters {
         StoreFilters::new(
             // default: wellington
-            self.location.unwrap_or(Coordinate::WELLINGTON),
+            self.location.unwrap_or(Coordinate::wellington()),
             // default: None, or no range
             self.max_range_metres,
-            // clone to allow reuse of builder
-            self.disallowed_brands.clone(),
+            self.disallowed_brands,
+            self.max_store_visits.unwrap_or(3),
         )
     }
 
@@ -144,8 +151,14 @@ impl StoreFiltersBuilder {
     /// example
     /// ```
     /// ```
-    pub fn range(&mut self, range: f32) {
+    pub fn range(mut self, range: Distance) -> Self {
         self.max_range_metres = Some(range);
+        self
+    }
+
+    pub fn max_store_visits(mut self, max_store_visits: usize) -> Self {
+        self.max_store_visits = Some(max_store_visits);
+        self
     }
 
     /// Set the centre point of the location filter.
@@ -159,8 +172,9 @@ impl StoreFiltersBuilder {
     /// filters.location(Coordinate::AUCKLAND);
     /// println!("{:?}", filters.build().location); // Coordinate { longitude: -36.84846, latitude: 174.76334 }
     /// ```
-    pub fn location(&mut self, location: Coordinate) {
+    pub fn location(mut self, location: Coordinate) -> Self {
         self.location = Some(location);
+        self
     }
 
     /// Disallow a supermarket brand.
@@ -175,8 +189,9 @@ impl StoreFiltersBuilder {
     /// filters.disallow_brand(StoreBrand::Woolworths);
     /// println!("{:?}", filters.build().allowed_brands); // {Woolworths}
     /// ```
-    pub fn disallow_brand(&mut self, brand: StoreBrand) {
+    pub fn disallow_brand(mut self, brand: StoreBrand) -> Self {
         self.disallowed_brands.insert(brand);
+        self
     }
 
     /// Disable multiple supermarket brands at once.
@@ -192,10 +207,11 @@ impl StoreFiltersBuilder {
     /// filters.disallow_brands(&[StoreBrand::Paknsave, StoreBrand::Newworld]);
     /// println!("{:?}", filters.build().allowed_brands); // {Paknsave, NewWorld}
     /// ```
-    pub fn disallow_brands(&mut self, brands: &[StoreBrand]) {
+    pub fn disallow_brands(mut self, brands: &[StoreBrand]) -> Self {
         for brand in brands {
             self.disallowed_brands.insert(*brand);
         }
+        self
     }
 
     /// Enable all supermarket brands.
@@ -212,8 +228,9 @@ impl StoreFiltersBuilder {
     /// filters.all_brands();
     /// println!("{:?}", filters.build().allowed_brands); // {}
     /// ```
-    pub fn all_brands(&mut self) {
+    pub fn all_brands(mut self) -> Self {
         self.disallowed_brands.clear();
+        self
     }
 }
 
@@ -264,16 +281,18 @@ pub fn filter_stores(stores: &[Store], filters: &StoreFilters) -> Vec<Store> {
 
     stores
         .iter()
-        .copied()
-        .filter(|store| !filters.disallowed_brands.contains(&store.brand))
-        .filter(|store| match filters.max_range_metres {
+        .filter(|&store| !filters.disallowed_brands.contains(&store.brand))
+        .filter(|&store| match filters.max_range_metres.clone() {
             // TODO: fix this
             Some(range) => {
                 // dbg!(filters.max_range_metres);
-                filters.location.within_range(store.location, range)
+                filters
+                    .location
+                    .within_range(store.location.clone(), &range)
             }
             None => panic!(),
         })
+        .cloned()
         .collect::<Vec<_>>()
 }
 
@@ -282,49 +301,4 @@ mod tests {
     use serde_json::Deserializer;
 
     use super::*;
-
-    const UNIVERSITY: Coordinate = Coordinate::with_decimal_degrees(-41.290_38, 174.767_94);
-    const TE_PAPA: Coordinate = Coordinate::with_decimal_degrees(-41.290_474, 174.781_02);
-
-    const CABLE_CAR_WOOLIES: Store = Store {
-        brand: StoreBrand::Woolworths,
-        location: Coordinate::with_decimal_degrees(-41.284_46, 174.775_01),
-    };
-    const NEWTOWN_WOOLIES: Store = Store {
-        brand: StoreBrand::Woolworths,
-        location: Coordinate::with_decimal_degrees(-41.307_335, 174.777_42),
-    };
-    const NEWWORLD_METRO: Store = Store {
-        brand: StoreBrand::Newworld,
-        location: Coordinate::with_decimal_degrees(-41.287_785, 174.775_25),
-    };
-    const NEWWORLD_SHAFFERS: Store = Store {
-        brand: StoreBrand::Newworld,
-        location: Coordinate::with_decimal_degrees(-41.292_35, 174.784_29),
-    };
-    const PAKNSAVE_KILBIRNE: Store = Store {
-        brand: StoreBrand::Paknsave,
-        location: Coordinate::with_decimal_degrees(-41.318_737, 174.796_69),
-    };
-    const NEWWORLD_NEWTOWN: Store = Store {
-        brand: StoreBrand::Newworld,
-        location: Coordinate::with_decimal_degrees(-41.307_47, 174.777_48),
-    };
-
-    const EXAMPLE_DATABASE: &[Store] = &[
-        CABLE_CAR_WOOLIES,
-        NEWTOWN_WOOLIES,
-        NEWWORLD_METRO,
-        NEWWORLD_SHAFFERS,
-        PAKNSAVE_KILBIRNE,
-        NEWWORLD_NEWTOWN,
-    ];
-
-    #[test]
-    fn test_filter_stores() {
-        println!(
-            "{}",
-            serde_json::to_string_pretty(&Box::new(EXAMPLE_DATABASE)).unwrap()
-        );
-    }
 }

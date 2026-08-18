@@ -1,75 +1,97 @@
-use nalgebra::Vector3;
+use std::str::FromStr;
+
+use bigdecimal::BigDecimal;
+use num_traits::FromPrimitive;
+use num_traits::ToPrimitive;
 use serde::{Deserialize, Serialize};
 
-#[derive(Default, Debug, PartialEq, PartialOrd, Clone, Copy, Serialize, Deserialize)]
+use crate::distance::Distance;
+
+#[derive(Debug, PartialEq, PartialOrd, Clone, Serialize, Deserialize)]
 pub struct Coordinate {
-    longitude: f32,
-    latitude: f32,
+    pub latitude: BigDecimal,
+    pub longitude: BigDecimal,
+}
+
+impl Default for Coordinate {
+    fn default() -> Self {
+        // VUW
+        Self::from_lat_long_f64(-41.289_848_883_193, 174.767_827_737_626_22)
+    }
 }
 
 impl Coordinate {
-    pub const fn new(longitude: f32, latitude: f32) -> Self {
+    /// Creates a new [`Coordinate`].
+    #[must_use]
+    pub fn from_lat_long<T: Into<BigDecimal>>(latitude: T, longitude: T) -> Self {
         Self {
-            longitude,
-            latitude,
+            latitude: latitude.into(),
+            longitude: longitude.into(),
         }
     }
 
-    pub fn geodetic_normal(&self) -> Vector3<f32> {
-        // https://en.wikipedia.org/wiki/N-vector#Converting_latitude/longitude_to_n-vector
-        Vector3::new(
-            self.latitude.cos() * self.longitude.cos(),
-            self.latitude.sin() * self.longitude.sin(),
-            self.latitude.sin(),
+    /// Creates a new [`Coordinate`].
+    #[must_use]
+    pub fn from_lat_long_f64(latitude: f64, longitude: f64) -> Self {
+        Self {
+            latitude: BigDecimal::from_f64(latitude).unwrap(),
+            longitude: BigDecimal::from_f64(longitude).unwrap(),
+        }
+    }
+
+    /// Creates a new [`Coordinate`].
+    #[must_use]
+    pub fn from_lat_long_f32(latitude: f32, longitude: f32) -> Self {
+        Self {
+            latitude: BigDecimal::from_f32(latitude).unwrap(),
+            longitude: BigDecimal::from_f32(longitude).unwrap(),
+        }
+    }
+
+    pub fn from_lat_long_str(
+        latitude: &str,
+        longitude: &str,
+    ) -> Result<Self, <BigDecimal as FromStr>::Err> {
+        Ok(Self {
+            latitude: BigDecimal::from_str(latitude)?,
+            longitude: BigDecimal::from_str(longitude)?,
+        })
+    }
+
+    #[must_use]
+    /// Construct a
+    pub fn distance_to(&self, other: Self) -> Distance {
+        const ERROR_MESSAGE: &str =
+            "This shouldnt be a weird float, if this fails, Coordinate is implemented wrong";
+        Distance::from_metres(
+            BigDecimal::from_f64(
+                map_3d::distance(
+                    (
+                        self.latitude.to_f64().expect(ERROR_MESSAGE),
+                        self.longitude.to_f64().expect(ERROR_MESSAGE),
+                    ),
+                    (
+                        other.latitude.to_f64().expect(ERROR_MESSAGE),
+                        other.longitude.to_f64().expect(ERROR_MESSAGE),
+                    ),
+                )
+            ).expect("This shouldnt be a weird float, if this fails, Coordinate or map_3d is implemented wrong")
         )
     }
 
     #[must_use]
-    pub fn distance_to(&self, other: Self) -> f32 {
-        // const EARTH_RADIUS_METRES: f32 = 6_371_000.;
-        // // https://en.wikipedia.org/wiki/N-vector#Example_1:_Great_circle_distance
-        // let a = self.geodetic_normal();
-        // let b = other.geodetic_normal();
-
-        // let theta = (a.cross(&b).magnitude() / a.dot(&b)).atan();
-
-        // theta * EARTH_RADIUS_METRES
-        //
-
-        ((self.latitude - other.latitude).powf(2.) + (self.longitude - other.longitude).powf(2.))
-            .sqrt()
-            .abs()
-            * 60.0 // to minutes/nautical miles
-            * 1852.0 // to km
+    pub fn within_range(&self, other: Self, range_metres: &Distance) -> bool {
+        &self.distance_to(other) <= range_metres
     }
 
-    #[must_use]
-    pub fn within_range(&self, other: Self, range_metres: f32) -> bool {
-        self.distance_to(other) <= range_metres
+    pub fn wellington() -> Self {
+        Coordinate::from_lat_long_str("-41.2866", "174.7756").unwrap()
     }
-
-    #[must_use]
-    // Order is degree, min, second. If mins or seconds is negative, that works to subtract from degrees or mins respectively
-    pub const fn with_degrees_minutes_seconds(
-        longitude: (f32, f32, f32),
-        latitude: (f32, f32, f32),
-    ) -> Self {
-        Self::new(
-            longitude.2 + longitude.1 * 60. + longitude.0 * 60. * 60.,
-            latitude.2 + latitude.1 * 60. + latitude.0 * 60. * 60.,
-        )
+    pub fn auckland() -> Self {
+        Coordinate::from_lat_long_str("-36.848461", "174.763336").unwrap()
     }
-
-    #[must_use]
-    pub const fn with_decimal_degrees(longitude: f32, latitude: f32) -> Self {
-        Self::new(longitude, latitude)
-    }
-
-    pub const WELLINGTON: Self = Coordinate::with_decimal_degrees(-41.294_77, 174.771_97);
-    pub const AUCKLAND: Self = Coordinate::with_decimal_degrees(-36.848_46, 174.763_34);
-    pub const CHRISTCHURCH: Self = Coordinate::with_decimal_degrees(-43.525_65, 172.639_85);
 }
 #[cfg(test)]
 mod coordinate_tests {
-    use super::*;
+    use crate::float_absolute_compare;
 }
