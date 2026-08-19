@@ -61,6 +61,8 @@ pub struct ShoppingItemQuery {
     pub unit: String,
 }
 
+
+#[derive(Debug, PartialEq)]
 pub struct ShoppingItem {
     pub name: String,
     pub quantity: u32,

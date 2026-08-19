@@ -1,5 +1,6 @@
-use util::search::{ShoppingItem, ShoppingItemQuery, match_sid_to_brand};
-use util::store::StoreBrand;
+use util::coordinate::Coordinate;
+use util::search::{SearchUnits, ShoppingItem, ShoppingItemQuery, match_sid_to_brand};
+use util::store::{Store, StoreBrand};
 use std::collections::HashMap;
 use std::process::Command;
 use std::path::Path;
@@ -28,38 +29,68 @@ struct SearchResult {
 /// ShoppingItem
 /// <br>
 /// None if the string could not be resolved
-pub fn resolve(item_query: &ShoppingItemQuery) -> Vec<Option<ShoppingItem>> {
+pub fn resolve(item_query: &ShoppingItemQuery) -> Option<HashMap<u32,ShoppingItem>> {
     // Split item_query into search terms
     let terms: Vec<&str> = item_query.name.split(' ').collect();
-    // For each supermarket (future narrow to allowed)
-    let shop_id: &str = "1";
-    let mut itemlist: HashMap<u32, SearchResult> = HashMap::new();
-    // Get every item that matches some whole term of the query
-    for term in terms {
-        let found = parse_all_at_shop(shop_id, term).unwrap();
-        // Only add item if it wasn't already in the map
-        for item in found {
-            if !itemlist.contains_key(&item.item_id) {
-                itemlist.insert(item.item_id, item);
+    let mut result: HashMap<u32, ShoppingItem> = HashMap::new();
+    // For each store (future narrow to allowed)
+    for i in 1..=3 { // stores not available at the moment, only brands
+        let shop_id: &str = &i.to_string();
+        let mut itemlist: HashMap<u32, SearchResult> = HashMap::new();
+        // Get every item that matches some whole term of the query
+        for j in 0..terms.len() {
+            let term= *terms.get(j).unwrap();
+            let found = parse_all_at_shop(shop_id, term).unwrap();
+            // Only add item if it wasn't already in the map
+            for item in found {
+                if !itemlist.contains_key(&item.item_id) {
+                    itemlist.insert(item.item_id, item);
+                }
             }
         }
+        // Score each item based on whether it fits the right department,
+        // Multiple words of the query (multiplicative factor), and has
+        // minimal other content. This should reward "Free Range Chicken Breast"
+        // over "Brand Pasta Single Snack Chicken Curry Pasta & Sauce" and
+        // "Wet Cat Food Chicken Breast and Herb"
+        let mut best_key: i32 = i32::MIN;
+        let mut best_score = i32::MIN;
+        for key in itemlist.keys() {
+            let item: &&SearchResult = &itemlist.get(key).unwrap();
+            let name: &String = &item.name;
+            let mut score: i32 = 100;
+            // Score name based on search term matches and minimalism (might punish certain items - future)
+            for j in 0..terms.len() {
+                let term: &str= *terms.get(j).unwrap();
+                name.matches(term).for_each(|x: &str| score *= 2);
+            }
+            // Score based on most popular category of high scoring items (narrow top results - need good already)
+            // category not available at the moment
+            // Grade on price & quantity matching
+            score -= (item.price/10) as i32;
+            // Return best match per store
+            if score > best_score {
+                best_key = *key as i32;
+            }
+        }
+        if (best_key < 0) {
+            continue;
+        }
+        let best = itemlist.get(&(best_key as u32)).unwrap();
+        result.insert(i, ShoppingItem {
+            name: best.name.clone(),
+            quantity: 1,
+            unit: SearchUnits::EACH,
+            price: best.price,
+            store: Store {
+                brand: best.store,
+                location: Coordinate::new(i as f32, i as f32)
+            },
+        });
     }
-    // Score each item based on whether it fits the right department,
-    // Multiple words of the query (multiplicative factor), and has
-    // minimal other content. This should reward "Free Range Chicken Breast"
-    // over "Brand Pasta Single Snack Chicken Curry Pasta & Sauce" and
-    // "Wet Cat Food Chicken Breast and Herb"
-    
-    // Score name based on search term matches and minimalism (might punish certain items - future)
-
-    // Score based on most popular category of high scoring items (narrow top results - need good already)
-
-    // Select best match - price, quantity matching
-
-    // Return best match per store
     
     //println!("{:?}", parse_all_at_shop("1", "eggs"));
-    Vec::new()
+    Some(result)
 
     // Example search "Vegemite",1,"ea" -> return cheapest vegemite at each store, with single item and price
     // Complications (includes but is not limited to)
@@ -86,9 +117,11 @@ fn parse_all_at_shop(shop_id: &str, search_term: &str) -> Result<Vec<SearchResul
     // Parse input and validate parsing
     let parsed: CSV;
     {
-        let csv_reply: String = demo_db(&("SELECT id, supermarket_id, name, price".to_owned()+
-            &", volume_size FROM products p WHERE p.supermarket_id = ".to_owned()+shop_id+
-            " and p.name LIKE '%" + search_term + "%'"));
+        let sql = "SELECT id, supermarket_id, name, price".to_owned()+
+            ", volume_size FROM products p WHERE p.supermarket_id = "+shop_id+
+            " and p.name LIKE '%" + search_term + "%'";
+        println!("{}", sql);
+        let csv_reply: String = demo_db(&sql);
         let parse_result: Result<CSV, ListParserError> = parse_csv(&csv_reply);
         if (parse_result.is_err()) {
             return Err(parse_result.err().unwrap());
@@ -120,7 +153,7 @@ fn parse_all_at_shop(shop_id: &str, search_term: &str) -> Result<Vec<SearchResul
         if (name.is_empty()) {
             return Err(ListParserError::LineNotReadable("Name is empty".to_owned(), iline as u32));
         }
-        let price: Result<f32, std::num::ParseFloatError>= parsed.fields.get(iline*rlen+1).unwrap().parse::<f32>();
+        let price: Result<f32, std::num::ParseFloatError>= parsed.fields.get(iline*rlen+3).unwrap().parse::<f32>();
         if (price.is_err()) {
             return Err(ListParserError::LineNotReadable("Could not read price".to_owned(), iline as u32));
         }
@@ -170,10 +203,10 @@ mod tests {
 
     #[test]
     fn test_example() {
-        resolve(&ShoppingItemQuery {
-            name: String::from("Name"),
+        println!("{:?}", resolve(&ShoppingItemQuery {
+            name: String::from("Eggs"),
             quantity: 1,
             unit: String::from("ea"),
-        });
+        }));
     }
 }
