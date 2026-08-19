@@ -9,6 +9,8 @@ edition = "2021"
 # crate WASM-portable later, per design doc §6.3.
 rusqlite = { version = "0.31", features = ["bundled"] }
 serde_json = "1.0"
+util = { path = "../util" }
+bigdecimal = "0.4"
 
 # A small example binary so we can prove the crate works end-to-end
 # without waiting for the Price Calculator. This mocks the role of
