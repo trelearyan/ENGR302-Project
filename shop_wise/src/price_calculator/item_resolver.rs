@@ -1,5 +1,6 @@
 use util::search::{ShoppingItem, ShoppingItemQuery, match_sid_to_brand};
 use util::store::StoreBrand;
+use std::collections::HashMap;
 use std::process::Command;
 use std::path::Path;
 use std::fs;
@@ -29,8 +30,20 @@ struct SearchResult {
 /// None if the string could not be resolved
 pub fn resolve(item_query: &ShoppingItemQuery) -> Vec<Option<ShoppingItem>> {
     // Split item_query into search terms
+    let terms: Vec<&str> = item_query.name.split(' ').collect();
     // For each supermarket (future narrow to allowed)
+    let shop_id: &str = "1";
+    let mut itemlist: HashMap<u32, SearchResult> = HashMap::new();
     // Get every item that matches some whole term of the query
+    for term in terms {
+        let found = parse_all_at_shop(shop_id, term).unwrap();
+        // Only add item if it wasn't already in the map
+        for item in found {
+            if !itemlist.contains_key(&item.item_id) {
+                itemlist.insert(item.item_id, item);
+            }
+        }
+    }
     // Score each item based on whether it fits the right department,
     // Multiple words of the query (multiplicative factor), and has
     // minimal other content. This should reward "Free Range Chicken Breast"
@@ -44,7 +57,8 @@ pub fn resolve(item_query: &ShoppingItemQuery) -> Vec<Option<ShoppingItem>> {
     // Select best match - price, quantity matching
 
     // Return best match per store
-    println!("{:?}", parse_all_at_shop("1", "eggs"));
+    
+    //println!("{:?}", parse_all_at_shop("1", "eggs"));
     Vec::new()
 
     // Example search "Vegemite",1,"ea" -> return cheapest vegemite at each store, with single item and price
