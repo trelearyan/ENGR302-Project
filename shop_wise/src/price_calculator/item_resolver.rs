@@ -1,4 +1,5 @@
-use util::search::{ShoppingItem, ShoppingItemQuery};
+use util::search::{ShoppingItem, ShoppingItemQuery, match_sid_to_brand};
+use util::store::StoreBrand;
 use std::process::Command;
 use std::path::Path;
 use std::fs;
@@ -6,6 +7,17 @@ use std::fs;
 // as it allows the user of raw_arg
 use std::os::windows::process::CommandExt;
 
+use crate::price_calculator::shopping_list_parser::{CSV, ListParserError, parse_csv};
+
+
+#[derive(Debug, PartialEq)]
+struct SearchResult {
+    item_id: u32,
+    name: String,
+    price: u32,
+    store: StoreBrand,
+    quantity: f32,
+}
 
 /// Resolve a ShoppingItemQuery into a ShoppingItem for each store
 /// <br>
@@ -32,7 +44,7 @@ pub fn resolve(item_query: &ShoppingItemQuery) -> Vec<Option<ShoppingItem>> {
     // Select best match - price, quantity matching
 
     // Return best match per store
-    let csv_reply: String = demo_db("SELECT id, supermarket_id, name, price, volume_size FROM products");
+    println!("{:?}", parse_all_at_shop("1", "eggs"));
     Vec::new()
 
     // Example search "Vegemite",1,"ea" -> return cheapest vegemite at each store, with single item and price
@@ -56,6 +68,62 @@ pub fn resolve(item_query: &ShoppingItemQuery) -> Vec<Option<ShoppingItem>> {
     // vs "Vanilla Coke Zero Sugar"
 }
 
+fn parse_all_at_shop(shop_id: &str, search_term: &str) -> Result<Vec<SearchResult>, ListParserError> {
+    // Parse input and validate parsing
+    let parsed: CSV;
+    {
+        let csv_reply: String = demo_db(&("SELECT id, supermarket_id, name, price".to_owned()+
+            &", volume_size FROM products p WHERE p.supermarket_id = ".to_owned()+shop_id+
+            " and p.name LIKE '%" + search_term + "%'"));
+        let parse_result: Result<CSV, ListParserError> = parse_csv(&csv_reply);
+        if (parse_result.is_err()) {
+            return Err(parse_result.err().unwrap());
+        }
+        parsed = parse_result.unwrap();
+    }
+    let rlen: usize = 5;
+    // Check that has the expected field size
+    if (parsed.field_len != rlen as u32) {
+        return Err(ListParserError::ParseInvalidShape(parsed.field_len));
+    }
+    // Check that their are enough fields - SHOULDN'T EVER FAIL GIVEN ABOVE
+    if (parsed.fields.len() < rlen) {
+            return Err(ListParserError::LineNotReadable("Not enough fields".to_owned(), 0));
+    }
+    // Second field should be a string representation of an integer, unless header
+    let mut iline: usize = 0;
+    let mut shopping_query: Vec<SearchResult> = Vec::new();
+    while (iline < parsed.fields.len() / rlen) {
+        let id: Result<u32, std::num::ParseIntError>= parsed.fields.get(iline*rlen).unwrap().parse::<u32>();
+        if (id.is_err()) {
+            return Err(ListParserError::LineNotReadable("Could not read id".to_owned(), iline as u32));
+        }
+        let sid: Result<u32, std::num::ParseIntError>= parsed.fields.get(iline*rlen+1).unwrap().parse::<u32>();
+        if (sid.is_err()) {
+            return Err(ListParserError::LineNotReadable("Could not read supermarket id".to_owned(), iline as u32));
+        }
+        let name: String = parsed.fields.get(iline*rlen+2).unwrap().to_string();
+        if (name.is_empty()) {
+            return Err(ListParserError::LineNotReadable("Name is empty".to_owned(), iline as u32));
+        }
+        let price: Result<f32, std::num::ParseFloatError>= parsed.fields.get(iline*rlen+1).unwrap().parse::<f32>();
+        if (price.is_err()) {
+            return Err(ListParserError::LineNotReadable("Could not read price".to_owned(), iline as u32));
+        }
+        let price_cents: u32 = (price.unwrap()*100.0) as u32;
+        shopping_query.push(SearchResult {
+            item_id: id.unwrap(),
+            name: name,
+            price: price_cents,
+            store: match_sid_to_brand(sid.unwrap()).unwrap(),
+            quantity: 1.0,
+        });
+        iline += 1;
+    }
+    Ok(shopping_query)
+}
+
+/// Mock the sqlite database by using a python version and some jank commands
 pub fn demo_db(sql_query: &str) -> String {
     if cfg!(target_os = "windows") {
         // Should execute >cmd /C ""./src/demo_db/db.py" --query <sql>"

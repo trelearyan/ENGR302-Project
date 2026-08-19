@@ -1,4 +1,4 @@
-use crate::{search::SearchUnits::{DOLLAR, EACH, GRAM, KILOGRAM, LITRE, MILLILITRE}, store::Store};
+use crate::{search::SearchUnits::{DOLLAR, EACH, GRAM, KILOGRAM, LITRE, MILLILITRE}, store::{Store, StoreBrand::{self, Newworld, Paknsave, Woolworths}}};
 
 
 #[derive(Debug, Eq, PartialEq)]
@@ -41,6 +41,15 @@ pub fn match_to_unit(name: &str) -> Option<SearchUnits> {
         "mL" => Some(MILLILITRE),
         "L" => Some(LITRE),
         "$" => Some(DOLLAR),
+        _ => None,
+    }
+}
+
+pub fn match_sid_to_brand(sid: u32) -> Option<StoreBrand> {
+    match (sid) {
+        1 => Some(Paknsave),
+        2 => Some(Newworld),
+        3 => Some(Woolworths),
         _ => None,
     }
 }
