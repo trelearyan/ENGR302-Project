@@ -15,9 +15,9 @@ pub enum ListParserError {
 }
 
 #[derive(Debug, Eq, PartialEq)]
-struct CSV {
-    field_len: u32,
-    fields: Vec<String>,
+pub struct CSV {
+    pub field_len: u32,
+    pub fields: Vec<String>,
 }
 
 /// Parse a csv into a list of queries
@@ -39,7 +39,7 @@ struct CSV {
 /// <br>
 /// Err(ListParserError::LineNotReadable(Reason, line) if a line cannot be parsed
 /// into a shopping query
-fn parse(csv_of_shopping_list_items: &str) -> Result<Vec<ShoppingItemQuery>, ListParserError> {
+pub fn parse(csv_of_shopping_list_items: &str) -> Result<Vec<ShoppingItemQuery>, ListParserError> {
     // Parse input and validate parsing
     let parsed: CSV;
     {
@@ -90,8 +90,11 @@ fn parse(csv_of_shopping_list_items: &str) -> Result<Vec<ShoppingItemQuery>, Lis
     Ok(shopping_query)
 }
 
-/// Parse a csv into a vector of strings.
+/// Parse a string representation of a csv into same-size records represented by CSV
 /// The Strings will be copied, and no references are made to the original csv str
+/// (simplification made from Cow as some strings are sanitised, but short-lived so
+/// not neccessary to hold reference to original csv string -> ideally drop csv string
+/// immediately after parsing)
 /// <br>
 /// Returns:
 /// <br>
@@ -105,7 +108,7 @@ fn parse(csv_of_shopping_list_items: &str) -> Result<Vec<ShoppingItemQuery>, Lis
 /// <br>
 /// Err(ListParserError::CSVImproperLinebreak(column) if the parameter contains
 /// an invalid linebreak sequence
-fn parse_csv(csv: &str) -> Result<CSV, ListParserError> {
+pub fn parse_csv(csv: &str) -> Result<CSV, ListParserError> {
     // begin with empty field length
     let mut field_len: u32 = 0;
     // Start working string with a reasonable capacity to avoid constant re-allocation

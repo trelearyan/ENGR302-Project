@@ -26,10 +26,12 @@ pub struct BestPlan {
 //pub mod item_resolver;
 
 pub mod calculator {
+    use util::{search::ShoppingItem, store::Store};
+
     use crate::price_calculator::*;
     pub fn calculate(
         _items: &[ShoppingItem],
-        _supermarkets: &[Supermarket],
+        _supermarkets: &[Store],
         _database: &HashMap<StoreId, HashMap<ItemId, i32>>) {
         /* Will call calculate cheapest, best and fastest
          *            with their respective closures and then return
@@ -151,15 +153,6 @@ pub mod calculator {
         }
 }
 
-pub struct ShoppingItem<'a> {
-    name: &'a str,
-}
-
-// Maybe this belongs in Database?
-pub struct Supermarket<'a> {
-    name: &'a str,
-    id: i32,
-}
 
 #[cfg(test)]
 mod tests {

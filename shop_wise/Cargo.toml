@@ -25,6 +25,7 @@ reqwest = { version = "0.12", features = ["json"] }
 urlencoding = "2.1"
 bigdecimal = "0.4.10"
 derive_more = { version = "2.1.1", features = ["display", "is_variant"] }
+serial_test = "4.0.1"
 
 [dependencies.web-sys]
 version = "0.3"
