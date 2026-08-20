@@ -5,10 +5,6 @@ use std::collections::HashMap;
 use std::process::Command;
 use std::path::Path;
 use std::fs;
-// Silly rust CommandExt to stop escaping in literals
-// as it allows the user of raw_arg
-use std::os::windows::process::CommandExt;
-
 use crate::price_calculator::shopping_list_parser::{CSV, ListParserError, parse_csv};
 
 
@@ -40,9 +36,12 @@ pub fn resolve(item_query: &ShoppingItemQuery) -> Option<HashMap<u32,ShoppingIte
         // Get every item that matches some whole term of the query
         for j in 0..terms.len() {
             let term= *terms.get(j).unwrap();
-            let found = parse_all_at_shop(shop_id, term).unwrap();
+            let found = parse_all_at_shop(shop_id, term);
+            if (found.is_err()) {
+                continue;
+            }
             // Only add item if it wasn't already in the map
-            for item in found {
+            for item in found.unwrap() {
                 if !itemlist.contains_key(&item.item_id) {
                     itemlist.insert(item.item_id, item);
                 }
@@ -58,19 +57,26 @@ pub fn resolve(item_query: &ShoppingItemQuery) -> Option<HashMap<u32,ShoppingIte
         for key in itemlist.keys() {
             let item: &&SearchResult = &itemlist.get(key).unwrap();
             let name: &String = &item.name;
-            let mut score: i32 = 100;
+            let mut score: i32 = 1;
             // Score name based on search term matches and minimalism (might punish certain items - future)
             for j in 0..terms.len() {
+                let mut tscore = 1;
                 let term: &str= *terms.get(j).unwrap();
-                name.matches(term).for_each(|x: &str| score *= 2);
+                name.split(' ').for_each(|x: &str| {
+                    tscore += if (x.to_lowercase().contains(&term.to_lowercase())) {10} else {-1};
+                });
+                score *= tscore;
             }
+            score *= 1000;
             // Score based on most popular category of high scoring items (narrow top results - need good already)
             // category not available at the moment
             // Grade on price & quantity matching
-            score -= (item.price/10) as i32;
+            score -= item.price as i32;
+            score -= name.len() as i32;
             // Return best match per store
             if score > best_score {
                 best_key = *key as i32;
+                best_score = score;
             }
         }
         if (best_key < 0) {
@@ -119,8 +125,8 @@ fn parse_all_at_shop(shop_id: &str, search_term: &str) -> Result<Vec<SearchResul
     {
         let sql = "SELECT id, supermarket_id, name, price".to_owned()+
             ", volume_size FROM products p WHERE p.supermarket_id = "+shop_id+
-            " and p.name LIKE '%" + search_term + "%'";
-        println!("{}", sql);
+            " and LOWER(p.name) LIKE '%" + &search_term.to_lowercase() + "%'";
+        //println!("{}", sql);
         let csv_reply: String = demo_db(&sql);
         let parse_result: Result<CSV, ListParserError> = parse_csv(&csv_reply);
         if (parse_result.is_err()) {
@@ -128,15 +134,16 @@ fn parse_all_at_shop(shop_id: &str, search_term: &str) -> Result<Vec<SearchResul
         }
         parsed = parse_result.unwrap();
     }
+    // Check that their are any results
+    if (parsed.fields.len() == 0) {
+            return Ok(Vec::new());
+    }
     let rlen: usize = 5;
     // Check that has the expected field size
     if (parsed.field_len != rlen as u32) {
         return Err(ListParserError::ParseInvalidShape(parsed.field_len));
     }
-    // Check that their are enough fields - SHOULDN'T EVER FAIL GIVEN ABOVE
-    if (parsed.fields.len() < rlen) {
-            return Err(ListParserError::LineNotReadable("Not enough fields".to_owned(), 0));
-    }
+    
     // Second field should be a string representation of an integer, unless header
     let mut iline: usize = 0;
     let mut shopping_query: Vec<SearchResult> = Vec::new();
@@ -173,6 +180,9 @@ fn parse_all_at_shop(shop_id: &str, search_term: &str) -> Result<Vec<SearchResul
 /// Mock the sqlite database by using a python version and some jank commands
 pub fn demo_db(sql_query: &str) -> String {
     if cfg!(target_os = "windows") {
+        // Silly rust CommandExt to stop escaping in literals
+        // as it allows the user of raw_arg
+        use std::os::windows::process::CommandExt;
         // Should execute >cmd /C ""./src/demo_db/db.py" --query <sql>"
         // without escaping the qoutes (unliteraling my literal)
         // this is the same as typing "./src/demo_db/db.py" --query <sql>
@@ -198,15 +208,60 @@ pub fn demo_db(sql_query: &str) -> String {
 mod tests {
     // TODO: add tests
 
+    use serial_test::serial;
     use util::search::ShoppingItemQuery;
     use crate::price_calculator::item_resolver::resolve;
 
     #[test]
-    fn test_example() {
-        println!("{:?}", resolve(&ShoppingItemQuery {
+    #[serial]
+    fn test_result() {
+        resolve(&ShoppingItemQuery {
             name: String::from("Eggs"),
             quantity: 1,
             unit: String::from("ea"),
-        }));
+        });
+    }
+
+    #[test]
+    #[serial]
+    fn test_weetbix() {
+        {
+            let res = resolve(&ShoppingItemQuery {
+                name: String::from("Weetbix"),
+                quantity: 1,
+                unit: String::from("ea"),
+            }).unwrap();
+            assert_eq!(true, res.contains_key(&2));
+            assert_eq!(false, res.contains_key(&1));
+            assert_eq!(false, res.contains_key(&3));
+        }
+        {
+            let res = resolve(&ShoppingItemQuery {
+                name: String::from("Weet-Bix"),
+                quantity: 1,
+                unit: String::from("ea"),
+            }).unwrap();
+            assert_eq!(false, res.contains_key(&2));
+            assert_eq!(true, res.contains_key(&1));
+            assert_eq!(true, res.contains_key(&3));
+        }
+    }
+
+    #[test]
+    #[serial]
+    fn test_dip() {
+        let res = resolve(&ShoppingItemQuery {
+            name: String::from("Onion Soup"),
+            quantity: 1,
+            unit: String::from("ea"),
+        }).unwrap();//Maggi Onion Soup
+        assert_eq!("Maggi Onion Soup", res.get(&1).unwrap().name);
+        let res = resolve(&ShoppingItemQuery {
+            name: String::from("Reduced Cream"),
+            quantity: 1,
+            unit: String::from("ea"),
+        }).unwrap();
+        assert_eq!("Pams Reduced Cream", res.get(&1).unwrap().name);
+        assert_eq!("countdown reduced cream ", res.get(&2).unwrap().name);
     }
 }
