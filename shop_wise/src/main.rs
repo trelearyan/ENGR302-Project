@@ -8,6 +8,10 @@ pub mod input_gui;
 pub mod price_calculator;
 pub mod route_planner;
 
+pub mod output;
+pub mod mock;
+pub mod results;
+
 use eframe::egui;
 use input_gui::MyApp;
 
