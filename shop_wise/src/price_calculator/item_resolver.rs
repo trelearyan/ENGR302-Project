@@ -195,12 +195,17 @@ pub fn demo_db(sql_query: &str) -> String {
     }
     #[cfg (target_os = "linux")]
     {
-        // Not yet tested on linux
-        Command::new("sh")
-            .arg("-c")
-            .args(["./src/demo_db/db.py", "--query", "\"SELECT * FROM supermarkets\""])
+        // Should be the same as typing sh -c "python \"./src/demo_db/db.py\" --query \"SELECT * FROM supermarkets\""
+        // in shopwise/shop_wise
+        //Output { status: ExitStatus(unix_wait_status(32512)), stdout: "", stderr: "sh: line 1: python \"./src/demo_db/db.py\" --query \"SELECT * FROM supermarkets\": No such file or directory\n" }
+
+        let x = Command::new("python")
+            .arg("./src/demo_db/db.py")
+            .arg("--query")
+            .arg(sql_query)
             .output()
             .expect("couldn't execute query");
+        println!("{:?}", x);
     }
     let path = Path::new("./src/demo_db/out.txt");
     fs::read_to_string(path)
