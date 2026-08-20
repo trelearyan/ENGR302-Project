@@ -179,7 +179,8 @@ fn parse_all_at_shop(shop_id: &str, search_term: &str) -> Result<Vec<SearchResul
 
 /// Mock the sqlite database by using a python version and some jank commands
 pub fn demo_db(sql_query: &str) -> String {
-    if cfg!(target_os = "windows") {
+    #[cfg (target_os = "windows")]
+    {
         // Silly rust CommandExt to stop escaping in literals
         // as it allows the user of raw_arg
         use std::os::windows::process::CommandExt;
@@ -190,15 +191,17 @@ pub fn demo_db(sql_query: &str) -> String {
         Command::new("cmd")
             .raw_arg("/C \"\"./src/demo_db/db.py\" --query \"".to_owned()+sql_query+"\"\"")
             .output()
-            .expect("couldn't execute query")
-    } else {
+            .expect("couldn't execute query");
+    }
+    #[cfg (target_os = "linux")]
+    {
         // Not yet tested on linux
         Command::new("sh")
             .arg("-c")
             .args(["./src/demo_db/db.py", "--query", "\"SELECT * FROM supermarkets\""])
             .output()
-            .expect("couldn't execute query")
-    };
+            .expect("couldn't execute query");
+    }
     let path = Path::new("./src/demo_db/out.txt");
     fs::read_to_string(path)
         .expect("Should have been able to read the file")
