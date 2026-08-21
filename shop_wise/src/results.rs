@@ -1,13 +1,13 @@
-pub type Cents = i64;
-
-pub fn format_money(cents: Cents) -> String {
-    let sign = if cents < 0 { "-" } else { "" };
-    let abs = cents.abs();
-    format!("{sign}${}.{:02}", abs / 100, abs % 100)
+use bigdecimal::{BigDecimal, Zero};
+use util::cost::Cost;
+use util::distance::Distance;
+use util::store::StoreBrand;
+pub fn format_money(cost: &Cost) -> String {
+    format!("${cost}")
 }
 
-pub fn format_distance(km: f32) -> String {
-    format!("{km:.1} km")
+pub fn format_distance(distance: &Distance) -> String {
+    format!("{:.1} km", distance.kilometres())
 }
 
 pub fn format_duration(minutes: f32) -> String {
@@ -46,22 +46,11 @@ impl ScenarioKind {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
-pub enum Chain {
-    PakNSave,
-    NewWorld,
-    Woolworths,
-    FreshChoice,
-}
-
-impl Chain {
-    pub fn label(self) -> &'static str {
-        match self {
-            Chain::PakNSave => "Pak'nSave",
-            Chain::NewWorld => "New World",
-            Chain::Woolworths => "Woolworths",
-            Chain::FreshChoice => "Fresh Choice",
-        }
+pub fn brand_label(brand: StoreBrand) -> &'static str {
+    match brand {
+        StoreBrand::Paknsave => "Pak'nSave",
+        StoreBrand::Newworld => "New World",
+        StoreBrand::Woolworths => "Woolworths",
     }
 }
 
@@ -69,27 +58,27 @@ impl Chain {
 pub struct ItemLine {
     pub name: String,
     pub quantity: u32,
-    pub unit_price: Cents,
+    pub unit_price: Cost,
     pub on_special: bool,
     pub needs_loyalty_card: bool,
 }
 
 impl ItemLine {
-    pub fn line_total(&self) -> Cents {
-        self.unit_price * i64::from(self.quantity)
+    pub fn line_total(&self) -> Cost {
+        self.unit_price.clone() * BigDecimal::from(self.quantity)
     }
 }
 
 #[derive(Clone, Debug)]
 pub struct StoreStop {
     pub store_name: String,
-    pub chain: Chain,
+    pub chain: StoreBrand,
     pub address: String,
     pub items: Vec<ItemLine>,
 }
 
 impl StoreStop {
-    pub fn subtotal(&self) -> Cents {
+    pub fn subtotal(&self) -> Cost {
         self.items.iter().map(ItemLine::line_total).sum()
     }
 }
@@ -98,20 +87,19 @@ impl StoreStop {
 pub struct Scenario {
     pub kind: ScenarioKind,
     pub stops: Vec<StoreStop>,
-    pub travel_cost: Cents,
-    pub distance_km: f32,
+    pub travel_cost: Cost,
+    pub distance_km: Distance,
     pub duration_min: f32,
 }
 
 impl Scenario {
-    pub fn grocery_cost(&self) -> Cents {
+    pub fn grocery_cost(&self) -> Cost {
         self.stops.iter().map(StoreStop::subtotal).sum()
     }
 
-    pub fn total_cost(&self) -> Cents {
-        self.grocery_cost() + self.travel_cost
+    pub fn total_cost(&self) -> Cost {
+        self.grocery_cost() + self.travel_cost.clone()
     }
-
     pub fn item_count(&self) -> u32 {
         self.stops.iter().flat_map(|s| s.items.iter()).map(|i| i.quantity).sum()
     }
@@ -167,13 +155,12 @@ impl Results {
         }
     }
 
-    pub fn headline_saving(&self) -> Option<Cents> {
+    pub fn headline_saving(&self) -> Option<Cost> {
         let dearest = ScenarioKind::ALL.iter().map(|k| self.scenario(*k).total_cost()).max()?;
         let saving = dearest - self.cheapest.total_cost();
-        (saving > 0).then_some(saving)
+        (saving.clone().inner() > BigDecimal::zero()).then_some(saving)
     }
 }
-
 #[derive(Clone, Debug)]
 pub enum ResultsState {
     Idle,
@@ -188,11 +175,11 @@ mod tests {
 
     #[test]
     fn money_formats_with_two_decimals() {
-        assert_eq!(format_money(0), "$0.00");
-        assert_eq!(format_money(5), "$0.05");
-        assert_eq!(format_money(1234), "$12.34");
-        assert_eq!(format_money(-250), "-$2.50");
+        assert_eq!(format_money(&Cost::from_cents(0)), "$0.00");
+        assert_eq!(format_money(&Cost::from_cents(5)), "$0.05");
+        assert_eq!(format_money(&Cost::from_cents(1234)), "$12.34");
     }
+
 
     #[test]
     fn duration_rolls_over_to_hours() {
@@ -204,12 +191,12 @@ mod tests {
     fn total_is_groceries_plus_travel() {
         let stop = StoreStop {
             store_name: "Test".to_owned(),
-            chain: Chain::PakNSave,
+            chain: StoreBrand::Paknsave,
             address: String::new(),
             items: vec![ItemLine {
                 name: "Milk 2L".to_owned(),
                 quantity: 2,
-                unit_price: 449,
+                unit_price: Cost::from_cents(449),
                 on_special: false,
                 needs_loyalty_card: false,
             }],
@@ -217,12 +204,12 @@ mod tests {
         let scenario = Scenario {
             kind: ScenarioKind::Cheapest,
             stops: vec![stop],
-            travel_cost: 380,
-            distance_km: 8.6,
+            travel_cost: Cost::from_cents(380),
+            distance_km: Distance::from_kilometres_f64(8.6),
             duration_min: 19.0,
         };
-        assert_eq!(scenario.grocery_cost(), 898);
-        assert_eq!(scenario.total_cost(), 1278);
+        assert_eq!(scenario.grocery_cost(), Cost::from_cents(898));
+        assert_eq!(scenario.total_cost(), Cost::from_cents(1278));
         assert_eq!(scenario.item_count(), 2);
     }
 }
