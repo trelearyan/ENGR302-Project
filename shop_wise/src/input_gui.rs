@@ -19,6 +19,10 @@ use util::store::StoreBrand;
 use crate::route_planner;
 use crate::route_planner::filters::StoreFilters;
 
+use crate::mock;
+use crate::output::OutputPanel;
+use crate::results::ResultsState;
+
 #[derive(Default, Clone)]
 pub struct LocationState {
     latitude: Option<f64>,
@@ -71,6 +75,10 @@ pub struct MyApp {
     mileage_scratch: String,
     // Shared location state
     location_state: Rc<RefCell<LocationState>>,
+    //output panel
+    pub output: OutputPanel,
+    pub results: ResultsState,
+
 }
 
 impl MyApp {
@@ -86,6 +94,8 @@ impl MyApp {
             mileage_scratch: Cost::from(MileageOptions::default()).to_string(),
 
             location_state: Rc::new(RefCell::new(LocationState::default())),
+            output: OutputPanel::new(),
+            results: ResultsState::Idle,
         }
     }
     // for debugging
@@ -299,10 +309,11 @@ impl MyApp {
                     .max_store_visits(self.filters.max_stores as usize)
                     .disallow_brands(banned_stores.iter().copied().collect::<Vec<_>>().deref());
                 let routes = route_planner::all_possible_routes(&filters.build());
+                log::info!("{} routes found", routes.len());
 
                 routes
                     .iter()
-                    .for_each(|route| println!("{}", route.pretty_print()));
+                    .for_each(|route| log::debug!("{}", route.pretty_print()));
             }
         });
     }
@@ -431,7 +442,7 @@ impl From<MileageOptions> for Cost {
         match value {
             MileageOptions::Petrol => Cost::from_cents(37),
             MileageOptions::Diesel => Cost::from_cents(38),
-            MileageOptions::Hybrid => Cost::from_cents(24),
+            MileageOptions::Hybrid => Cost::from_cgit add shop_wise/src/input_gui.rs shop_wise/src/main.rsents(24),
             MileageOptions::Electric => Cost::from_cents(23),
             MileageOptions::Custom(cost) => cost,
             MileageOptions::DontCalculateMileage => Cost::from_cents(0),

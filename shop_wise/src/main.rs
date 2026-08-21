@@ -65,6 +65,9 @@ impl eframe::App for MyApp {
             self.search_button(ui);
             // for debugging
             self.print_filters(ui);
+
+            ui.separator();
+            self.output.show(ui, &self.results);
         });
     }
 }
