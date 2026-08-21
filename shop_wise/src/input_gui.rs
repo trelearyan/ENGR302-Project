@@ -14,12 +14,9 @@ use strum_macros::EnumIter;
 use urlencoding::encode;
 use util::coordinate::Coordinate;
 use util::cost::{self, Cost};
-<<<<<<< shop_wise/src/input_gui.rs
 use util::search::{ShoppingItemQuery, unit_to_str};
-=======
 use util::distance::Distance;
 use util::store::StoreBrand;
->>>>>>> shop_wise/src/input_gui.rs
 
 use crate::route_planner;
 use crate::route_planner::filters::StoreFilters;
