@@ -19,7 +19,6 @@ use util::store::StoreBrand;
 use crate::route_planner;
 use crate::route_planner::filters::StoreFilters;
 
-use crate::mock;
 use crate::output::OutputPanel;
 use crate::results::ResultsState;
 
@@ -98,6 +97,11 @@ impl MyApp {
             results: ResultsState::Idle,
         }
     }
+
+    pub fn output_panel(&mut self, ui: &mut egui::Ui) {
+        self.output.show(ui, &self.results);
+    }
+
     // for debugging
     pub fn print_filters(&self, ui: &mut egui::Ui) {
         ui.label("=== Filter values ===");

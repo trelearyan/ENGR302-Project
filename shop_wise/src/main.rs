@@ -7,7 +7,7 @@ use crate::route_planner::filters::{StoreFilters, filter_stores};
 pub mod input_gui;
 pub mod price_calculator;
 pub mod route_planner;
-
+//pub mod mock;
 pub mod output;
 pub mod results;
 
@@ -66,7 +66,7 @@ impl eframe::App for MyApp {
             self.print_filters(ui);
 
             ui.separator();
-            self.output.show(ui, &self.results);
+            self.output_panel(ui);
         });
     }
 }
