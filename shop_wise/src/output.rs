@@ -1,8 +1,8 @@
 use eframe::egui;
 
 use crate::results::{
-    brand_label, format_distance, format_duration, format_money, Results, ResultsState, Scenario, ScenarioKind,
-    StoreStop, UnresolvedItem,
+    Results, ResultsState, Scenario, ScenarioKind, StoreStop, UNAVAILABLE, UnresolvedItem,
+    brand_label, format_distance, format_duration, format_money,
 };
 
 const STACK_BELOW_WIDTH: f32 = 760.0;
@@ -24,7 +24,10 @@ pub struct OutputPanel {
 
 impl Default for OutputPanel {
     fn default() -> Self {
-        Self { selected: ScenarioKind::Best, layout: PanelLayout::Cards }
+        Self {
+            selected: ScenarioKind::Best,
+            layout: PanelLayout::Cards,
+        }
     }
 }
 
@@ -75,7 +78,11 @@ impl OutputPanel {
     fn ready(&mut self, ui: &mut egui::Ui, results: &Results) {
         ui.horizontal_wrapped(|ui| {
             ui.label(egui::RichText::new("Starting from").small().weak());
-            ui.label(egui::RichText::new(results.origin_label.as_str()).small().strong());
+            ui.label(
+                egui::RichText::new(results.origin_label.as_str())
+                    .small()
+                    .strong(),
+            );
         });
         ui.add_space(8.0);
 
@@ -125,7 +132,11 @@ impl OutputPanel {
     fn scenario_tabs(&mut self, ui: &mut egui::Ui, results: &Results) {
         ui.horizontal_wrapped(|ui| {
             for kind in ScenarioKind::ALL {
-                let label = format!("{}   {}", kind.label(), format_money(&results.scenario(kind).total_cost()));
+                let label = format!(
+                    "{}   {}",
+                    kind.label(),
+                    format_money(&results.scenario(kind).total_cost())
+                );
                 ui.selectable_value(&mut self.selected, kind, label)
                     .on_hover_text(kind.blurb());
             }
@@ -171,7 +182,11 @@ impl OutputPanel {
                 ui.label(egui::RichText::new(kind.blurb()).small().weak());
 
                 ui.add_space(6.0);
-                ui.label(egui::RichText::new(format_money(&scenario.total_cost())).size(26.0).strong());
+                ui.label(
+                    egui::RichText::new(format_money(&scenario.total_cost()))
+                        .size(26.0)
+                        .strong(),
+                );
                 ui.label(egui::RichText::new("groceries plus petrol").small().weak());
 
                 ui.add_space(8.0);
@@ -180,21 +195,34 @@ impl OutputPanel {
                     .spacing([12.0, 3.0])
                     .show(ui, |ui| {
                         ui.label(egui::RichText::new("Groceries").small().weak());
-                        ui.label(egui::RichText::new(format_money(&scenario.grocery_cost())).small());
+                        ui.label(
+                            egui::RichText::new(format_money(&scenario.grocery_cost())).small(),
+                        );
                         ui.end_row();
 
                         ui.label(egui::RichText::new("Travel").small().weak());
-                        ui.label(egui::RichText::new(format_money(&scenario.travel_cost)).small());
+                        ui.label(
+                            egui::RichText::new(match &scenario.travel_cost {
+                                Some(c) => format_money(c),
+                                None => UNAVAILABLE.to_owned(),
+                            })
+                            .small()
+                            .weak(),
+                        );
                         ui.end_row();
 
                         ui.label(egui::RichText::new("Distance").small().weak());
                         ui.label(
-                            egui::RichText::new(format!(
-                                "{} ({})",
-                                format_distance(&scenario.distance_km),
-                                format_duration(scenario.duration_min)
-                            ))
-                                .small(),
+                            egui::RichText::new(
+                                match (&scenario.distance_km, scenario.duration_min) {
+                                    (Some(d), Some(m)) => {
+                                        format!("{} ({})", format_distance(d), format_duration(m))
+                                    }
+                                    _ => UNAVAILABLE.to_owned(),
+                                },
+                            )
+                            .small()
+                            .weak(),
                         );
                         ui.end_row();
                     });
@@ -203,10 +231,14 @@ impl OutputPanel {
                 ui.label(egui::RichText::new(scenario.store_summary()).strong());
 
                 ui.add_space(6.0);
-                let label = if selected { "Showing this plan" } else { "Show this plan" };
+                let label = if selected {
+                    "Showing this plan"
+                } else {
+                    "Show this plan"
+                };
                 ui.selectable_label(selected, label).clicked()
             })
-                .inner
+            .inner
         });
 
         let clicked_card = card
@@ -224,11 +256,32 @@ impl OutputPanel {
 
         ui.horizontal_wrapped(|ui| {
             Self::stat(ui, "Groceries", &format_money(&scenario.grocery_cost()));
-            Self::stat(ui, "Petrol", &format_money(&scenario.travel_cost));
             Self::stat(ui, "Total", &format_money(&scenario.total_cost()));
-            Self::stat(ui, "Distance", &format_distance(&scenario.distance_km));
-            Self::stat(ui, "Driving time", &format_duration(scenario.duration_min));
             Self::stat(ui, "Items", &scenario.item_count().to_string());
+            Self::stat(
+                ui,
+                "Petrol",
+                &match &scenario.travel_cost {
+                    Some(c) => format_money(c),
+                    None => UNAVAILABLE.to_owned(),
+                },
+            );
+            Self::stat(
+                ui,
+                "Distance",
+                &match &scenario.distance_km {
+                    Some(d) => format_distance(d),
+                    None => UNAVAILABLE.to_owned(),
+                },
+            );
+            Self::stat(
+                ui,
+                "Driving time",
+                &match scenario.duration_min {
+                    Some(m) => format_duration(m),
+                    None => UNAVAILABLE.to_owned(),
+                },
+            );
         });
 
         ui.add_space(10.0);
@@ -260,14 +313,27 @@ impl OutputPanel {
             ui.set_width(ui.available_width());
 
             ui.horizontal_wrapped(|ui| {
-                ui.label(egui::RichText::new(format!("Stop {stop_number}")).small().weak());
-                ui.label(egui::RichText::new(stop.store_name.as_str()).strong());
+                ui.label(
+                    egui::RichText::new(format!("Stop {stop_number}"))
+                        .small()
+                        .weak(),
+                );
+                ui.label(
+                    egui::RichText::new(
+                        stop.store_name
+                            .as_deref()
+                            .unwrap_or(brand_label(stop.chain)),
+                    )
+                    .strong(),
+                );
                 ui.label(egui::RichText::new(brand_label(stop.chain)).small().weak());
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                     ui.label(egui::RichText::new(format_money(&stop.subtotal())).strong());
                 });
             });
-            ui.label(egui::RichText::new(stop.address.as_str()).small().weak());
+            if let Some(address) = &stop.address {
+                ui.label(egui::RichText::new(address.as_str()).small().weak());
+            }
             ui.add_space(6.0);
 
             egui::Grid::new("items")
