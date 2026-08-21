@@ -19,14 +19,14 @@ struct ItemInfo {
 struct CurrentPlan {
     current_shop_plan: ShoppingPlan,
     current_stores: RoutePlan,
-    current_item_cost: u32,
-    current_travel_cost: u32,
+    current_item_cost: Cost,
+    current_travel_cost: Cost,
 }
 
 #[derive(PartialEq, Debug)]
 struct BestPlan {
     best_shop_plan: ShoppingPlan,
-    best_cost: u32,
+    best_cost: Cost,
 }
 
 // Mocking route_planner
@@ -46,24 +46,10 @@ struct LocalRoute<'a> {
 pub mod calculator {
     use std::hash::Hash;
 
-use util::{search::{ShoppingItem, ShoppingItemQuery, unit_to_str}, store::Store};
+    use util::{search::{ShoppingItem, ShoppingItemQuery, unit_to_str}, store::Store};
 
     use crate::price_calculator::{item_resolver::resolve, *};
 
-    ///
-    /*#[must_use]
-    pub fn all_possible_routes(filters: &StoreFilters) -> Box<[Route]> {
-        let stores = filter_stores(&all_stores(), filters);
-
-        (1..filters.max_store_visits)
-            .flat_map(|store_visits| stores.iter().cloned().combinations(store_visits))
-            .map(|stores| Route {
-                shops: stores.into_boxed_slice(),
-                route_cost: 0.into(),
-            })
-            .collect_vec()
-            .into_boxed_slice()
-    } */
     // Given the parsed shopping list, perform price optimisation
     pub fn calculate(list: &[ShoppingItemQuery]) {
         // Retrieve all shops - MOCK FOR NOW
@@ -82,7 +68,11 @@ use util::{search::{ShoppingItem, ShoppingItemQuery, unit_to_str}, store::Store}
             store_id: 3,
             brand: StoreBrand::Newworld
         };
-        let all_stores = [&s1,&s2,&s3];
+        let store_lookup: HashMap<StoreId, &LocalStore> = HashMap::from([
+            (1, &s1),
+            (2, &s2),
+            (3, &s3)
+        ]);
         let all_routes = [
             LocalRoute {
                 shops: Box::new([&s1]),
@@ -119,34 +109,34 @@ use util::{search::{ShoppingItem, ShoppingItemQuery, unit_to_str}, store::Store}
         let mut short_database: HashMap<StoreId, HashMap<ItemId, Cost>> = HashMap::new();
         for query in list {
             let res = resolve(query).unwrap_or(HashMap::new());
-            for store in all_stores {
-                if (res.contains_key(&store.store_id)) {
-                    let full_item = res.get(&store.store_id).unwrap();
+            for store_id in store_lookup.keys() {
+                if (res.contains_key(&store_id)) {
+                    let full_item = res.get(&store_id).unwrap();
                     let item: ItemInfo = ItemInfo {
                         product_name: full_item.name.clone(),
                         price: Cost::from_cents(full_item.price),
                         quantity: full_item.quantity.to_string() + " " + unit_to_str(full_item.unit.clone()),
                     };
                     item_lookup.insert(next_item_key, item);
-                    if (short_database.contains_key(&store.store_id)) {
-                        short_database.get_mut(&store.store_id).unwrap()
+                    if (short_database.contains_key(&store_id)) {
+                        short_database.get_mut(&store_id).unwrap()
                             .insert(next_item_key, Cost::from_cents(full_item.price));
                     } else {
                         let mut item_map: HashMap<ItemId, Cost> = HashMap::new();
                         item_map.insert(next_item_key, Cost::from_cents(full_item.price));
-                        short_database.insert(store.store_id, item_map);
+                        short_database.insert(*store_id, item_map);
                     }
                     next_item_key += 1;
                 }
             }
         }
+        let res = calculate_costs(&all_routes, &short_database);
     }
 
     // Perform cheapest, best, and fastest costs
     pub fn calculate_costs(
-        _items: &[ShoppingItem],
-        _supermarkets: &[Store],
-        short_database: &HashMap<StoreId, HashMap<ItemId, i32>>) {
+        routes: &[LocalRoute],
+        short_database: &HashMap<StoreId, HashMap<ItemId, Cost>>) {
         /* Will call calculate cheapest, best and fastest
         *            with their respective closures and then return
         *            their results */
@@ -164,13 +154,13 @@ use util::{search::{ShoppingItem, ShoppingItemQuery, unit_to_str}, store::Store}
         let mut current_plan = CurrentPlan {
             current_shop_plan: HashMap::new(),
             current_stores: Vec::new(),
-            current_item_cost: 0,
-            current_travel_cost: 0,
+            current_item_cost: Cost::from_cents(0),
+            current_travel_cost: Cost::from_cents(0),
         };
 
         let mut best_plan = BestPlan {
             best_shop_plan: HashMap::new(),
-            best_cost: i32::MAX,
+            best_cost: u32::MAX,
         };
 
         cheapest_search(0,
@@ -182,7 +172,7 @@ use util::{search::{ShoppingItem, ShoppingItemQuery, unit_to_str}, store::Store}
                         &mut best_plan,
         );
 
-        if best_plan.best_cost == i32::MAX {
+        if best_plan.best_cost == u32::MAX {
             /* Couldn't buy all the items and return None,
                 *            need to work out how to deal with certain errors
                 *            and some of this needs to be done in a pre-check */
@@ -223,7 +213,7 @@ use util::{search::{ShoppingItem, ShoppingItemQuery, unit_to_str}, store::Store}
             }
             let mut added_store: bool = false;
             let mut store_index: usize = 0;
-            let old_travel_cost: i32 = current_plan.current_travel_cost;
+            let old_travel_cost: u32 = current_plan.current_travel_cost;
             // If store not on route currently, add it
             if !current_plan.current_shop_plan.contains_key(store_id) {
                 added_store = true;
@@ -274,7 +264,9 @@ use util::{search::{ShoppingItem, ShoppingItemQuery, unit_to_str}, store::Store}
 #[cfg(test)]
 mod tests {
     use std::collections::HashMap;
-    use crate::price_calculator::{self, BestPlan, ItemId, RoutePlan, StoreId};
+    use util::cost::Cost;
+
+use crate::price_calculator::{self, BestPlan, ItemId, RoutePlan, StoreId};
 
     #[test]
     fn demo_test() {
@@ -307,7 +299,7 @@ mod tests {
         correct_shop.insert(1, vec![2]);
         let correct_result: Option<BestPlan> = Some(BestPlan {
             best_shop_plan: correct_shop,
-            best_cost: 2913,
+            best_cost: Cost::from_cents(2913),
         });
         assert_eq!(result,correct_result);
     }
