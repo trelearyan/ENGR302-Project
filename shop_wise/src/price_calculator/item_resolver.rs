@@ -221,7 +221,7 @@ pub fn demo_db(sql_query: &str) -> String {
             .raw_arg("/C \"python \"./shop_wise/src/demo_db/db.py\" --query \"".to_owned() + sql_query + "\"\"")
             .output()
             .expect("couldn't execute query");
-        //println!("{:?}", x);
+        println!("{:?}", x);
     }
     #[cfg(target_os = "linux")]
     {

@@ -10,7 +10,7 @@ type RoutePlan = Vec<StoreId>;
 type ShoppingPlan = HashMap<StoreId, Vec<ItemId>>;
 
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 struct ItemInfo {
     product_name: String,
     price: Cost,
@@ -39,11 +39,28 @@ pub(crate) struct LocalRoute<'a> {
     route_time_cost: Cost,
 }
 
+
+#[derive(Debug, PartialEq)]
+pub struct Calculation {
+    total_shop_cost: Cost,
+    //est_travel_cost: Cost,
+    //est_time_cost: Cost,
+    shopping_plan: HashMap<StoreId, Vec<ItemInfo>>
+}
+
+#[derive(Debug, PartialEq)]
+pub struct CalculationTotal {
+    cheapest: Calculation,
+    fastest: Calculation,
+    best: Calculation,
+}
+
 pub mod calculator {
     use std::hash::Hash;
 
     use bigdecimal::BigDecimal;
-    use util::{
+    use eframe::egui::accesskit::ScrollUnit::Item;
+use util::{
         search::{ShoppingItem, ShoppingItemQuery, unit_to_str},
         store::Store,
     };
@@ -51,7 +68,7 @@ pub mod calculator {
     use crate::price_calculator::{item_resolver::resolve, *};
 
     // Given the parsed shopping list, perform price optimisation
-    pub fn calculate(list: &[ShoppingItemQuery]) -> String {
+    pub fn calculate(list: &[ShoppingItemQuery]) -> Option<CalculationTotal> {
         // Retrieve all shops - MOCK FOR NOW
         let s1 = LocalStore {
             store_name: "PakNSave Kilbernie".to_owned(),
@@ -163,43 +180,85 @@ pub mod calculator {
         // De-localise and return best plans
         let mut output: String = "Calculation output:\n\r".to_owned();
         if (res.is_none()) {
-            output + "No result"
+            output + "No result";
+            return None;
         } else {
             let unwrapped = res.unwrap();
             let cheap: BestPlan = unwrapped.0;
+            let mut cheap_shopping_plan: HashMap<StoreId, Vec<ItemInfo>> = HashMap::new();
             output += "- Cheapest:\n\r";
             output += &("   total cost: $".to_owned()+&cheap.total_shop_cost.to_string()+" (optimising cost "+&cheap.best_cost.to_string()+")\n");
             for i in cheap.best_shop_plan.keys() {
                 let store: &&LocalStore = store_lookup.get(i).unwrap();
+                let mut resitem: Vec<ItemInfo> = Vec::new();
                 output += &("   At store: ".to_owned() + &store.store_name + "(id: " + &store.store_id.to_string() + ")\n");
                 for j in cheap.best_shop_plan.get(i).unwrap() {
                     let item: &ItemInfo = item_lookup.get(j).unwrap().get(i).unwrap();
                     output += &("       item: ".to_owned() + &item.product_name + "(id: " + &j.to_string() + ") - "+&item.price.to_string()+"\n");
+                    resitem.push(ItemInfo {
+                        product_name: item.product_name.clone(),
+                        price: item.price.clone(),
+                        quantity: item.quantity.clone(),
+                    });
                 }
+                cheap_shopping_plan.insert(*i, resitem);
             }
+            let cheapres = Calculation {
+                total_shop_cost: cheap.total_shop_cost,
+                shopping_plan: cheap_shopping_plan,
+            };
             let fast: BestPlan = unwrapped.1;
+            let mut fast_shopping_plan: HashMap<StoreId, Vec<ItemInfo>> = HashMap::new();
             output += "\n- Fastest:\n";
             output += &("   total cost: $".to_owned()+&fast.total_shop_cost.to_string()+" (optimising cost "+&fast.best_cost.to_string()+")\n");
             for i in fast.best_shop_plan.keys() {
                 let store: &&LocalStore = store_lookup.get(i).unwrap();
+                let mut resitem: Vec<ItemInfo> = Vec::new();
                 output += &("   At store: ".to_owned() + &store.store_name + "(id: " + &store.store_id.to_string() + ")\n");
                 for j in fast.best_shop_plan.get(i).unwrap() {
                     let item: &ItemInfo = item_lookup.get(j).unwrap().get(i).unwrap();
                     output += &("       item: ".to_owned() + &item.product_name + "(id: " + &j.to_string() + ") - "+&item.price.to_string()+"\n");
+                    resitem.push(ItemInfo {
+                        product_name: item.product_name.clone(),
+                        price: item.price.clone(),
+                        quantity: item.quantity.clone(),
+                    });
                 }
+                fast_shopping_plan.insert(*i, resitem);
             }
+            let fastres = Calculation {
+                total_shop_cost: fast.total_shop_cost,
+                shopping_plan: fast_shopping_plan,
+            };
             let best: BestPlan = unwrapped.2;
+            let mut best_shopping_plan: HashMap<StoreId, Vec<ItemInfo>> = HashMap::new();
             output += "\n- Best:\n";
             output += &("   total cost: $".to_owned()+&best.total_shop_cost.to_string()+" (optimising cost "+&best.best_cost.to_string()+")\n");
             for i in best.best_shop_plan.keys() {
                 let store: &&LocalStore = store_lookup.get(i).unwrap();
+                let mut resitem: Vec<ItemInfo> = Vec::new();
                 output += &("   At store: ".to_owned() + &store.store_name + "(id: " + &store.store_id.to_string() + ")\n");
                 for j in best.best_shop_plan.get(i).unwrap() {
                     let item: &ItemInfo = item_lookup.get(j).unwrap().get(i).unwrap();
                     output += &("       item: ".to_owned() + &item.product_name + "(id: " + &j.to_string() + ") - "+&item.price.to_string()+"\n");
+                    resitem.push(ItemInfo {
+                        product_name: item.product_name.clone(),
+                        price: item.price.clone(),
+                        quantity: item.quantity.clone(),
+                    });
                 }
+                best_shopping_plan.insert(*i, resitem);
             }
-            output
+            let bestres = Calculation {
+                total_shop_cost: best.total_shop_cost,
+                shopping_plan: best_shopping_plan,
+            };
+            println!("{}", output);
+            Some(CalculationTotal {
+                cheapest: cheapres,
+                fastest: fastres,
+                best: bestres,
+            })
         }
     }
 
@@ -378,7 +437,7 @@ mod tests {
         assert_eq!(correct_result, result);
     }
 
-    //#[test]
+    /*#[test]
     fn test_whole() {
         let queries: &[ShoppingItemQuery] = &[ShoppingItemQuery {
             name: "Weet-Bix".to_owned(),
@@ -386,5 +445,5 @@ mod tests {
             unit: "ea".to_owned(),
         }];
         println!("{:?}", calculate(queries));
-    }
+    }*/
 }
