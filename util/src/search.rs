@@ -1,7 +1,7 @@
 use crate::{search::SearchUnits::{DOLLAR, EACH, GRAM, KILOGRAM, LITRE, MILLILITRE}, store::{Store, StoreBrand::{self, Newworld, Paknsave, Woolworths}}};
 
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq, Clone)]
 pub enum SearchUnits {
     EACH,
     GRAM,
