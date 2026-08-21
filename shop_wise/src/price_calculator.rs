@@ -52,7 +52,7 @@ pub mod calculator {
     use crate::price_calculator::{item_resolver::resolve, *};
 
     // Given the parsed shopping list, perform price optimisation
-    pub fn calculate(list: &[ShoppingItemQuery]) {
+    pub fn calculate(list: &[ShoppingItemQuery]) -> Option<(BestPlan, BestPlan, BestPlan)> {
         // Retrieve all shops - MOCK FOR NOW
         let s1 = LocalStore {
             store_name: "PakNSave Porirua".to_owned(),
@@ -133,29 +133,33 @@ pub mod calculator {
                 }
             }
         }
-        let res = calculate_costs(shop_list.as_ref(), &all_routes, &short_database);
+        let res: Option<(BestPlan, BestPlan, BestPlan)> = calculate_costs(shop_list.as_ref(), &all_routes, &short_database);
+        // De-localise and return best plans
+        res
     }
 
     // Perform cheapest, best, and fastest costs
     fn calculate_costs(
         list: &[ItemId],
         routes: &[LocalRoute],
-        short_database: &HashMap<StoreId, HashMap<ItemId, Cost>>) {
-        /* Will call calculate cheapest, best and fastest
-        *            with their respective closures and then return
-        *            their results */
-        // Cheapest
-        calculate_minimised(list, routes, short_database,
+        short_database: &HashMap<StoreId, HashMap<ItemId, Cost>>) -> Option<(BestPlan, BestPlan, BestPlan)> {
+        // Cheapest - lowest total cost
+        let cheapest = calculate_minimised(list, routes, short_database,
             |a: &Cost, b: &LocalRoute|->Cost{ return a.clone() + b.route_cost.clone(); }
         );
         // Fastest - assume route cost is proportional to time for now
-        calculate_minimised(list, routes, short_database,
+        let fastest = calculate_minimised(list, routes, short_database,
             |a: &Cost, b: &LocalRoute|->Cost{ return b.route_cost.clone(); }
         );
-        // Best
-        calculate_minimised(list, routes, short_database,
+        // Best - use route cost as time cost for now
+        let best =calculate_minimised(list, routes, short_database,
             |a: &Cost, b: &LocalRoute|->Cost{ return a.clone() + b.route_cost.clone() * 2; }
         );
+        if (cheapest.is_none() || fastest.is_none() || best.is_none()) {
+            return None
+        } else {
+            Some((cheapest.unwrap(), fastest.unwrap(), best.unwrap()))
+        }
     }
 
     // To be replaced with closure
@@ -180,6 +184,9 @@ pub mod calculator {
                 let mut best_place: Option<StoreId> = None;
                 let mut best_cost: Cost = Cost::from_cents(u32::MAX);
                 for shop in &route.shops {
+                    if (!short_database.contains_key(&shop.store_id)) {
+                        continue 'outer;
+                    }
                     let temp_cost: Option<&Cost> = short_database.get(&shop.store_id).unwrap()
                         .get(item);
                     if (temp_cost.is_some()) {
@@ -224,12 +231,13 @@ pub mod calculator {
 #[cfg(test)]
 mod tests {
     use std::collections::HashMap;
-    use util::{cost::Cost, store::StoreBrand};
-    use crate::price_calculator::calculator::calculate_minimised;
+    use eframe::egui::accesskit::Role::Search;
+use util::{cost::Cost, search::ShoppingItemQuery, store::StoreBrand};
+    use crate::price_calculator::calculator::{calculate, calculate_minimised};
     use super::*;
 
     #[test]
-    fn demo_test() {
+    fn test_cheapest_demo() {
         let items = [0, 1, 2];
         let supermarkets = vec![0, 1];
         let s1 = LocalStore {
@@ -271,5 +279,17 @@ mod tests {
             best_cost: Cost::from_cents(2913),
         });
         assert_eq!(correct_result, result);
+    }
+
+    #[test]
+    fn test_whole() {
+        let queries: &[ShoppingItemQuery] = &[
+            ShoppingItemQuery {
+                name: "Weet-Bix".to_owned(),
+                quantity: 1,
+                unit: "ea".to_owned(),
+            },
+        ];
+        println!("{:?}", calculate(queries));
     }
 }
