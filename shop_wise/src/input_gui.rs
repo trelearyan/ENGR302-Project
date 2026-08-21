@@ -318,6 +318,10 @@ impl MyApp {
                 routes
                     .iter()
                     .for_each(|route| log::debug!("{}", route.pretty_print()));
+
+                    // TODO: replace with price_calculator::calculator::calculate(&self.shopping_items). BestPlans need pub, and the store and item lookups
+                    self.results = ResultsState::Failed("not implemented yet".to_owned(),
+                );
             }
         });
     }
