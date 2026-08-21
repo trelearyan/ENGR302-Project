@@ -21,6 +21,7 @@ struct ItemInfo {
 pub struct BestPlan {
     best_shop_plan: ShoppingPlan,
     best_cost: Cost,
+    total_shop_cost: Cost,
 }
 
 // Mocking route_planner
@@ -167,7 +168,7 @@ pub mod calculator {
             let unwrapped = res.unwrap();
             let cheap: BestPlan = unwrapped.0;
             output += "- Cheapest:\n\r";
-            output += &("   total cost: ".to_owned()+&cheap.best_cost.to_string()+"\n");
+            output += &("   total cost: $".to_owned()+&cheap.total_shop_cost.to_string()+" (optimising cost "+&cheap.best_cost.to_string()+")\n");
             for i in cheap.best_shop_plan.keys() {
                 let store: &&LocalStore = store_lookup.get(i).unwrap();
                 output += &("   At store: ".to_owned() + &store.store_name + "(id: " + &store.store_id.to_string() + ")\n");
@@ -178,7 +179,7 @@ pub mod calculator {
             }
             let fast: BestPlan = unwrapped.1;
             output += "\n- Fastest:\n";
-            output += &("   total cost: ".to_owned()+&fast.best_cost.to_string()+"\n");
+            output += &("   total cost: $".to_owned()+&fast.total_shop_cost.to_string()+" (optimising cost "+&fast.best_cost.to_string()+")\n");
             for i in fast.best_shop_plan.keys() {
                 let store: &&LocalStore = store_lookup.get(i).unwrap();
                 output += &("   At store: ".to_owned() + &store.store_name + "(id: " + &store.store_id.to_string() + ")\n");
@@ -189,7 +190,7 @@ pub mod calculator {
             }
             let best: BestPlan = unwrapped.2;
             output += "\n- Best:\n";
-            output += &("   total cost: ".to_owned()+&best.best_cost.to_string()+"\n");
+            output += &("   total cost: $".to_owned()+&best.total_shop_cost.to_string()+" (optimising cost "+&best.best_cost.to_string()+")\n");
             for i in best.best_shop_plan.keys() {
                 let store: &&LocalStore = store_lookup.get(i).unwrap();
                 output += &("   At store: ".to_owned() + &store.store_name + "(id: " + &store.store_id.to_string() + ")\n");
@@ -296,6 +297,7 @@ pub mod calculator {
                 best_plan = Some(BestPlan {
                     best_shop_plan: current_shop_plan,
                     best_cost: new,
+                    total_shop_cost: total_item + route.route_travel_cost.clone(),
                 });
             }
         }
@@ -371,6 +373,7 @@ mod tests {
         let correct_result: Option<BestPlan> = Some(BestPlan {
             best_shop_plan: correct_shop,
             best_cost: Cost::from_cents(2913),
+            total_shop_cost: Cost::from_cents(2913),
         });
         assert_eq!(correct_result, result);
     }
