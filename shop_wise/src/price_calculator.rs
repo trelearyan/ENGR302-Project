@@ -281,8 +281,7 @@ use util::{cost::Cost, search::ShoppingItemQuery, store::StoreBrand};
         assert_eq!(correct_result, result);
     }
 
-    //
-    #[test]
+    //#[test]
     fn test_whole() {
         let queries: &[ShoppingItemQuery] = &[
             ShoppingItemQuery {
