@@ -24,7 +24,7 @@ struct CurrentPlan {
 }
 
 #[derive(PartialEq, Debug)]
-pub(crate) struct BestPlan {
+pub struct BestPlan {
     best_shop_plan: ShoppingPlan,
     best_cost: Cost,
 }

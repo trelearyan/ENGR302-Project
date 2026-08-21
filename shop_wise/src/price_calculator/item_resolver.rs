@@ -96,7 +96,7 @@ pub fn resolve(item_query: &ShoppingItemQuery) -> Option<HashMap<u32, ShoppingIt
                 price: best.price,
                 store: Store {
                     brand: best.store,
-                    location: Coordinate::new(i as f32, i as f32),
+                    location: Coordinate::from_lat_long_f32(i as f32, i as f32),
                 },
             },
         );
