@@ -112,8 +112,15 @@ pub mod calculator {
         for query in list {
             let res = resolve(query).unwrap_or(HashMap::new());
             for store_id in store_lookup.keys() {
-                if (res.contains_key(&store_id)) {
-                    let full_item = res.get(&store_id).unwrap();
+                // Mock store specific availability by just assuming same
+                // among all stores within a brand
+                let store_key = match store_lookup.get(store_id).unwrap().brand {
+                    StoreBrand::Paknsave => 1,
+                    StoreBrand::Newworld => 2,
+                    StoreBrand::Woolworths => 3,
+                };
+                if (res.contains_key(&store_key)) {
+                    let full_item = res.get(&store_key).unwrap();
                     let item: ItemInfo = ItemInfo {
                         product_name: full_item.name.clone(),
                         price: Cost::from_cents(full_item.price),
