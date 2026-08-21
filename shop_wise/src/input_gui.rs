@@ -270,7 +270,7 @@ impl MyApp {
 
                 // Sam
                 let res = price_calculator::calculator::calculate(&self.shopping_items);
-                println!("{}", res);
+                println!("{:?}", res);
                 //item_resolver(&self.shopping_items);
 
                 // Alex
