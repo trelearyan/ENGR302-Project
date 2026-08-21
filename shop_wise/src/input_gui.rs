@@ -442,7 +442,7 @@ impl From<MileageOptions> for Cost {
         match value {
             MileageOptions::Petrol => Cost::from_cents(37),
             MileageOptions::Diesel => Cost::from_cents(38),
-            MileageOptions::Hybrid => Cost::from_cgit add shop_wise/src/input_gui.rs shop_wise/src/main.rsents(24),
+            MileageOptions::Hybrid => Cost::from_cents(24),
             MileageOptions::Electric => Cost::from_cents(23),
             MileageOptions::Custom(cost) => cost,
             MileageOptions::DontCalculateMileage => Cost::from_cents(0),
