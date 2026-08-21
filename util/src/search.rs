@@ -1,5 +1,10 @@
-use crate::{search::SearchUnits::{DOLLAR, EACH, GRAM, KILOGRAM, LITRE, MILLILITRE}, store::{Store, StoreBrand::{self, Newworld, Paknsave, Woolworths}}};
-
+use crate::{
+    search::SearchUnits::{DOLLAR, EACH, GRAM, KILOGRAM, LITRE, MILLILITRE},
+    store::{
+        Store,
+        StoreBrand::{self, Newworld, Paknsave, Woolworths},
+    },
+};
 
 #[derive(Debug, Eq, PartialEq, Clone)]
 pub enum SearchUnits {
@@ -61,7 +66,6 @@ pub struct ShoppingItemQuery {
     pub unit: String,
 }
 
-
 #[derive(Debug, PartialEq)]
 pub struct ShoppingItem {
     pub name: String,
@@ -77,11 +81,29 @@ mod test {
 
     #[test]
     fn test_symettric() {
-        assert_eq!(match_to_unit(unit_to_str(SearchUnits::EACH)), Some(SearchUnits::EACH));
-        assert_eq!(match_to_unit(unit_to_str(SearchUnits::GRAM)), Some(SearchUnits::GRAM));
-        assert_eq!(match_to_unit(unit_to_str(SearchUnits::KILOGRAM)), Some(SearchUnits::KILOGRAM));
-        assert_eq!(match_to_unit(unit_to_str(SearchUnits::MILLILITRE)), Some(SearchUnits::MILLILITRE));
-        assert_eq!(match_to_unit(unit_to_str(SearchUnits::LITRE)), Some(SearchUnits::LITRE));
-        assert_eq!(match_to_unit(unit_to_str(SearchUnits::DOLLAR)), Some(SearchUnits::DOLLAR));
+        assert_eq!(
+            match_to_unit(unit_to_str(SearchUnits::EACH)),
+            Some(SearchUnits::EACH)
+        );
+        assert_eq!(
+            match_to_unit(unit_to_str(SearchUnits::GRAM)),
+            Some(SearchUnits::GRAM)
+        );
+        assert_eq!(
+            match_to_unit(unit_to_str(SearchUnits::KILOGRAM)),
+            Some(SearchUnits::KILOGRAM)
+        );
+        assert_eq!(
+            match_to_unit(unit_to_str(SearchUnits::MILLILITRE)),
+            Some(SearchUnits::MILLILITRE)
+        );
+        assert_eq!(
+            match_to_unit(unit_to_str(SearchUnits::LITRE)),
+            Some(SearchUnits::LITRE)
+        );
+        assert_eq!(
+            match_to_unit(unit_to_str(SearchUnits::DOLLAR)),
+            Some(SearchUnits::DOLLAR)
+        );
     }
 }

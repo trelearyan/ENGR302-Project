@@ -1,12 +1,11 @@
+use crate::price_calculator::shopping_list_parser::{CSV, ListParserError, parse_csv};
+use std::collections::HashMap;
+use std::fs;
+use std::path::Path;
+use std::process::Command;
 use util::coordinate::Coordinate;
 use util::search::{SearchUnits, ShoppingItem, ShoppingItemQuery, match_sid_to_brand};
 use util::store::{Store, StoreBrand};
-use std::collections::HashMap;
-use std::process::Command;
-use std::path::Path;
-use std::fs;
-use crate::price_calculator::shopping_list_parser::{CSV, ListParserError, parse_csv};
-
 
 #[derive(Debug, PartialEq)]
 struct SearchResult {
@@ -25,17 +24,18 @@ struct SearchResult {
 /// ShoppingItem
 /// <br>
 /// None if the string could not be resolved
-pub fn resolve(item_query: &ShoppingItemQuery) -> Option<HashMap<u32,ShoppingItem>> {
+pub fn resolve(item_query: &ShoppingItemQuery) -> Option<HashMap<u32, ShoppingItem>> {
     // Split item_query into search terms
     let terms: Vec<&str> = item_query.name.split(' ').collect();
     let mut result: HashMap<u32, ShoppingItem> = HashMap::new();
     // For each store (future narrow to allowed)
-    for i in 1..=3 { // stores not available at the moment, only brands
+    for i in 1..=3 {
+        // stores not available at the moment, only brands
         let shop_id: &str = &i.to_string();
         let mut itemlist: HashMap<u32, SearchResult> = HashMap::new();
         // Get every item that matches some whole term of the query
         for j in 0..terms.len() {
-            let term= *terms.get(j).unwrap();
+            let term = *terms.get(j).unwrap();
             let found = parse_all_at_shop(shop_id, term);
             if (found.is_err()) {
                 continue;
@@ -61,9 +61,13 @@ pub fn resolve(item_query: &ShoppingItemQuery) -> Option<HashMap<u32,ShoppingIte
             // Score name based on search term matches and minimalism (might punish certain items - future)
             for j in 0..terms.len() {
                 let mut tscore = 1;
-                let term: &str= *terms.get(j).unwrap();
+                let term: &str = *terms.get(j).unwrap();
                 name.split(' ').for_each(|x: &str| {
-                    tscore += if (x.to_lowercase().contains(&term.to_lowercase())) {10} else {-1};
+                    tscore += if (x.to_lowercase().contains(&term.to_lowercase())) {
+                        10
+                    } else {
+                        -1
+                    };
                 });
                 score *= tscore;
             }
@@ -83,18 +87,21 @@ pub fn resolve(item_query: &ShoppingItemQuery) -> Option<HashMap<u32,ShoppingIte
             continue;
         }
         let best = itemlist.get(&(best_key as u32)).unwrap();
-        result.insert(i, ShoppingItem {
-            name: best.name.clone(),
-            quantity: 1,
-            unit: SearchUnits::EACH,
-            price: best.price,
-            store: Store {
-                brand: best.store,
-                location: Coordinate::new(i as f32, i as f32)
+        result.insert(
+            i,
+            ShoppingItem {
+                name: best.name.clone(),
+                quantity: 1,
+                unit: SearchUnits::EACH,
+                price: best.price,
+                store: Store {
+                    brand: best.store,
+                    location: Coordinate::new(i as f32, i as f32),
+                },
             },
-        });
+        );
     }
-    
+
     //println!("{:?}", parse_all_at_shop("1", "eggs"));
     Some(result)
 
@@ -119,13 +126,19 @@ pub fn resolve(item_query: &ShoppingItemQuery) -> Option<HashMap<u32,ShoppingIte
     // vs "Vanilla Coke Zero Sugar"
 }
 
-fn parse_all_at_shop(shop_id: &str, search_term: &str) -> Result<Vec<SearchResult>, ListParserError> {
+fn parse_all_at_shop(
+    shop_id: &str,
+    search_term: &str,
+) -> Result<Vec<SearchResult>, ListParserError> {
     // Parse input and validate parsing
     let parsed: CSV;
     {
-        let sql = "SELECT id, supermarket_id, name, price".to_owned()+
-            ", volume_size FROM products p WHERE p.supermarket_id = "+shop_id+
-            " and LOWER(p.name) LIKE '%" + &search_term.to_lowercase() + "%'";
+        let sql = "SELECT id, supermarket_id, name, price".to_owned()
+            + ", volume_size FROM products p WHERE p.supermarket_id = "
+            + shop_id
+            + " and LOWER(p.name) LIKE '%"
+            + &search_term.to_lowercase()
+            + "%'";
         //println!("{}", sql);
         let csv_reply: String = demo_db(&sql);
         let parse_result: Result<CSV, ListParserError> = parse_csv(&csv_reply);
@@ -136,35 +149,50 @@ fn parse_all_at_shop(shop_id: &str, search_term: &str) -> Result<Vec<SearchResul
     }
     // Check that their are any results
     if (parsed.fields.len() == 0) {
-            return Ok(Vec::new());
+        return Ok(Vec::new());
     }
     let rlen: usize = 5;
     // Check that has the expected field size
     if (parsed.field_len != rlen as u32) {
         return Err(ListParserError::ParseInvalidShape(parsed.field_len));
     }
-    
+
     // Second field should be a string representation of an integer, unless header
     let mut iline: usize = 0;
     let mut shopping_query: Vec<SearchResult> = Vec::new();
     while (iline < parsed.fields.len() / rlen) {
-        let id: Result<u32, std::num::ParseIntError>= parsed.fields.get(iline*rlen).unwrap().parse::<u32>();
+        let id: Result<u32, std::num::ParseIntError> =
+            parsed.fields.get(iline * rlen).unwrap().parse::<u32>();
         if (id.is_err()) {
-            return Err(ListParserError::LineNotReadable("Could not read id".to_owned(), iline as u32));
+            return Err(ListParserError::LineNotReadable(
+                "Could not read id".to_owned(),
+                iline as u32,
+            ));
         }
-        let sid: Result<u32, std::num::ParseIntError>= parsed.fields.get(iline*rlen+1).unwrap().parse::<u32>();
+        let sid: Result<u32, std::num::ParseIntError> =
+            parsed.fields.get(iline * rlen + 1).unwrap().parse::<u32>();
         if (sid.is_err()) {
-            return Err(ListParserError::LineNotReadable("Could not read supermarket id".to_owned(), iline as u32));
+            return Err(ListParserError::LineNotReadable(
+                "Could not read supermarket id".to_owned(),
+                iline as u32,
+            ));
         }
-        let name: String = parsed.fields.get(iline*rlen+2).unwrap().to_string();
+        let name: String = parsed.fields.get(iline * rlen + 2).unwrap().to_string();
         if (name.is_empty()) {
-            return Err(ListParserError::LineNotReadable("Name is empty".to_owned(), iline as u32));
+            return Err(ListParserError::LineNotReadable(
+                "Name is empty".to_owned(),
+                iline as u32,
+            ));
         }
-        let price: Result<f32, std::num::ParseFloatError>= parsed.fields.get(iline*rlen+3).unwrap().parse::<f32>();
+        let price: Result<f32, std::num::ParseFloatError> =
+            parsed.fields.get(iline * rlen + 3).unwrap().parse::<f32>();
         if (price.is_err()) {
-            return Err(ListParserError::LineNotReadable("Could not read price".to_owned(), iline as u32));
+            return Err(ListParserError::LineNotReadable(
+                "Could not read price".to_owned(),
+                iline as u32,
+            ));
         }
-        let price_cents: u32 = (price.unwrap()*100.0) as u32;
+        let price_cents: u32 = (price.unwrap() * 100.0) as u32;
         shopping_query.push(SearchResult {
             item_id: id.unwrap(),
             name: name,
@@ -179,7 +207,7 @@ fn parse_all_at_shop(shop_id: &str, search_term: &str) -> Result<Vec<SearchResul
 
 /// Mock the sqlite database by using a python version and some jank commands
 pub fn demo_db(sql_query: &str) -> String {
-    #[cfg (target_os = "windows")]
+    #[cfg(target_os = "windows")]
     {
         // Silly rust CommandExt to stop escaping in literals
         // as it allows the user of raw_arg
@@ -189,11 +217,11 @@ pub fn demo_db(sql_query: &str) -> String {
         // this is the same as typing "./src/demo_db/db.py" --query <sql>
         // into the cmd console located on shopwise/shop_wise
         Command::new("cmd")
-            .raw_arg("/C \"\"./src/demo_db/db.py\" --query \"".to_owned()+sql_query+"\"\"")
+            .raw_arg("/C \"\"./src/demo_db/db.py\" --query \"".to_owned() + sql_query + "\"\"")
             .output()
             .expect("couldn't execute query");
     }
-    #[cfg (target_os = "linux")]
+    #[cfg(target_os = "linux")]
     {
         // Should be the same as typing python ./src/demo_db/db.py --query SELECT * FROM supermarkets
         // in shopwise/shop_wise
@@ -206,15 +234,14 @@ pub fn demo_db(sql_query: &str) -> String {
         println!("{:?}", x);
     }
     let path = Path::new("./src/demo_db/out.txt");
-    fs::read_to_string(path)
-        .expect("Should have been able to read the file")
+    fs::read_to_string(path).expect("Should have been able to read the file")
 }
 
 #[cfg(test)]
 mod tests {
+    use crate::price_calculator::item_resolver::resolve;
     use serial_test::serial;
     use util::search::ShoppingItemQuery;
-    use crate::price_calculator::item_resolver::resolve;
 
     //#[test]
     #[serial]
@@ -234,7 +261,8 @@ mod tests {
                 name: String::from("Weetbix"),
                 quantity: 1,
                 unit: String::from("ea"),
-            }).unwrap();
+            })
+            .unwrap();
             assert_eq!(true, res.contains_key(&2));
             assert_eq!(false, res.contains_key(&1));
             assert_eq!(false, res.contains_key(&3));
@@ -244,7 +272,8 @@ mod tests {
                 name: String::from("Weet-Bix"),
                 quantity: 1,
                 unit: String::from("ea"),
-            }).unwrap();
+            })
+            .unwrap();
             assert_eq!(false, res.contains_key(&2));
             assert_eq!(true, res.contains_key(&1));
             assert_eq!(true, res.contains_key(&3));
@@ -258,13 +287,15 @@ mod tests {
             name: String::from("Onion Soup"),
             quantity: 1,
             unit: String::from("ea"),
-        }).unwrap();//Maggi Onion Soup
+        })
+        .unwrap(); //Maggi Onion Soup
         assert_eq!("Maggi Onion Soup", res.get(&1).unwrap().name);
         let res = resolve(&ShoppingItemQuery {
             name: String::from("Reduced Cream"),
             quantity: 1,
             unit: String::from("ea"),
-        }).unwrap();
+        })
+        .unwrap();
         assert_eq!("Pams Reduced Cream", res.get(&1).unwrap().name);
         assert_eq!("countdown reduced cream ", res.get(&2).unwrap().name);
     }

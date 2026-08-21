@@ -55,35 +55,51 @@ pub fn parse(csv_of_shopping_list_items: &str) -> Result<Vec<ShoppingItemQuery>,
     }
     // Check that their are enough fields - SHOULDN'T EVER FAIL GIVEN ABOVE
     if (parsed.fields.len() < 3) {
-            return Err(ListParserError::LineNotReadable("Not enough fields".to_owned(), 0));
+        return Err(ListParserError::LineNotReadable(
+            "Not enough fields".to_owned(),
+            0,
+        ));
     }
     // Second field should be a string representation of an integer, unless header
     let mut iline: usize = 0;
     if (parsed.fields.get(1).unwrap().parse::<u32>().is_err()) {
         // Assume header and so try 5th
         if (parsed.fields.len() < 6 || parsed.fields.get(4).unwrap().parse::<u32>().is_err()) {
-            return Err(ListParserError::LineNotReadable("More than one header or malformed".to_owned(), 1));
+            return Err(ListParserError::LineNotReadable(
+                "More than one header or malformed".to_owned(),
+                1,
+            ));
         }
         iline = 1;
     }
     let mut shopping_query: Vec<ShoppingItemQuery> = Vec::new();
     while (iline < parsed.fields.len() / 3) {
-        let name: String = parsed.fields.get(iline*3).unwrap().to_string();
+        let name: String = parsed.fields.get(iline * 3).unwrap().to_string();
         if (name.is_empty()) {
-            return Err(ListParserError::LineNotReadable("Name is empty".to_owned(), iline as u32));
+            return Err(ListParserError::LineNotReadable(
+                "Name is empty".to_owned(),
+                iline as u32,
+            ));
         }
-        let quantity: Result<u32, std::num::ParseIntError>= parsed.fields.get(iline*3+1).unwrap().parse::<u32>();
+        let quantity: Result<u32, std::num::ParseIntError> =
+            parsed.fields.get(iline * 3 + 1).unwrap().parse::<u32>();
         if (quantity.is_err()) {
-            return Err(ListParserError::LineNotReadable("Could not read quantity".to_owned(), iline as u32));
+            return Err(ListParserError::LineNotReadable(
+                "Could not read quantity".to_owned(),
+                iline as u32,
+            ));
         }
-        let unit: String = parsed.fields.get(iline*3+2).unwrap().to_string();
+        let unit: String = parsed.fields.get(iline * 3 + 2).unwrap().to_string();
         if (match_to_unit(unit.as_ref()).is_none()) {
-            return Err(ListParserError::LineNotReadable("Unit not valid".to_owned(), iline as u32));
+            return Err(ListParserError::LineNotReadable(
+                "Unit not valid".to_owned(),
+                iline as u32,
+            ));
         }
         shopping_query.push(ShoppingItemQuery {
             name: name,
             quantity: quantity.unwrap(),
-            unit: unit
+            unit: unit,
         });
         iline += 1;
     }
@@ -118,7 +134,7 @@ pub fn parse_csv(csv: &str) -> Result<CSV, ListParserError> {
     // 1 is parsing a field surrounded by quotes
     // 2 is parsing a field surrounded by quotes, with one pending quote
     // 3 is parsing a field without quoutes
-    let mut quote_phase: i32 = 0; 
+    let mut quote_phase: i32 = 0;
     let mut return_char: bool = false;
     let mut err_counter: u32 = 0;
     'whole: for c in csv.chars() {
@@ -272,12 +288,19 @@ mod tests {
     fn test_csvparse_basic() {
         let csvtext: &str = "id,name,email\r\n1,John,john.doe@example.com\
                             \r\n2,Jane,janey72@test.org";
-        assert_eq!(Ok(CSV {
+        assert_eq!(
+            Ok(CSV {
                 field_len: 3,
                 fields: string_vec![
-                    "id", "name", "email",
-                    "1", "John", "john.doe@example.com",
-                    "2", "Jane", "janey72@test.org"
+                    "id",
+                    "name",
+                    "email",
+                    "1",
+                    "John",
+                    "john.doe@example.com",
+                    "2",
+                    "Jane",
+                    "janey72@test.org"
                 ],
             }),
             parse_csv(csvtext)
@@ -287,16 +310,15 @@ mod tests {
     #[test]
     fn test_csvparse_oneliner() {
         let csvtext: &str = "id,name,email";
-        assert_eq!(Ok(CSV {
+        assert_eq!(
+            Ok(CSV {
                 field_len: 3,
-                fields: string_vec![
-                    "id", "name", "email",
-                ],
+                fields: string_vec!["id", "name", "email",],
             }),
             parse_csv(csvtext)
         );
     }
-    
+
     #[test]
     fn test_csvparse_advanced() {
         let csvtext: &str = "Year,Make,Model,Description,Price\r\n1997,Ford,E350,\
@@ -305,14 +327,35 @@ mod tests {
                             Venture \"\"Extended Edition, Very Large\"\"\",\"\",5\
                             000.00\r\n1996,Jeep,Grand Cherokee,\"MUST SELL!\r\nai\
                             r, moon roof, loaded\",4799.00\r\n";
-        assert_eq!(Ok(CSV {
+        assert_eq!(
+            Ok(CSV {
                 field_len: 5,
                 fields: string_vec![
-                    "Year", "Make", "Model","Description","Price",
-                    "1997", "Ford", "E350","ac, abs, moon","3000.00",
-                    "1999", "Chevy", "Venture \"Extended Edition\"","","4900.00",
-                    "1999", "Chevy", "Venture \"Extended Edition, Very Large\"","","5000.00",
-                    "1996", "Jeep", "Grand Cherokee","MUST SELL!\r\nair, moon roof, loaded","4799.00",
+                    "Year",
+                    "Make",
+                    "Model",
+                    "Description",
+                    "Price",
+                    "1997",
+                    "Ford",
+                    "E350",
+                    "ac, abs, moon",
+                    "3000.00",
+                    "1999",
+                    "Chevy",
+                    "Venture \"Extended Edition\"",
+                    "",
+                    "4900.00",
+                    "1999",
+                    "Chevy",
+                    "Venture \"Extended Edition, Very Large\"",
+                    "",
+                    "5000.00",
+                    "1996",
+                    "Jeep",
+                    "Grand Cherokee",
+                    "MUST SELL!\r\nair, moon roof, loaded",
+                    "4799.00",
                 ],
             }),
             parse_csv(csvtext)
@@ -322,15 +365,17 @@ mod tests {
     #[test]
     fn test_csvparse_invalidcharacter() {
         let csvtext: &str = "id,name,em\"ail";
-        assert_eq!(Err(ListParserError::CSVIllegalCharacter(10)),
+        assert_eq!(
+            Err(ListParserError::CSVIllegalCharacter(10)),
             parse_csv(csvtext)
         );
     }
-    
+
     #[test]
     fn test_csvparse_improperlinebreak() {
         let csvtext: &str = "id,name,email\n1,John,john.doe@example.com";
-        assert_eq!(Err(ListParserError::CSVImproperLinebreak(13)),
+        assert_eq!(
+            Err(ListParserError::CSVImproperLinebreak(13)),
             parse_csv(csvtext)
         );
     }
@@ -338,59 +383,82 @@ mod tests {
     #[test]
     fn test_csvparse_invalidshape() {
         let csvtext: &str = "a,b,c\r\n1,2,3,4";
-        assert_eq!(Err(ListParserError::CSVInvalid(14)),
-            parse_csv(csvtext)
-        );
+        assert_eq!(Err(ListParserError::CSVInvalid(14)), parse_csv(csvtext));
     }
-    
+
     #[test]
     fn test_csvparse_unclosedquotes() {
         let csvtext: &str = "a,b,c\r\n1,\"2,3";
-        assert_eq!(Err(ListParserError::CSVInvalid(13)),
-            parse_csv(csvtext)
-        );
+        assert_eq!(Err(ListParserError::CSVInvalid(13)), parse_csv(csvtext));
     }
-    
+
     #[test]
     fn test_csvparse_lonequoute() {
         let csvtext: &str = "a,b,c\r\n1,\"2\"2\",3";
-        assert_eq!(Err(ListParserError::CSVInvalid(12)),
-            parse_csv(csvtext)
-        );
+        assert_eq!(Err(ListParserError::CSVInvalid(12)), parse_csv(csvtext));
     }
 
     #[test]
     fn test_shopparse_basic() {
         let csvtext: &str = "Butter,1,ea\r\nCheese,2,kg";
-        assert_eq!(Ok(vec![
-                ShoppingItemQuery { name: "Butter".to_owned(), quantity: 1, unit: "ea".to_owned()},
-                ShoppingItemQuery { name: "Cheese".to_owned(), quantity: 2, unit: "kg".to_owned()},
+        assert_eq!(
+            Ok(vec![
+                ShoppingItemQuery {
+                    name: "Butter".to_owned(),
+                    quantity: 1,
+                    unit: "ea".to_owned()
+                },
+                ShoppingItemQuery {
+                    name: "Cheese".to_owned(),
+                    quantity: 2,
+                    unit: "kg".to_owned()
+                },
             ]),
             parse(csvtext)
         );
     }
-    
+
     #[test]
     fn test_shopparse_oneliner() {
         let csvtext: &str = "Butter,1,ea";
-        assert_eq!(Ok(vec![
-                ShoppingItemQuery { name: "Butter".to_owned(), quantity: 1, unit: "ea".to_owned()}
-            ]),
+        assert_eq!(
+            Ok(vec![ShoppingItemQuery {
+                name: "Butter".to_owned(),
+                quantity: 1,
+                unit: "ea".to_owned()
+            }]),
             parse(csvtext)
         );
     }
-    
+
     #[test]
     fn test_shopparse_advanced() {
         let csvtext: &str = "Butter,1,ea\r\n\
                             \"Cheese, American\",2,kg\r\n\
                             \"\"\"Fred\"\"\",1800,mL\r\n\
                             \"Box of Newlines,\n\r\n\n\r\n\"\"100% Organic\",12,$";
-        assert_eq!(Ok(vec![
-                ShoppingItemQuery { name: "Butter".to_owned(), quantity: 1, unit: "ea".to_owned()},
-                ShoppingItemQuery { name: "Cheese, American".to_owned(), quantity: 2, unit: "kg".to_owned()},
-                ShoppingItemQuery { name: "\"Fred\"".to_owned(), quantity: 1800, unit: "mL".to_owned()},
-                ShoppingItemQuery { name: "Box of Newlines,\n\r\n\n\r\n\"100% Organic".to_owned(), quantity: 12, unit: "$".to_owned()},
+        assert_eq!(
+            Ok(vec![
+                ShoppingItemQuery {
+                    name: "Butter".to_owned(),
+                    quantity: 1,
+                    unit: "ea".to_owned()
+                },
+                ShoppingItemQuery {
+                    name: "Cheese, American".to_owned(),
+                    quantity: 2,
+                    unit: "kg".to_owned()
+                },
+                ShoppingItemQuery {
+                    name: "\"Fred\"".to_owned(),
+                    quantity: 1800,
+                    unit: "mL".to_owned()
+                },
+                ShoppingItemQuery {
+                    name: "Box of Newlines,\n\r\n\n\r\n\"100% Organic".to_owned(),
+                    quantity: 12,
+                    unit: "$".to_owned()
+                },
             ]),
             parse(csvtext)
         );
@@ -399,24 +467,36 @@ mod tests {
     #[test]
     fn test_shopparse_basic_header() {
         let csvtext: &str = "ItemName,Quantity,Unit\r\nButter,1,ea\r\nCheese,2,kg";
-        assert_eq!(Ok(vec![
-                ShoppingItemQuery { name: "Butter".to_owned(), quantity: 1, unit: "ea".to_owned()},
-                ShoppingItemQuery { name: "Cheese".to_owned(), quantity: 2, unit: "kg".to_owned()},
+        assert_eq!(
+            Ok(vec![
+                ShoppingItemQuery {
+                    name: "Butter".to_owned(),
+                    quantity: 1,
+                    unit: "ea".to_owned()
+                },
+                ShoppingItemQuery {
+                    name: "Cheese".to_owned(),
+                    quantity: 2,
+                    unit: "kg".to_owned()
+                },
             ]),
             parse(csvtext)
         );
     }
-    
+
     #[test]
     fn test_shopparse_oneliner_header() {
         let csvtext: &str = "ItemName,Quantity,Unit\r\nButter,1,ea";
-        assert_eq!(Ok(vec![
-                ShoppingItemQuery { name: "Butter".to_owned(), quantity: 1, unit: "ea".to_owned()}
-            ]),
+        assert_eq!(
+            Ok(vec![ShoppingItemQuery {
+                name: "Butter".to_owned(),
+                quantity: 1,
+                unit: "ea".to_owned()
+            }]),
             parse(csvtext)
         );
     }
-    
+
     #[test]
     fn test_shopparse_advanced_header() {
         let csvtext: &str = "ItemName,Quantity,Unit\r\n\
@@ -424,14 +504,30 @@ mod tests {
                             \"Cheese, American\",2,kg\r\n\
                             \"\"\"Fred\"\"\",1800,mL\r\n\
                             \"Box of Newlines,\n\r\n\n\r\n\"\"100% Organic\",12,$";
-        assert_eq!(Ok(vec![
-                ShoppingItemQuery { name: "Butter".to_owned(), quantity: 1, unit: "ea".to_owned()},
-                ShoppingItemQuery { name: "Cheese, American".to_owned(), quantity: 2, unit: "kg".to_owned()},
-                ShoppingItemQuery { name: "\"Fred\"".to_owned(), quantity: 1800, unit: "mL".to_owned()},
-                ShoppingItemQuery { name: "Box of Newlines,\n\r\n\n\r\n\"100% Organic".to_owned(), quantity: 12, unit: "$".to_owned()},
+        assert_eq!(
+            Ok(vec![
+                ShoppingItemQuery {
+                    name: "Butter".to_owned(),
+                    quantity: 1,
+                    unit: "ea".to_owned()
+                },
+                ShoppingItemQuery {
+                    name: "Cheese, American".to_owned(),
+                    quantity: 2,
+                    unit: "kg".to_owned()
+                },
+                ShoppingItemQuery {
+                    name: "\"Fred\"".to_owned(),
+                    quantity: 1800,
+                    unit: "mL".to_owned()
+                },
+                ShoppingItemQuery {
+                    name: "Box of Newlines,\n\r\n\n\r\n\"100% Organic".to_owned(),
+                    quantity: 12,
+                    unit: "$".to_owned()
+                },
             ]),
             parse(csvtext)
         );
     }
-    
 }
