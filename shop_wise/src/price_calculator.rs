@@ -2,7 +2,6 @@ pub mod item_resolver;
 pub mod shopping_list_parser;
 
 use std::collections::HashMap;
-
 use util::{cost::Cost, store::StoreBrand};
 
 type StoreId = u32;
@@ -10,17 +9,12 @@ type ItemId = u32;
 type RoutePlan = Vec<StoreId>;
 type ShoppingPlan = HashMap<StoreId, Vec<ItemId>>;
 
+
+#[derive(Debug)]
 struct ItemInfo {
     product_name: String,
     price: Cost,
     quantity: String,
-}
-
-struct CurrentPlan {
-    current_shop_plan: ShoppingPlan,
-    current_stores: RoutePlan,
-    current_item_cost: Cost,
-    current_total_cost: Cost,
 }
 
 #[derive(PartialEq, Debug)]
@@ -40,7 +34,8 @@ struct LocalStore {
 #[derive(Debug, PartialEq)]
 pub(crate) struct LocalRoute<'a> {
     shops: Box<[&'a LocalStore]>,
-    route_cost: Cost,
+    route_travel_cost: Cost,
+    route_time_cost: Cost,
 }
 
 pub mod calculator {
@@ -55,20 +50,20 @@ pub mod calculator {
     use crate::price_calculator::{item_resolver::resolve, *};
 
     // Given the parsed shopping list, perform price optimisation
-    pub fn calculate(list: &[ShoppingItemQuery]) -> Option<(BestPlan, BestPlan, BestPlan)> {
+    pub fn calculate(list: &[ShoppingItemQuery]) -> String {
         // Retrieve all shops - MOCK FOR NOW
         let s1 = LocalStore {
-            store_name: "PakNSave Porirua".to_owned(),
+            store_name: "PakNSave Kilbernie".to_owned(),
             store_id: 1,
             brand: StoreBrand::Paknsave,
         };
         let s2 = LocalStore {
-            store_name: "Woolworths Crofton Downs".to_owned(),
+            store_name: "Woolworths Cable Car Lane".to_owned(),
             store_id: 2,
             brand: StoreBrand::Woolworths,
         };
         let s3 = LocalStore {
-            store_name: "NewWorld Khandallah".to_owned(),
+            store_name: "NewWorld Willis Street".to_owned(),
             store_id: 3,
             brand: StoreBrand::Newworld,
         };
@@ -77,37 +72,44 @@ pub mod calculator {
         let all_routes = [
             LocalRoute {
                 shops: Box::new([&s1]),
-                route_cost: Cost::from_cents(100),
+                route_travel_cost: Cost::from_cents(422), // 11.4 km
+                route_time_cost: Cost::from_cents(1200), // 24 min
             },
             LocalRoute {
                 shops: Box::new([&s2]),
-                route_cost: Cost::from_cents(100),
+                route_travel_cost: Cost::from_cents(141), // 3.8 km
+                route_time_cost: Cost::from_cents(600), // 12 min
             },
             LocalRoute {
                 shops: Box::new([&s3]),
-                route_cost: Cost::from_cents(100),
+                route_travel_cost: Cost::from_cents(111), // 3 km
+                route_time_cost: Cost::from_cents(500), // 12 min
             },
             LocalRoute {
                 shops: Box::new([&s1, &s2]),
-                route_cost: Cost::from_cents(200),
+                route_travel_cost: Cost::from_cents(492), // 13.3 km
+                route_time_cost: Cost::from_cents(1600), // 32 min
             },
             LocalRoute {
                 shops: Box::new([&s1, &s3]),
-                route_cost: Cost::from_cents(200),
+                route_travel_cost: Cost::from_cents(466), // 12.6 km
+                route_time_cost: Cost::from_cents(1500), // 30 min
             },
             LocalRoute {
                 shops: Box::new([&s2, &s3]),
-                route_cost: Cost::from_cents(200),
+                route_travel_cost: Cost::from_cents(141), // 3.8 km
+                route_time_cost: Cost::from_cents(650), // 13 min
             },
             LocalRoute {
                 shops: Box::new([&s1, &s2, &s3]),
-                route_cost: Cost::from_cents(300),
+                route_travel_cost: Cost::from_cents(492), // 13.3 km
+                route_time_cost: Cost::from_cents(1650), // 33 min
             },
         ];
         // Parse all shopping items and compile short_database and helper maps
         let mut next_item_key: u32 = 0;
         let mut shop_list: Vec<ItemId> = Vec::new();
-        let mut item_lookup: HashMap<ItemId, ItemInfo> = HashMap::new();
+        let mut item_lookup: HashMap<ItemId, HashMap<StoreId, ItemInfo>> = HashMap::new();
         let mut short_database: HashMap<StoreId, HashMap<ItemId, Cost>> = HashMap::new();
         for query in list {
             let res = resolve(query).unwrap_or(HashMap::new());
@@ -128,7 +130,18 @@ pub mod calculator {
                             + " "
                             + unit_to_str(full_item.unit.clone()),
                     };
-                    item_lookup.insert(next_item_key, item);
+                    // Add item to item lookup table
+                    if (item_lookup.contains_key(&next_item_key)) {
+                        item_lookup
+                            .get_mut(&next_item_key)
+                            .unwrap()
+                            .insert(*store_id, item);
+                    } else {
+                        let mut item_map: HashMap<ItemId, ItemInfo> = HashMap::new();
+                        item_map.insert(*store_id, item);
+                        item_lookup.insert(next_item_key, item_map);
+                    }
+                    // Add price to short database
                     if (short_database.contains_key(&store_id)) {
                         short_database
                             .get_mut(&store_id)
@@ -139,15 +152,54 @@ pub mod calculator {
                         item_map.insert(next_item_key, Cost::from_cents(full_item.price));
                         short_database.insert(*store_id, item_map);
                     }
-                    shop_list.push(next_item_key);
-                    next_item_key += 1;
                 }
             }
+            shop_list.push(next_item_key);
+            next_item_key += 1;
         }
         let res: Option<(BestPlan, BestPlan, BestPlan)> =
             calculate_costs(shop_list.as_ref(), &all_routes, &short_database);
         // De-localise and return best plans
-        res
+        let mut output: String = "Calculation output:\n\r".to_owned();
+        if (res.is_none()) {
+            output + "No result"
+        } else {
+            let unwrapped = res.unwrap();
+            let cheap: BestPlan = unwrapped.0;
+            output += "- Cheapest:\n\r";
+            output += &("   total cost: ".to_owned()+&cheap.best_cost.to_string()+"\n");
+            for i in cheap.best_shop_plan.keys() {
+                let store: &&LocalStore = store_lookup.get(i).unwrap();
+                output += &("   At store: ".to_owned() + &store.store_name + "(id: " + &store.store_id.to_string() + ")\n");
+                for j in cheap.best_shop_plan.get(i).unwrap() {
+                    let item: &ItemInfo = item_lookup.get(j).unwrap().get(i).unwrap();
+                    output += &("       item: ".to_owned() + &item.product_name + "(id: " + &j.to_string() + ") - "+&item.price.to_string()+"\n");
+                }
+            }
+            let fast: BestPlan = unwrapped.1;
+            output += "\n- Fastest:\n";
+            output += &("   total cost: ".to_owned()+&fast.best_cost.to_string()+"\n");
+            for i in fast.best_shop_plan.keys() {
+                let store: &&LocalStore = store_lookup.get(i).unwrap();
+                output += &("   At store: ".to_owned() + &store.store_name + "(id: " + &store.store_id.to_string() + ")\n");
+                for j in fast.best_shop_plan.get(i).unwrap() {
+                    let item: &ItemInfo = item_lookup.get(j).unwrap().get(i).unwrap();
+                    output += &("       item: ".to_owned() + &item.product_name + "(id: " + &j.to_string() + ") - "+&item.price.to_string()+"\n");
+                }
+            }
+            let best: BestPlan = unwrapped.2;
+            output += "\n- Best:\n";
+            output += &("   total cost: ".to_owned()+&best.best_cost.to_string()+"\n");
+            for i in best.best_shop_plan.keys() {
+                let store: &&LocalStore = store_lookup.get(i).unwrap();
+                output += &("   At store: ".to_owned() + &store.store_name + "(id: " + &store.store_id.to_string() + ")\n");
+                for j in best.best_shop_plan.get(i).unwrap() {
+                    let item: &ItemInfo = item_lookup.get(j).unwrap().get(i).unwrap();
+                    output += &("       item: ".to_owned() + &item.product_name + "(id: " + &j.to_string() + ") - "+&item.price.to_string()+"\n");
+                }
+            }
+            output
+        }
     }
 
     // Perform cheapest, best, and fastest costs
@@ -162,7 +214,7 @@ pub mod calculator {
             routes,
             short_database,
             |a: &Cost, b: &LocalRoute| -> Cost {
-                return a.clone() + b.route_cost.clone();
+                return a.clone() + b.route_travel_cost.clone();
             },
         );
         // Fastest - assume route cost is proportional to time for now
@@ -171,7 +223,7 @@ pub mod calculator {
             routes,
             short_database,
             |a: &Cost, b: &LocalRoute| -> Cost {
-                return b.route_cost.clone();
+                return b.route_time_cost.clone();
             },
         );
         // Best - use route cost as time cost for now
@@ -180,7 +232,7 @@ pub mod calculator {
             routes,
             short_database,
             |a: &Cost, b: &LocalRoute| -> Cost {
-                return a.clone() + b.route_cost.clone() * 2;
+                return a.clone() + b.route_travel_cost.clone() + b.route_time_cost.clone();
             },
         );
         if (cheapest.is_none() || fastest.is_none() || best.is_none()) {
@@ -281,15 +333,18 @@ mod tests {
         let mut routes: Vec<LocalRoute> = Vec::new();
         routes.push(LocalRoute {
             shops: Box::new([&s1]),
-            route_cost: Cost::from_cents(196),
+            route_travel_cost: Cost::from_cents(196),
+            route_time_cost: Cost::from_cents(0),
         });
         routes.push(LocalRoute {
             shops: Box::new([&s2]),
-            route_cost: Cost::from_cents(190),
+            route_travel_cost: Cost::from_cents(190),
+            route_time_cost: Cost::from_cents(0),
         });
         routes.push(LocalRoute {
             shops: Box::new([&s1, &s2]),
-            route_cost: Cost::from_cents(295),
+            route_travel_cost: Cost::from_cents(295),
+            route_time_cost: Cost::from_cents(0),
         });
         let mut database: HashMap<StoreId, HashMap<ItemId, Cost>> = HashMap::new();
         let mut store0: HashMap<ItemId, Cost> = HashMap::new();
@@ -307,7 +362,7 @@ mod tests {
             routes.as_ref(),
             &database,
             |a: &Cost, b: &LocalRoute| -> Cost {
-                return a.clone() + b.route_cost.clone();
+                return a.clone() + b.route_travel_cost.clone();
             },
         );
         let mut correct_shop = HashMap::new();

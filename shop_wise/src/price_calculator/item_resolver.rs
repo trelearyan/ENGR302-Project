@@ -207,33 +207,35 @@ fn parse_all_at_shop(
 
 /// Mock the sqlite database by using a python version and some jank commands
 pub fn demo_db(sql_query: &str) -> String {
+    // Only works when the command is run by an executable on the shop_wise directory (e.g. cargo run)
     #[cfg(target_os = "windows")]
     {
         // Silly rust CommandExt to stop escaping in literals
         // as it allows the user of raw_arg
         use std::os::windows::process::CommandExt;
-        // Should execute >cmd /C ""./src/demo_db/db.py" --query <sql>"
+        // Should execute >cmd /C ""./shop_wise/src/demo_db/db.py" --query <sql>"
         // without escaping the qoutes (unliteraling my literal)
         // this is the same as typing "./src/demo_db/db.py" --query <sql>
-        // into the cmd console located on shopwise/shop_wise
-        Command::new("cmd")
-            .raw_arg("/C \"\"./src/demo_db/db.py\" --query \"".to_owned() + sql_query + "\"\"")
+        // into the cmd console located on shopwise directory
+        let x = Command::new("cmd")
+            .raw_arg("/C \"python \"./shop_wise/src/demo_db/db.py\" --query \"".to_owned() + sql_query + "\"\"")
             .output()
             .expect("couldn't execute query");
+        //println!("{:?}", x);
     }
     #[cfg(target_os = "linux")]
     {
-        // Should be the same as typing python ./src/demo_db/db.py --query SELECT * FROM supermarkets
-        // in shopwise/shop_wise
+        // Should be the same as typing python ./shop_wisesrc/demo_db/db.py --query SELECT * FROM supermarkets
+        // in shopwise
         let x = Command::new("python")
-            .arg("./src/demo_db/db.py")
+            .arg("./shop_wise/src/demo_db/db.py")
             .arg("--query")
             .arg(sql_query)
             .output()
             .expect("couldn't execute query");
-        println!("{:?}", x);
+        //println!("{:?}", x);
     }
-    let path = Path::new("./src/demo_db/out.txt");
+    let path = Path::new("./shop_wise/src/demo_db/out.txt");
     fs::read_to_string(path).expect("Should have been able to read the file")
 }
 
@@ -243,7 +245,7 @@ mod tests {
     use serial_test::serial;
     use util::search::ShoppingItemQuery;
 
-    //#[test]
+    /*#[test]
     #[serial]
     fn test_result() {
         resolve(&ShoppingItemQuery {
@@ -251,9 +253,9 @@ mod tests {
             quantity: 1,
             unit: String::from("ea"),
         });
-    }
+    }*/
 
-    //#[test]
+    /*#[test]
     #[serial]
     fn test_weetbix() {
         {
@@ -278,9 +280,9 @@ mod tests {
             assert_eq!(true, res.contains_key(&1));
             assert_eq!(true, res.contains_key(&3));
         }
-    }
+    }*/
 
-    //#[test]
+    /* #[test]
     #[serial]
     fn test_dip() {
         let res = resolve(&ShoppingItemQuery {
@@ -298,5 +300,5 @@ mod tests {
         .unwrap();
         assert_eq!("Pams Reduced Cream", res.get(&1).unwrap().name);
         assert_eq!("countdown reduced cream ", res.get(&2).unwrap().name);
-    }
+    } */
 }

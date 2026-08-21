@@ -48,8 +48,8 @@ ORDER BY p.price ASC LIMIT 4
 
 import sys, sqlite3, os
 
-DB_PATH = "src/demo_db/shopwise.db"
-OUT_PATH = "src/demo_db/out.txt"
+DB_PATH = "shop_wise/src/demo_db/shopwise.db"
+OUT_PATH = "shop_wise/src/demo_db/out.txt"
 
 def main():
     if not os.path.exists(DB_PATH):

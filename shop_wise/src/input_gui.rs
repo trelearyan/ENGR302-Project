@@ -18,6 +18,7 @@ use util::search::{ShoppingItemQuery, unit_to_str};
 use util::distance::Distance;
 use util::store::StoreBrand;
 
+use crate::price_calculator::{self, item_resolver, shopping_list_parser};
 use crate::route_planner;
 use crate::route_planner::filters::StoreFilters;
 
@@ -268,6 +269,8 @@ impl MyApp {
                 // First: check if both shopping list and location are not empty
 
                 // Sam
+                let res = price_calculator::calculator::calculate(&self.shopping_items);
+                println!("{}", res);
                 //item_resolver(&self.shopping_items);
 
                 // Alex
