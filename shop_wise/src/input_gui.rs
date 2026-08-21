@@ -3,22 +3,43 @@ use derive_more::{Display, IsVariant};
 use eframe::egui;
 use serde::Deserialize;
 use util::search::SearchUnits::{DOLLAR, EACH, GRAM, KILOGRAM, LITRE, MILLILITRE};
+use std::collections::HashSet;
 use std::fmt::Display;
+use std::ops::Deref;
 use std::rc::Rc;
 use std::sync::Arc;
 use std::{cell::RefCell, str::FromStr};
 use strum::IntoEnumIterator;
 use strum_macros::EnumIter;
 use urlencoding::encode;
+use util::coordinate::Coordinate;
 use util::cost::{self, Cost};
+<<<<<<< shop_wise/src/input_gui.rs
 use util::search::{ShoppingItemQuery, unit_to_str};
+=======
+use util::distance::Distance;
+use util::store::StoreBrand;
+>>>>>>> shop_wise/src/input_gui.rs
 
-#[derive(Default)]
-struct LocationState {
+use crate::route_planner;
+use crate::route_planner::filters::StoreFilters;
+
+#[derive(Default, Clone)]
+pub struct LocationState {
     latitude: Option<f64>,
     longitude: Option<f64>,
     // location (what the user sees)
     address: String,
+}
+
+impl From<LocationState> for Coordinate {
+    fn from(value: LocationState) -> Self {
+        if let (Some(latitude), Some(longitude)) = (value.latitude, value.longitude) {
+            Coordinate::from_lat_long_f64(latitude, longitude)
+        } else {
+            Coordinate::default()
+        }
+    }
 }
 
 #[derive(Deserialize)]
@@ -35,7 +56,7 @@ struct ReverseResponse {
 }
 
 struct Filters {
-    max_range: u32,
+    max_range: Distance,
     max_stores: u32,
     include_paknsave: bool,
     include_newworld: bool,
@@ -69,7 +90,10 @@ impl MyApp {
     // for debugging
     pub fn print_filters(&self, ui: &mut egui::Ui) {
         ui.label("=== Filter values ===");
-        ui.label(format!("Max Range: {}", self.filters.max_range));
+        ui.label(format!(
+            "Max Range: {}",
+            self.filters.max_range.kilometres()
+        ));
         ui.label(format!("Max Stores: {}", self.filters.max_stores));
         ui.label(format!("Pak'nSave: {}", self.filters.include_paknsave));
         ui.label(format!("New World: {}", self.filters.include_newworld));
@@ -113,7 +137,9 @@ impl MyApp {
         ui.heading("Filters");
 
         ui.label("Max Range");
-        ui.add(egui::Slider::new(&mut self.filters.max_range, 1..=50).text("(km)"));
+        let mut maxrange = self.filters.max_range.kilometres();
+        ui.add(egui::Slider::new(&mut maxrange, 1.0..=50.).text("(km)"));
+        self.filters.max_range = Distance::from_kilometres_f64(maxrange);
 
         ui.label("Max Stores per Trip");
         ui.add(egui::Slider::new(&mut self.filters.max_stores, 1..=10));
@@ -248,8 +274,34 @@ impl MyApp {
                 //item_resolver(&self.shopping_items);
 
                 // Alex
-                //let location = self.location_state.borrow();
-                //route_planner(&location, &self.filters);
+                // TODO: Fix this up once we have a better format of all the stores and individual location blacklisting
+                let mut banned_stores = HashSet::<StoreBrand>::new();
+
+                if !self.filters.include_paknsave {
+                    banned_stores.insert(StoreBrand::Paknsave);
+                }
+                if !self.filters.include_newworld {
+                    banned_stores.insert(StoreBrand::Newworld);
+                }
+                if !self.filters.include_woolies {
+                    banned_stores.insert(StoreBrand::Woolworths);
+                }
+
+                let mut filters = StoreFilters::builder()
+                    .location(
+                        <RefCell<LocationState> as Clone>::clone(&self.location_state)
+                            .into_inner()
+                            .clone()
+                            .into(),
+                    )
+                    .range(self.filters.max_range.clone())
+                    .max_store_visits(self.filters.max_stores as usize)
+                    .disallow_brands(banned_stores.iter().copied().collect::<Vec<_>>().deref());
+                let routes = route_planner::all_possible_routes(&filters.build());
+
+                routes
+                    .iter()
+                    .for_each(|route| println!("{}", route.pretty_print()));
             }
         });
     }
@@ -404,7 +456,7 @@ impl Default for MyApp {
         Self::new(
             Vec::new(),
             Filters {
-                max_range: 10,
+                max_range: Distance::from_kilometres_f64(10.),
                 max_stores: 3,
                 include_paknsave: true,
                 include_newworld: true,
