@@ -23,6 +23,7 @@ use crate::price_calculator::{self, item_resolver, shopping_list_parser};
 use crate::results::ResultsState;
 use crate::route_planner;
 use crate::route_planner::filters::StoreFilters;
+
 #[derive(Default, Clone)]
 pub struct LocationState {
     latitude: Option<f64>,
