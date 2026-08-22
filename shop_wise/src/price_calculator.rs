@@ -11,10 +11,10 @@ type ShoppingPlan = HashMap<StoreId, Vec<ItemId>>;
 
 
 #[derive(Debug, PartialEq, Eq)]
-struct ItemInfo {
-    product_name: String,
-    price: Cost,
-    quantity: String,
+pub struct ItemInfo {
+    pub product_name: String,
+    pub price: Cost,
+    pub quantity: String,
 }
 
 #[derive(PartialEq, Debug)]
@@ -42,17 +42,17 @@ pub(crate) struct LocalRoute<'a> {
 
 #[derive(Debug, PartialEq)]
 pub struct Calculation {
-    total_shop_cost: Cost,
+    pub total_shop_cost: Cost,
     //est_travel_cost: Cost,
     //est_time_cost: Cost,
-    shopping_plan: HashMap<StoreId, Vec<ItemInfo>>
+    pub shopping_plan: HashMap<StoreId, Vec<ItemInfo>>
 }
 
 #[derive(Debug, PartialEq)]
 pub struct CalculationTotal {
-    cheapest: Calculation,
-    fastest: Calculation,
-    best: Calculation,
+    pub cheapest: Calculation,
+    pub fastest: Calculation,
+    pub best: Calculation,
 }
 
 pub mod calculator {
@@ -60,10 +60,10 @@ pub mod calculator {
 
     use bigdecimal::BigDecimal;
     use eframe::egui::accesskit::ScrollUnit::Item;
-use util::{
-        search::{ShoppingItem, ShoppingItemQuery, unit_to_str},
-        store::Store,
-    };
+    use util::{
+            search::{ShoppingItem, ShoppingItemQuery, unit_to_str},
+            store::Store,
+        };
 
     use crate::price_calculator::{item_resolver::resolve, *};
 
