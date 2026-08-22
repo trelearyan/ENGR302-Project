@@ -102,7 +102,6 @@ pub fn resolve(item_query: &ShoppingItemQuery) -> Option<HashMap<u32, ShoppingIt
         );
     }
 
-    //println!("{:?}", parse_all_at_shop("1", "eggs"));
     Some(result)
 
     // Example search "Vegemite",1,"ea" -> return cheapest vegemite at each store, with single item and price
@@ -139,7 +138,6 @@ fn parse_all_at_shop(
             + " and LOWER(p.name) LIKE '%"
             + &search_term.to_lowercase()
             + "%'";
-        //println!("{}", sql);
         let csv_reply: String = demo_db(&sql);
         let parse_result: Result<CSV, ListParserError> = parse_csv(&csv_reply);
         if (parse_result.is_err()) {
@@ -221,7 +219,7 @@ pub fn demo_db(sql_query: &str) -> String {
             .raw_arg("/C \"python \"./shop_wise/src/demo_db/db.py\" --query \"".to_owned() + sql_query + "\"\"")
             .output()
             .expect("couldn't execute query");
-        println!("{:?}", x);
+        log::info!("ItemResolutionDemoDB comammand: {:?}", x);
     }
     #[cfg(target_os = "linux")]
     {
@@ -233,7 +231,7 @@ pub fn demo_db(sql_query: &str) -> String {
             .arg(sql_query)
             .output()
             .expect("couldn't execute query");
-        //println!("{:?}", x);
+        log::info!("ItemResolutionDemoDB comammand: {:?}", x);
     }
     let path = Path::new("./shop_wise/src/demo_db/out.txt");
     fs::read_to_string(path).expect("Should have been able to read the file")

@@ -19,9 +19,11 @@ pub struct ItemInfo {
 
 #[derive(PartialEq, Debug)]
 pub struct BestPlan {
-    best_shop_plan: ShoppingPlan,
-    best_cost: Cost,
-    total_shop_cost: Cost,
+    pub best_shop_plan: ShoppingPlan,
+    pub best_cost: Cost,
+    pub total_item_cost: Cost,
+    pub total_travel_cost: Cost,
+    pub total_shop_cost: Cost,
 }
 
 // Mocking route_planner
@@ -43,8 +45,9 @@ pub(crate) struct LocalRoute<'a> {
 #[derive(Debug, PartialEq)]
 pub struct Calculation {
     pub total_shop_cost: Cost,
-    //est_travel_cost: Cost,
-    //est_time_cost: Cost,
+    pub total_item_cost: Cost,
+    pub total_travel_cost: Cost,
+    //pub total_time_cost: Cost,
     pub shopping_plan: HashMap<StoreId, Vec<ItemInfo>>
 }
 
@@ -205,6 +208,8 @@ pub mod calculator {
             }
             let cheapres = Calculation {
                 total_shop_cost: cheap.total_shop_cost,
+                total_item_cost: cheap.total_item_cost,
+                total_travel_cost: cheap.total_travel_cost,
                 shopping_plan: cheap_shopping_plan,
             };
             let fast: BestPlan = unwrapped.1;
@@ -228,6 +233,8 @@ pub mod calculator {
             }
             let fastres = Calculation {
                 total_shop_cost: fast.total_shop_cost,
+                total_item_cost: fast.total_item_cost,
+                total_travel_cost: fast.total_travel_cost,
                 shopping_plan: fast_shopping_plan,
             };
             let best: BestPlan = unwrapped.2;
@@ -251,9 +258,11 @@ pub mod calculator {
             }
             let bestres = Calculation {
                 total_shop_cost: best.total_shop_cost,
+                total_item_cost: best.total_item_cost,
+                total_travel_cost: best.total_travel_cost,
                 shopping_plan: best_shopping_plan,
             };
-            println!("{}", output);
+            log::info!("{}", output);
             Some(CalculationTotal {
                 cheapest: cheapres,
                 fastest: fastres,
@@ -356,6 +365,8 @@ pub mod calculator {
                 best_plan = Some(BestPlan {
                     best_shop_plan: current_shop_plan,
                     best_cost: new,
+                    total_item_cost: total_item.clone(),
+                    total_travel_cost: route.route_travel_cost.clone(),
                     total_shop_cost: total_item + route.route_travel_cost.clone(),
                 });
             }
@@ -432,6 +443,8 @@ mod tests {
         let correct_result: Option<BestPlan> = Some(BestPlan {
             best_shop_plan: correct_shop,
             best_cost: Cost::from_cents(2913),
+            total_item_cost: Cost::from_cents(2618),
+            total_travel_cost: Cost::from_cents(295),
             total_shop_cost: Cost::from_cents(2913),
         });
         assert_eq!(correct_result, result);
