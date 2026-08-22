@@ -4,24 +4,24 @@ pub mod shopping_list_parser;
 use std::collections::HashMap;
 use util::{cost::Cost, store::StoreBrand};
 
-type StoreId = u32;
-type ItemId = u32;
-type RoutePlan = Vec<StoreId>;
-type ShoppingPlan = HashMap<StoreId, Vec<ItemId>>;
+pub type StoreId = u32;
+pub type ItemId = u32;
+pub type RoutePlan = Vec<StoreId>;
+pub type ShoppingPlan = HashMap<StoreId, Vec<ItemId>>;
 
 
 #[derive(Debug, PartialEq, Eq)]
-struct ItemInfo {
-    product_name: String,
-    price: Cost,
-    quantity: String,
+pub struct ItemInfo {
+    pub product_name: String,
+    pub price: Cost,
+    pub quantity: String,
 }
 
 #[derive(PartialEq, Debug)]
 pub struct BestPlan {
-    best_shop_plan: ShoppingPlan,
-    best_cost: Cost,
-    total_shop_cost: Cost,
+    pub best_shop_plan: ShoppingPlan,
+    pub best_cost: Cost,
+    pub total_shop_cost: Cost,
 }
 
 // Mocking route_planner
@@ -42,17 +42,17 @@ pub(crate) struct LocalRoute<'a> {
 
 #[derive(Debug, PartialEq)]
 pub struct Calculation {
-    total_shop_cost: Cost,
+    pub total_shop_cost: Cost,
     //est_travel_cost: Cost,
     //est_time_cost: Cost,
-    shopping_plan: HashMap<StoreId, Vec<ItemInfo>>
+    pub shopping_plan: HashMap<StoreId, Vec<ItemInfo>>
 }
 
 #[derive(Debug, PartialEq)]
 pub struct CalculationTotal {
-    cheapest: Calculation,
-    fastest: Calculation,
-    best: Calculation,
+    pub cheapest: Calculation,
+    pub fastest: Calculation,
+    pub best: Calculation,
 }
 
 pub mod calculator {
