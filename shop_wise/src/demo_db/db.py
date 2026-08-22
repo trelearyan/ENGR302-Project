@@ -74,8 +74,8 @@ def main():
         with open(OUT_PATH, "wb") as f:
           f.write(out.encode(encoding="ascii",errors="replace"))
         print("Write successful")
-##    except:
-##        print("Error in executing sql statement")
+    except:
+        sys.exit("Error in executing sql statement")
     finally:
         conn.close()
 
