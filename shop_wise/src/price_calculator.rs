@@ -4,11 +4,10 @@ pub mod shopping_list_parser;
 use std::collections::HashMap;
 use util::{cost::Cost, store::StoreBrand};
 
-type StoreId = u32;
-type ItemId = u32;
-type RoutePlan = Vec<StoreId>;
-type ShoppingPlan = HashMap<StoreId, Vec<ItemId>>;
-
+pub type StoreId = u32;
+pub type ItemId = u32;
+pub type RoutePlan = Vec<StoreId>;
+pub type ShoppingPlan = HashMap<StoreId, Vec<ItemId>>;
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct ItemInfo {
@@ -41,14 +40,12 @@ pub(crate) struct LocalRoute<'a> {
     route_time_cost: Cost,
 }
 
-
 #[derive(Debug, PartialEq)]
 pub struct Calculation {
     pub total_shop_cost: Cost,
     pub total_item_cost: Cost,
     pub total_travel_cost: Cost,
-    //pub total_time_cost: Cost,
-    pub shopping_plan: HashMap<StoreId, Vec<ItemInfo>>
+    pub shopping_plan: HashMap<StoreId, Vec<ItemInfo>>,
 }
 
 #[derive(Debug, PartialEq)]
@@ -64,9 +61,9 @@ pub mod calculator {
     use bigdecimal::BigDecimal;
     use eframe::egui::accesskit::ScrollUnit::Item;
     use util::{
-            search::{ShoppingItem, ShoppingItemQuery, unit_to_str},
-            store::Store,
-        };
+        search::{ShoppingItem, ShoppingItemQuery, unit_to_str},
+        store::Store,
+    };
 
     use crate::price_calculator::{item_resolver::resolve, *};
 
@@ -94,37 +91,37 @@ pub mod calculator {
             LocalRoute {
                 shops: Box::new([&s1]),
                 route_travel_cost: Cost::from_cents(422), // 11.4 km
-                route_time_cost: Cost::from_cents(1200), // 24 min
+                route_time_cost: Cost::from_cents(1200),  // 24 min
             },
             LocalRoute {
                 shops: Box::new([&s2]),
                 route_travel_cost: Cost::from_cents(141), // 3.8 km
-                route_time_cost: Cost::from_cents(600), // 12 min
+                route_time_cost: Cost::from_cents(600),   // 12 min
             },
             LocalRoute {
                 shops: Box::new([&s3]),
                 route_travel_cost: Cost::from_cents(111), // 3 km
-                route_time_cost: Cost::from_cents(500), // 12 min
+                route_time_cost: Cost::from_cents(500),   // 12 min
             },
             LocalRoute {
                 shops: Box::new([&s1, &s2]),
                 route_travel_cost: Cost::from_cents(492), // 13.3 km
-                route_time_cost: Cost::from_cents(1600), // 32 min
+                route_time_cost: Cost::from_cents(1600),  // 32 min
             },
             LocalRoute {
                 shops: Box::new([&s1, &s3]),
                 route_travel_cost: Cost::from_cents(466), // 12.6 km
-                route_time_cost: Cost::from_cents(1500), // 30 min
+                route_time_cost: Cost::from_cents(1500),  // 30 min
             },
             LocalRoute {
                 shops: Box::new([&s2, &s3]),
                 route_travel_cost: Cost::from_cents(141), // 3.8 km
-                route_time_cost: Cost::from_cents(650), // 13 min
+                route_time_cost: Cost::from_cents(650),   // 13 min
             },
             LocalRoute {
                 shops: Box::new([&s1, &s2, &s3]),
                 route_travel_cost: Cost::from_cents(492), // 13.3 km
-                route_time_cost: Cost::from_cents(1650), // 33 min
+                route_time_cost: Cost::from_cents(1650),  // 33 min
             },
         ];
         // Parse all shopping items and compile short_database and helper maps
@@ -190,14 +187,28 @@ pub mod calculator {
             let cheap: BestPlan = unwrapped.0;
             let mut cheap_shopping_plan: HashMap<StoreId, Vec<ItemInfo>> = HashMap::new();
             output += "- Cheapest:\n\r";
-            output += &("   total cost: $".to_owned()+&cheap.total_shop_cost.to_string()+" (optimising cost "+&cheap.best_cost.to_string()+")\n");
+            output += &("   total cost: $".to_owned()
+                + &cheap.total_shop_cost.to_string()
+                + " (optimising cost "
+                + &cheap.best_cost.to_string()
+                + ")\n");
             for i in cheap.best_shop_plan.keys() {
                 let store: &&LocalStore = store_lookup.get(i).unwrap();
                 let mut resitem: Vec<ItemInfo> = Vec::new();
-                output += &("   At store: ".to_owned() + &store.store_name + "(id: " + &store.store_id.to_string() + ")\n");
+                output += &("   At store: ".to_owned()
+                    + &store.store_name
+                    + "(id: "
+                    + &store.store_id.to_string()
+                    + ")\n");
                 for j in cheap.best_shop_plan.get(i).unwrap() {
                     let item: &ItemInfo = item_lookup.get(j).unwrap().get(i).unwrap();
-                    output += &("       item: ".to_owned() + &item.product_name + "(id: " + &j.to_string() + ") - "+&item.price.to_string()+"\n");
+                    output += &("       item: ".to_owned()
+                        + &item.product_name
+                        + "(id: "
+                        + &j.to_string()
+                        + ") - "
+                        + &item.price.to_string()
+                        + "\n");
                     resitem.push(ItemInfo {
                         product_name: item.product_name.clone(),
                         price: item.price.clone(),
@@ -215,14 +226,28 @@ pub mod calculator {
             let fast: BestPlan = unwrapped.1;
             let mut fast_shopping_plan: HashMap<StoreId, Vec<ItemInfo>> = HashMap::new();
             output += "\n- Fastest:\n";
-            output += &("   total cost: $".to_owned()+&fast.total_shop_cost.to_string()+" (optimising cost "+&fast.best_cost.to_string()+")\n");
+            output += &("   total cost: $".to_owned()
+                + &fast.total_shop_cost.to_string()
+                + " (optimising cost "
+                + &fast.best_cost.to_string()
+                + ")\n");
             for i in fast.best_shop_plan.keys() {
                 let store: &&LocalStore = store_lookup.get(i).unwrap();
                 let mut resitem: Vec<ItemInfo> = Vec::new();
-                output += &("   At store: ".to_owned() + &store.store_name + "(id: " + &store.store_id.to_string() + ")\n");
+                output += &("   At store: ".to_owned()
+                    + &store.store_name
+                    + "(id: "
+                    + &store.store_id.to_string()
+                    + ")\n");
                 for j in fast.best_shop_plan.get(i).unwrap() {
                     let item: &ItemInfo = item_lookup.get(j).unwrap().get(i).unwrap();
-                    output += &("       item: ".to_owned() + &item.product_name + "(id: " + &j.to_string() + ") - "+&item.price.to_string()+"\n");
+                    output += &("       item: ".to_owned()
+                        + &item.product_name
+                        + "(id: "
+                        + &j.to_string()
+                        + ") - "
+                        + &item.price.to_string()
+                        + "\n");
                     resitem.push(ItemInfo {
                         product_name: item.product_name.clone(),
                         price: item.price.clone(),
@@ -240,14 +265,28 @@ pub mod calculator {
             let best: BestPlan = unwrapped.2;
             let mut best_shopping_plan: HashMap<StoreId, Vec<ItemInfo>> = HashMap::new();
             output += "\n- Best:\n";
-            output += &("   total cost: $".to_owned()+&best.total_shop_cost.to_string()+" (optimising cost "+&best.best_cost.to_string()+")\n");
+            output += &("   total cost: $".to_owned()
+                + &best.total_shop_cost.to_string()
+                + " (optimising cost "
+                + &best.best_cost.to_string()
+                + ")\n");
             for i in best.best_shop_plan.keys() {
                 let store: &&LocalStore = store_lookup.get(i).unwrap();
                 let mut resitem: Vec<ItemInfo> = Vec::new();
-                output += &("   At store: ".to_owned() + &store.store_name + "(id: " + &store.store_id.to_string() + ")\n");
+                output += &("   At store: ".to_owned()
+                    + &store.store_name
+                    + "(id: "
+                    + &store.store_id.to_string()
+                    + ")\n");
                 for j in best.best_shop_plan.get(i).unwrap() {
                     let item: &ItemInfo = item_lookup.get(j).unwrap().get(i).unwrap();
-                    output += &("       item: ".to_owned() + &item.product_name + "(id: " + &j.to_string() + ") - "+&item.price.to_string()+"\n");
+                    output += &("       item: ".to_owned()
+                        + &item.product_name
+                        + "(id: "
+                        + &j.to_string()
+                        + ") - "
+                        + &item.price.to_string()
+                        + "\n");
                     resitem.push(ItemInfo {
                         product_name: item.product_name.clone(),
                         price: item.price.clone(),
