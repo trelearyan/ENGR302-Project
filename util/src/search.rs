@@ -53,8 +53,8 @@ pub fn match_to_unit(name: &str) -> Option<SearchUnits> {
 pub fn match_sid_to_brand(sid: u32) -> Option<StoreBrand> {
     match (sid) {
         1 => Some(Paknsave),
-        2 => Some(Newworld),
-        3 => Some(Woolworths),
+        2 => Some(Woolworths),
+        3 => Some(Newworld),
         _ => None,
     }
 }

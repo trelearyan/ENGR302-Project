@@ -450,7 +450,7 @@ mod tests {
         assert_eq!(correct_result, result);
     }
 
-    /*#[test]
+    #[test]
     fn test_whole() {
         let queries: &[ShoppingItemQuery] = &[ShoppingItemQuery {
             name: "Weet-Bix".to_owned(),
@@ -458,5 +458,5 @@ mod tests {
             unit: "ea".to_owned(),
         }];
         println!("{:?}", calculate(queries));
-    }*/
+    }
 }
