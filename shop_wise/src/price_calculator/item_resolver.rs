@@ -127,11 +127,35 @@ pub fn resolve(item_query: &ShoppingItemQuery) -> Option<HashMap<u32, ShoppingIt
     // vs "Vanilla Coke Zero Sugar"
 }
 
-static DB_PATH: &str = "src/demo_db/shopwise.db";
+#[cfg(not(target_arch = "wasm32"))]
+const DB_PATH: &str =
+    concat!(env!("CARGO_MANIFEST_DIR"), "/src/demo_db/shopwise.db");
+
+#[cfg(target_arch = "wasm32")]
+const DB: &[u8] =
+    include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/demo_db/shopwise.db"));
+
+fn open_database() -> Result<Connection> {
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        Connection::open(DB_PATH)
+    }
+
+    #[cfg(target_arch = "wasm32")]
+    {
+        let conn = Connection::open_in_memory()?;
+        conn.deserialize(
+            rusqlite::DatabaseName::Main,
+            DB.to_vec(),
+            None,
+        )?;
+        Ok(conn)
+    }
+}
 
 /// Mock the sqlite database by using a python version and some jank commands
 fn demo_db(search_terms: &[&str]) -> Result<HashMap<usize, HashMap<u32, Vec<SearchResult>>>> {
-    let conn = Connection::open(DB_PATH)?;
+    let conn = open_database()?;
     // Check Database is loaded correctly
 
     let mut result: HashMap<usize, HashMap<u32, Vec<SearchResult>>> = HashMap::new();
