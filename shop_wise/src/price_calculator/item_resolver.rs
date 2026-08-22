@@ -143,12 +143,8 @@ fn open_database() -> Result<Connection> {
 
     #[cfg(target_arch = "wasm32")]
     {
-        let conn = Connection::open_in_memory()?;
-        conn.deserialize(
-            rusqlite::DatabaseName::Main,
-            DB.to_vec(),
-            None,
-        )?;
+        let mut conn = Connection::open_in_memory()?;
+        conn.deserialize_bytes("main", DB)?;
         Ok(conn)
     }
 }
