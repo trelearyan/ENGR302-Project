@@ -23,16 +23,10 @@ ensure-no-warnings:
     - rustc --version && cargo --version
     - export RUSTFLAGS="-D warnings"
     - cargo check
-
-default:
-  image: "rust:1.95"
-  tags:
-    - docker
-
 create-pages:
   pages:
     # The folder that contains the files to be exposed at the Page URL
-    publish: dist
+    publish: shop_wise/dist
   rules:
     # This ensures that only pushes to the default branch will trigger
     # a pages deploy
@@ -42,4 +36,10 @@ create-pages:
     - rustup target add wasm32-unknown-unknown
     - cargo install --locked trunk
   script:
+    - cd shop_wise
     - trunk build --release
+
+default:
+  image: "rust:1.95"
+  tags:
+    - docker
