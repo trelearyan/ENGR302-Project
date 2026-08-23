@@ -2,6 +2,7 @@ use bigdecimal::BigDecimal;
 use derive_more::{Display, IsVariant};
 use eframe::egui;
 use serde::Deserialize;
+use util::search::SearchUnits::{DOLLAR, EACH, GRAM, KILOGRAM, LITRE, MILLILITRE};
 use std::collections::HashSet;
 use std::fmt::Display;
 use std::ops::Deref;
@@ -13,12 +14,15 @@ use strum_macros::EnumIter;
 use urlencoding::encode;
 use util::coordinate::Coordinate;
 use util::cost::{self, Cost};
+use util::search::{ShoppingItemQuery, unit_to_str};
 use util::distance::Distance;
 use util::store::StoreBrand;
 
+use crate::price_calculator::{self, item_resolver, shopping_list_parser};
 use crate::route_planner;
 use crate::route_planner::filters::StoreFilters;
-
+use crate::output::OutputPanel;
+use crate::results::ResultsState;
 #[derive(Default, Clone)]
 pub struct LocationState {
     latitude: Option<f64>,
@@ -50,12 +54,6 @@ struct ReverseResponse {
     display_name: String,
 }
 
-struct ShoppingItem {
-    name: String,
-    quantity: u32,
-    unit: String,
-}
-
 struct Filters {
     max_range: Distance,
     max_stores: u32,
@@ -65,17 +63,20 @@ struct Filters {
 }
 
 pub struct MyApp {
-    shopping_items: Vec<ShoppingItem>,
+    shopping_items: Vec<ShoppingItemQuery>,
     filters: Filters,
     mileage_option: MileageOptions,
     mileage_scratch: String,
     // Shared location state
     location_state: Rc<RefCell<LocationState>>,
+    // fr09 output panel
+    output: OutputPanel,
+    results: ResultsState,
 }
 
 impl MyApp {
     fn new(
-        shopping_items: Vec<ShoppingItem>,
+        shopping_items: Vec<ShoppingItemQuery>,
         filters: Filters,
         mileage_option: MileageOptions,
     ) -> Self {
@@ -86,8 +87,16 @@ impl MyApp {
             mileage_scratch: Cost::from(MileageOptions::default()).to_string(),
 
             location_state: Rc::new(RefCell::new(LocationState::default())),
+            output: OutputPanel::new(),
+            results: ResultsState::Idle,
         }
     }
+
+    //fr09 output
+    pub fn output_panel(&mut self, ui: &mut egui::Ui) {
+        self.output.show(ui, &self.results);
+    }
+
     // for debugging
     pub fn print_filters(&self, ui: &mut egui::Ui) {
         ui.label("=== Filter values ===");
@@ -108,10 +117,10 @@ impl MyApp {
         ui.heading("Your shopping list");
         // if the user clicks + Add Item button, creates an empty ShoppingingItem
         if ui.button("+ Add Item").clicked() {
-            self.shopping_items.push(ShoppingItem {
+            self.shopping_items.push(ShoppingItemQuery {
                 name: String::new(),
                 quantity: 1,
-                unit: "ea".to_string(),
+                unit: unit_to_str(EACH).to_string(),
             });
         }
 
@@ -123,12 +132,12 @@ impl MyApp {
                 egui::ComboBox::from_id_salt(i)
                     .selected_text(&item.unit)
                     .show_ui(ui, |ui| {
-                        ui.selectable_value(&mut item.unit, "ea".to_string(), "ea");
-                        ui.selectable_value(&mut item.unit, "g".to_string(), "g");
-                        ui.selectable_value(&mut item.unit, "kg".to_string(), "kg");
-                        ui.selectable_value(&mut item.unit, "mL".to_string(), "mL");
-                        ui.selectable_value(&mut item.unit, "L".to_string(), "L");
-                        ui.selectable_value(&mut item.unit, "pack".to_string(), "pack");
+                        ui.selectable_value(&mut item.unit, unit_to_str(EACH).to_string(),unit_to_str(EACH));
+                        ui.selectable_value(&mut item.unit, unit_to_str(GRAM).to_string(), unit_to_str(GRAM));
+                        ui.selectable_value(&mut item.unit, unit_to_str(KILOGRAM).to_string(), unit_to_str(KILOGRAM));
+                        ui.selectable_value(&mut item.unit, unit_to_str(MILLILITRE).to_string(), unit_to_str(MILLILITRE));
+                        ui.selectable_value(&mut item.unit, unit_to_str(LITRE).to_string(), unit_to_str(LITRE));
+                        ui.selectable_value(&mut item.unit, unit_to_str(DOLLAR).to_string(), unit_to_str(DOLLAR));
                     });
             });
         }
@@ -272,6 +281,8 @@ impl MyApp {
                 // First: check if both shopping list and location are not empty
 
                 // Sam
+                let res = price_calculator::calculator::calculate(&self.shopping_items);
+                println!("{:?}", res);
                 //item_resolver(&self.shopping_items);
 
                 // Alex
@@ -303,6 +314,16 @@ impl MyApp {
                 routes
                     .iter()
                     .for_each(|route| println!("{}", route.pretty_print()));
+
+                let origin_label = self.location_state.borrow().address.clone();
+                self.results = match price_calculator::calculator::calculate(&self.shopping_items) {
+                    Some(calc) => ResultsState::Ready(Box::new(
+                        crate::results::Results::from_calculation(&calc, origin_label),
+                    )),
+                    None => ResultsState::Failed(
+                        "No combination of stores in range can supply this list".to_owned(),
+                    ),
+                };
             }
         });
     }
