@@ -29,8 +29,6 @@ default:
   tags:
     - docker
 
-# The Docker image that will be used to build your app
-image: node:lts
 create-pages:
   pages:
     # The folder that contains the files to be exposed at the Page URL
