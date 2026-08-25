@@ -322,7 +322,6 @@ impl MyApp {
                     .max_store_visits(self.filters.max_stores as usize)
                     .disallow_brands(banned_stores.iter().copied().collect::<Vec<_>>().deref());
                 let routes = route_planner::all_possible_routes(&filters.build());
-
                 let origin_label = self.location_state.borrow().address.clone();
                 self.results = match price_calculator::calculator::calculate(&self.shopping_items) {
                     Some(calc) => ResultsState::Ready(Box::new(
