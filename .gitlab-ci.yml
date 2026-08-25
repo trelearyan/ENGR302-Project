@@ -32,7 +32,7 @@ create-pages:
   before_script:
     - rustup target add wasm32-unknown-unknown
     - cargo install --locked trunk
-    #- apt-get install clang
+    - apt-get install clang
   script:
     - cd shop_wise
     - export TRUNK_BUILD_PUBLIC_URL="/shopwise-0c4d83/"
