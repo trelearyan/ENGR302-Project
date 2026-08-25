@@ -40,7 +40,7 @@ create-test-pages:
   pages:
     # The folder that contains the files to be exposed at the Page URL
     publish: shop_wise/dist
-    path_prefix: 'mr-${CI_MERGE_REQUEST_IID}' # Results in paths like mr-123
+    path_prefix: 'mr-$CI_MERGE_REQUEST_SOURCE_BRANCH_NAME' 
   # Functions that should be executed before the build script is run
   before_script:
     - apt update || true
@@ -48,12 +48,12 @@ create-test-pages:
     - rustup target add wasm32-unknown-unknown
    # - cargo install --locked trunk
   script:
-    - export TRUNK_BUILD_PUBLIC_URL='https://gitlab-web.ecs.vuw.ac.nz/shopwise-0c4d83/mr-${CI_MERGE_REQUEST_IID}'
+    - export TRUNK_BUILD_PUBLIC_URL='https://gitlab-web.ecs.vuw.ac.nz/shopwise-0c4d83/mr-$CI_MERGE_REQUEST_SOURCE_BRANCH_NAME'
     - echo $TRUNK_BUILD_PUBLIC_URL
-    - echo https://gitlab-web.ecs.vuw.ac.nz/shopwise-0c4d83/mr-${CI_MERGE_REQUEST_IID}
-    - echo ${CI_MERGE_REQUEST_IID}
+    - echo https://gitlab-web.ecs.vuw.ac.nz/shopwise-0c4d83/mr-$CI_MERGE_REQUEST_SOURCE_BRANCH_NAME
+    - echo $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME
     - cd shop_wise
-    - export TRUNK_BUILD_PUBLIC_URL='https://gitlab-web.ecs.vuw.ac.nz/shopwise-0c4d83/mr-${CI_MERGE_REQUEST_IID}'
+    - export TRUNK_BUILD_PUBLIC_URL='https://gitlab-web.ecs.vuw.ac.nz/shopwise-0c4d83/mr-$CI_MERGE_REQUEST_SOURCE_BRANCH_NAME'
     - trunk build --release
 
 default:
