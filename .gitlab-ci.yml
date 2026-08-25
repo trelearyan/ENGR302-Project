@@ -35,7 +35,7 @@ create-main-pages:
     - trunk build --release
 
 
-create-main-pages:
+create-test-pages:
   when: manual
   pages:
     # The folder that contains the files to be exposed at the Page URL
