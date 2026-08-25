@@ -48,6 +48,10 @@ create-test-pages:
     - rustup target add wasm32-unknown-unknown
     - cargo install --locked trunk
   script:
+    - export TRUNK_BUILD_PUBLIC_URL='https://gitlab-web.ecs.vuw.ac.nz/shopwise-0c4d83/mr-${CI_MERGE_REQUEST_IID}'
+    - echo $TRUNK_BUILD_PUBLIC_URL
+    - echo 'https://gitlab-web.ecs.vuw.ac.nz/shopwise-0c4d83/mr-${CI_MERGE_REQUEST_IID}'
+    - exit
     - cd shop_wise
     - export TRUNK_BUILD_PUBLIC_URL='https://gitlab-web.ecs.vuw.ac.nz/shopwise-0c4d83/mr-${CI_MERGE_REQUEST_IID}'
     - trunk build --release
