@@ -378,11 +378,7 @@ impl OutputPanel {
         let warn = ui.visuals().warn_fg_color;
 
         egui::Frame::group(ui.style())
-<<<<<<< HEAD
             .stroke(egui::Stroke::new(1.0f32, warn))
-=======
-            .stroke(egui::Stroke::new(1.0, warn))
->>>>>>> a2243b0 (FR-09: output panel connected to price calc)
             .show(ui, |ui| {
                 ui.set_width(ui.available_width());
                 let heading = if items.len() == 1 {
