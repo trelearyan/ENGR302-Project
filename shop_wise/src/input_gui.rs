@@ -97,19 +97,6 @@ impl MyApp {
         self.output.show(ui, &self.results);
     }
 
-    // for debugging
-    pub fn print_filters(&self, ui: &mut egui::Ui) {
-        ui.label("=== Filter values ===");
-        ui.label(format!(
-            "Max Range: {}",
-            self.filters.max_range.kilometres()
-        ));
-        ui.label(format!("Max Stores: {}", self.filters.max_stores));
-        ui.label(format!("Pak'nSave: {}", self.filters.include_paknsave));
-        ui.label(format!("New World: {}", self.filters.include_newworld));
-        ui.label(format!("Woolworths: {}", self.filters.include_woolies));
-    }
-
     /*
     Your shopping list
      */
