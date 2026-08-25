@@ -46,7 +46,7 @@ create-test-pages:
     - apt update || true
     - yes | apt install clang || true # this returns 1 even when successful? maybe because of yes
     - rustup target add wasm32-unknown-unknown
-   # - cargo install --locked trunk
+    - cargo install --locked trunk
   script:
     - export TRUNK_BUILD_PUBLIC_URL=https://gitlab-web.ecs.vuw.ac.nz/shopwise-0c4d83/test-$CI_COMMIT_SHA
     - echo $TRUNK_BUILD_PUBLIC_URL
