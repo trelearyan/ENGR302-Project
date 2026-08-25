@@ -40,7 +40,7 @@ create-test-pages:
   pages:
     # The folder that contains the files to be exposed at the Page URL
     publish: shop_wise/dist
-    path_prefix: "shopwise-mr-$CI_MERGE_REQUEST_IID" # Results in paths like mr-123
+    path_prefix: "shopwise-mr-${CI_MERGE_REQUEST_IID}" # Results in paths like mr-123
   # Functions that should be executed before the build script is run
   before_script:
     - apt update || true
@@ -49,7 +49,7 @@ create-test-pages:
     - cargo install --locked trunk
   script:
     - cd shop_wise
-    - export TRUNK_BUILD_PUBLIC_URL="shopwise-mr-$CI_MERGE_REQUEST_IID"
+    - export TRUNK_BUILD_PUBLIC_URL="shopwise-mr-${CI_MERGE_REQUEST_IID}"
     - trunk build --release
 
 default:
