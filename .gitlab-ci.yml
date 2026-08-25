@@ -30,8 +30,8 @@ create-pages:
     publish: shop_wise/dist
   # Functions that should be executed before the build script is run
   before_script:
-    - apt update
-    - apt install clang
+    - yes | apt update
+    - yes | apt install clang
     - rustup target add wasm32-unknown-unknown
     - cargo install --locked trunk
   script:
