@@ -17,7 +17,7 @@ ensure-no-warnings:
     - export RUSTFLAGS="-D warnings"
     - cargo check
 
-create-pages:
+create-main-pages:
   rules:
     - if: $CI_COMMIT_BRANCH == "main"
   pages:
@@ -32,6 +32,23 @@ create-pages:
   script:
     - cd shop_wise
     - export TRUNK_BUILD_PUBLIC_URL="/shopwise-0c4d83/"
+    - trunk build --release
+
+
+create-main-pages:
+  when: manual
+  pages:
+    # The folder that contains the files to be exposed at the Page URL
+    publish: shop_wise/dist
+  # Functions that should be executed before the build script is run
+  before_script:
+    - apt update || true
+    - yes | apt install clang || true # this returns 1 even when successful? maybe because of yes
+    - rustup target add wasm32-unknown-unknown
+    - cargo install --locked trunk
+  script:
+    - cd shop_wise
+    - export TRUNK_BUILD_PUBLIC_URL="/shopwise-test-0c4d83/"
     - trunk build --release
 
 default:
