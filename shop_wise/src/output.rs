@@ -159,7 +159,7 @@ impl OutputPanel {
 
         let mut frame = egui::Frame::group(ui.style());
         if selected {
-            frame = frame.fill(faint).stroke(egui::Stroke::new(2.0, accent));
+            frame = frame.fill(faint).stroke(egui::Stroke::new(2.0f32, accent));
         }
 
         let card = frame.show(ui, |ui| {
@@ -378,7 +378,7 @@ impl OutputPanel {
         let warn = ui.visuals().warn_fg_color;
 
         egui::Frame::group(ui.style())
-            .stroke(egui::Stroke::new(1.0, warn))
+            .stroke(egui::Stroke::new(1.0f32, warn))
             .show(ui, |ui| {
                 ui.set_width(ui.available_width());
                 let heading = if items.len() == 1 {
