@@ -1,7 +1,7 @@
 # Official language image. Look for the different tagged releases at:
 # https://hub.docker.com/r/library/rust/tags/
 
-test:ensure-compiles:
+ensure-compiles:
   script:
     - rustc --version && cargo --version
     - cargo check
@@ -11,13 +11,6 @@ ensure-tests-pass:
     - rustc --version && cargo --version
     - cargo test --workspace --verbose
 
-# broken \/
-#ensure-formatted-correctly:
-#  image: "https://hub.docker.com/r/rustdocker/rustfmt"
-#  script:
-#    - rustc --version && cargo --version
-#    - cargo fmt --check
-
 ensure-no-warnings:
   script:
     - rustc --version && cargo --version
@@ -25,6 +18,8 @@ ensure-no-warnings:
     - cargo check
 
 create-pages:
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
   pages:
     # The folder that contains the files to be exposed at the Page URL
     publish: shop_wise/dist
