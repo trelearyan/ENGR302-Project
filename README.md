@@ -5,8 +5,6 @@
 ### Live Web version
 Visit https://gitlab-web.ecs.vuw.ac.nz/shopwise-0c4d83/
 
-⚠️ Currently the web version is broken. Apologies. ⚠️
-
 ### Desktop version
 1. Clone the repository:
     ```

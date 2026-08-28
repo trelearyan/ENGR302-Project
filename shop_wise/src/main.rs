@@ -10,6 +10,7 @@ pub mod price_calculator;
 pub mod results;
 pub mod route_planner;
 
+
 use eframe::egui;
 use input_gui::MyApp;
 

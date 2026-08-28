@@ -187,28 +187,14 @@ pub mod calculator {
             let cheap: BestPlan = unwrapped.0;
             let mut cheap_shopping_plan: HashMap<StoreId, Vec<ItemInfo>> = HashMap::new();
             output += "- Cheapest:\n\r";
-            output += &("   total cost: $".to_owned()
-                + &cheap.total_shop_cost.to_string()
-                + " (optimising cost "
-                + &cheap.best_cost.to_string()
-                + ")\n");
+            output += &("   total cost: $".to_owned()+&cheap.total_shop_cost.to_string()+" (optimising cost "+&cheap.best_cost.to_string()+")\n");
             for i in cheap.best_shop_plan.keys() {
                 let store: &&LocalStore = store_lookup.get(i).unwrap();
                 let mut resitem: Vec<ItemInfo> = Vec::new();
-                output += &("   At store: ".to_owned()
-                    + &store.store_name
-                    + "(id: "
-                    + &store.store_id.to_string()
-                    + ")\n");
+                output += &("   At store: ".to_owned() + &store.store_name + "(id: " + &store.store_id.to_string() + ")\n");
                 for j in cheap.best_shop_plan.get(i).unwrap() {
                     let item: &ItemInfo = item_lookup.get(j).unwrap().get(i).unwrap();
-                    output += &("       item: ".to_owned()
-                        + &item.product_name
-                        + "(id: "
-                        + &j.to_string()
-                        + ") - "
-                        + &item.price.to_string()
-                        + "\n");
+                    output += &("       item: ".to_owned() + &item.product_name + "(id: " + &j.to_string() + ") - "+&item.price.to_string()+"\n");
                     resitem.push(ItemInfo {
                         product_name: item.product_name.clone(),
                         price: item.price.clone(),
@@ -226,28 +212,14 @@ pub mod calculator {
             let fast: BestPlan = unwrapped.1;
             let mut fast_shopping_plan: HashMap<StoreId, Vec<ItemInfo>> = HashMap::new();
             output += "\n- Fastest:\n";
-            output += &("   total cost: $".to_owned()
-                + &fast.total_shop_cost.to_string()
-                + " (optimising cost "
-                + &fast.best_cost.to_string()
-                + ")\n");
+            output += &("   total cost: $".to_owned()+&fast.total_shop_cost.to_string()+" (optimising cost "+&fast.best_cost.to_string()+")\n");
             for i in fast.best_shop_plan.keys() {
                 let store: &&LocalStore = store_lookup.get(i).unwrap();
                 let mut resitem: Vec<ItemInfo> = Vec::new();
-                output += &("   At store: ".to_owned()
-                    + &store.store_name
-                    + "(id: "
-                    + &store.store_id.to_string()
-                    + ")\n");
+                output += &("   At store: ".to_owned() + &store.store_name + "(id: " + &store.store_id.to_string() + ")\n");
                 for j in fast.best_shop_plan.get(i).unwrap() {
                     let item: &ItemInfo = item_lookup.get(j).unwrap().get(i).unwrap();
-                    output += &("       item: ".to_owned()
-                        + &item.product_name
-                        + "(id: "
-                        + &j.to_string()
-                        + ") - "
-                        + &item.price.to_string()
-                        + "\n");
+                    output += &("       item: ".to_owned() + &item.product_name + "(id: " + &j.to_string() + ") - "+&item.price.to_string()+"\n");
                     resitem.push(ItemInfo {
                         product_name: item.product_name.clone(),
                         price: item.price.clone(),
@@ -265,28 +237,14 @@ pub mod calculator {
             let best: BestPlan = unwrapped.2;
             let mut best_shopping_plan: HashMap<StoreId, Vec<ItemInfo>> = HashMap::new();
             output += "\n- Best:\n";
-            output += &("   total cost: $".to_owned()
-                + &best.total_shop_cost.to_string()
-                + " (optimising cost "
-                + &best.best_cost.to_string()
-                + ")\n");
+            output += &("   total cost: $".to_owned()+&best.total_shop_cost.to_string()+" (optimising cost "+&best.best_cost.to_string()+")\n");
             for i in best.best_shop_plan.keys() {
                 let store: &&LocalStore = store_lookup.get(i).unwrap();
                 let mut resitem: Vec<ItemInfo> = Vec::new();
-                output += &("   At store: ".to_owned()
-                    + &store.store_name
-                    + "(id: "
-                    + &store.store_id.to_string()
-                    + ")\n");
+                output += &("   At store: ".to_owned() + &store.store_name + "(id: " + &store.store_id.to_string() + ")\n");
                 for j in best.best_shop_plan.get(i).unwrap() {
                     let item: &ItemInfo = item_lookup.get(j).unwrap().get(i).unwrap();
-                    output += &("       item: ".to_owned()
-                        + &item.product_name
-                        + "(id: "
-                        + &j.to_string()
-                        + ") - "
-                        + &item.price.to_string()
-                        + "\n");
+                    output += &("       item: ".to_owned() + &item.product_name + "(id: " + &j.to_string() + ") - "+&item.price.to_string()+"\n");
                     resitem.push(ItemInfo {
                         product_name: item.product_name.clone(),
                         price: item.price.clone(),
