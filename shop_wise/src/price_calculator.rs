@@ -4,10 +4,10 @@ pub mod shopping_list_parser;
 use std::collections::HashMap;
 use util::{cost::Cost, store::StoreBrand};
 
-type StoreId = u32;
-type ItemId = u32;
-type RoutePlan = Vec<StoreId>;
-type ShoppingPlan = HashMap<StoreId, Vec<ItemId>>;
+pub type StoreId = u32;
+pub type ItemId = u32;
+pub type RoutePlan = Vec<StoreId>;
+pub type ShoppingPlan = HashMap<StoreId, Vec<ItemId>>;
 
 
 #[derive(Debug, PartialEq, Eq)]
