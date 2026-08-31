@@ -92,6 +92,9 @@ impl MyApp {
             location_state: Rc::new(RefCell::new(LocationState::default())),
             output: OutputPanel::new(),
             results: ResultsState::Idle,
+
+            //fr13
+            csv_status: None,
         }
     }
 
@@ -129,7 +132,7 @@ impl MyApp {
             .unwrap_or_default();
 
         self.csv_status = Some(match std::fs::read_to_string(&path) {
-            Ok(text) => match crate::csv::parse_csv(&text) {
+            Ok(text) => match crate::csv::read_csv(&text) {
                 Ok(items) => {
                     let count = items.len();
                     self.shopping_items = items;
@@ -151,7 +154,7 @@ impl MyApp {
             return;
         };
 
-        let text = crate::csv::to_csv(&self.shopping_items);
+        let text = crate::csv::write_to_csv(&self.shopping_items);
         self.csv_status = Some(match std::fs::write(&path, text) {
             Ok(()) => format!("Saved {} items", self.shopping_items.len()),
             Err(error) => format!("Could not save: {error}"),
