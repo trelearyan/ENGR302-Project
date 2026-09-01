@@ -1,5 +1,4 @@
 pub mod item_resolver;
-pub mod shopping_list_parser;
 
 use std::collections::HashMap;
 use util::{cost::Cost, store::StoreBrand};

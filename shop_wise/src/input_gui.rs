@@ -19,7 +19,7 @@ use util::search::{ShoppingItemQuery, unit_to_str};
 use util::store::StoreBrand;
 
 use crate::output::OutputPanel;
-use crate::price_calculator::{self, item_resolver, shopping_list_parser};
+use crate::price_calculator::{self, item_resolver};
 use crate::results::ResultsState;
 use crate::route_planner;
 use crate::route_planner::filters::StoreFilters;
