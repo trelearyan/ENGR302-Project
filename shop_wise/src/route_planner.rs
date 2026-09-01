@@ -17,8 +17,8 @@ pub mod filters;
 
 #[derive(Debug, PartialEq)]
 pub struct Route {
-    shops: Box<[Store]>,
-    route_cost: Cost,
+    pub shops: Box<[Store]>,
+    pub route_cost: Cost,
 }
 
 impl Route {
