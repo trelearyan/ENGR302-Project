@@ -296,7 +296,7 @@ impl MyApp {
                 let routes = route_planner::all_possible_routes(&filters);
 
                 // Sam
-                let res = price_calculator::calculator::calculate(&self.shopping_items, &filters);
+                let res = price_calculator::calculate(&self.shopping_items, &filters);
                 log::info!("{:?}", res);
             }
         });
