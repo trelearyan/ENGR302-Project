@@ -268,11 +268,6 @@ impl MyApp {
                 log::info!("the search button is clicked!");
                 // First: check if both shopping list and location are not empty
 
-                // Sam
-                let res = price_calculator::calculator::calculate(&self.shopping_items);
-                println!("{:?}", res);
-                //item_resolver(&self.shopping_items);
-
                 // Alex
                 // TODO: Fix this up once we have a better format of all the stores and individual location blacklisting
                 let mut banned_stores = HashSet::<StoreBrand>::new();
@@ -287,7 +282,7 @@ impl MyApp {
                     banned_stores.insert(StoreBrand::Woolworths);
                 }
 
-                let mut filters = StoreFilters::builder()
+                let mut filters_builder = StoreFilters::builder()
                     .location(
                         <RefCell<LocationState> as Clone>::clone(&self.location_state)
                             .into_inner()
@@ -297,7 +292,12 @@ impl MyApp {
                     .range(self.filters.max_range.clone())
                     .max_store_visits(self.filters.max_stores as usize)
                     .disallow_brands(banned_stores.iter().copied().collect::<Vec<_>>().deref());
-                let routes = route_planner::all_possible_routes(&filters.build());
+                let filters = filters_builder.build();
+                let routes = route_planner::all_possible_routes(&filters);
+
+                // Sam
+                let res = price_calculator::calculator::calculate(&self.shopping_items, &filters);
+                log::info!("{:?}", res);
             }
         });
     }
