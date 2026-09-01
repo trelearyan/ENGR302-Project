@@ -73,7 +73,7 @@ pub struct MyApp {
     output: OutputPanel,
     results: ResultsState,
 
-    //fr09: load/save shopping list
+    //fr13: load/save shopping list
     csv_status: Option<String>,
 }
 
@@ -116,7 +116,7 @@ impl MyApp {
         ui.label(format!("Woolworths: {}", self.filters.include_woolies));
     }
 
-    //fr09
+    //fr13
     pub fn load_csv(&mut self) {
         let Some(path) = rfd::FileDialog::new()
             .add_filter("CSV", &["csv"])
@@ -147,7 +147,7 @@ impl MyApp {
     pub fn save_csv(&mut self) {
         let Some(path) = rfd::FileDialog::new()
             .add_filter("CSV", &["csv"])
-            .set_file_name("Shopwise-shopping-list.csv")
+            .set_file_name("Shopwise shopping list.csv")
             .set_title("Save your shopping list")
             .save_file()
         else {

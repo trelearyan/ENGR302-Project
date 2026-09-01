@@ -12,7 +12,7 @@ impl fmt::Display for CsvError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             CsvError::Malformed(detail) => write!(f, "CSV is not valid:  {detail}"),
-            CsvError::Row { line, reason } => write!(f, "line {line}: {reason}"),
+            CsvError::Row { line, reason } => write!(f, "has error in line {line}: {reason}"),
             CsvError::NoItems => write!(f, "file  is empty"),
         }
     }
@@ -49,7 +49,7 @@ pub fn read_csv(text: &str) -> Result<Vec<ShoppingItemQuery>, CsvError> {
 
         let quantity_text = record.get(1).unwrap_or("");
 
-        //TODO: wont read decimal e.g 2.5 kg. find a way to fix
+        //TODO: won't read decimal e.g 2.5 kg. find a way to fix
         let quantity: u32 = quantity_text.parse().map_err(|_| CsvError::Row {
             line,
             reason: format!("\"{quantity_text}\" is decimal"),
