@@ -71,7 +71,7 @@ pub fn all_stores() -> Box<[Store]> {
 pub fn all_possible_routes(filters: &StoreFilters) -> Box<[Route]> {
     let stores = filter_stores(&all_stores(), filters);
 
-    (1..filters.max_store_visits)
+    (1..=filters.max_store_visits)
         .flat_map(|store_visits| stores.iter().cloned().combinations(store_visits))
         .map(|stores| Route {
             shops: stores.into_boxed_slice(),
