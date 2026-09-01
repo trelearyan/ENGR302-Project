@@ -72,9 +72,7 @@ pub struct MyApp {
     // fr09 output panel
     output: OutputPanel,
     results: ResultsState,
-    // undo a cleared list
     cleared_items: Option<Vec<ShoppingItemQuery>>,
-
     //fr13: load/save shopping list
     csv_status: Option<String>,
 }
@@ -94,7 +92,6 @@ impl MyApp {
             location_state: Rc::new(RefCell::new(LocationState::default())),
             output: OutputPanel::new(),
             results: ResultsState::Idle,
-
             cleared_items: None,
             //fr13
             csv_status: None,
@@ -119,7 +116,7 @@ impl MyApp {
         ui.label(format!("Woolworths: {}", self.filters.include_woolies));
     }
 
-    //fr09
+    //fr13
     pub fn load_csv(&mut self) {
         let Some(path) = rfd::FileDialog::new()
             .add_filter("CSV", &["csv"])
@@ -150,7 +147,7 @@ impl MyApp {
     pub fn save_csv(&mut self) {
         let Some(path) = rfd::FileDialog::new()
             .add_filter("CSV", &["csv"])
-            .set_file_name("Shopwise-shopping-list.csv")
+            .set_file_name("Shopwise shopping list.csv")
             .set_title("Save your shopping list")
             .save_file()
         else {
@@ -197,6 +194,22 @@ impl MyApp {
             }
         });
 
+        //undo
+        if let Some(cleared) = &self.cleared_items {
+            let count = cleared.len();
+            ui.horizontal(|ui| {
+                ui.label(
+                    egui::RichText::new(format!("Removed {count} items"))
+                        .small()
+                        .weak(),
+                );
+                if ui.button("Undo").clicked() {
+                    if let Some(items) = self.cleared_items.take() {
+                        self.shopping_items = items;
+                    }
+                }
+            });
+        }
 
         if let Some(status) = &self.csv_status {
             ui.label(egui::RichText::new(status).small().weak());
@@ -221,8 +234,8 @@ impl MyApp {
                         ui.selectable_value(&mut item.unit, unit_to_str(DOLLAR).to_string(), unit_to_str(DOLLAR));
                     });
                 if ui
-                    .add(egui::Button::new("x").fill(egui::Color32::RED))
-                    .on_hover_text("Remove this item")
+                    .add(egui::Button::new("X").fill(egui::Color32::RED))
+                    .on_hover_text("Remove item")
                     .clicked()
                 {
                     remove_index = Some(i);
