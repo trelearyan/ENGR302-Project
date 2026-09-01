@@ -73,7 +73,7 @@ pub fn resolve(item_query: &ShoppingItemQuery) -> Option<HashMap<u32, ShoppingIt
                 });
                 score *= tscore;
             }
-            score *= 1000;
+            score *= 10000;
             // Score based on most popular category of high scoring items (narrow top results - need good already)
             // category not available at the moment
             // Grade on price & quantity matching
