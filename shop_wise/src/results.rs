@@ -180,7 +180,7 @@ impl Scenario {
              kind,
              stops,
              // TODO: calc output has no travel, distance and driving time
-             travel_cost: None,
+             travel_cost: Some(calc.total_travel_cost.clone()),
              distance_km: None,
              duration_min: None,
          }
