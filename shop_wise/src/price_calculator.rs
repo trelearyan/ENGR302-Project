@@ -12,17 +12,10 @@ use crate::{price_calculator::item_resolver::resolve, route_planner::{all_possib
 
 pub mod item_resolver;
 
-#[derive(Debug, PartialEq, Eq)]
-pub struct ItemInfo {
-    pub product_name: String,
-    pub price: Cost,
-    pub quantity: String,
-}
-
 #[derive(Debug)]
 pub struct StorePlan {
     pub store: Store,
-    pub items: Vec<ItemInfo>,
+    pub items: Vec<ShoppingItem>,
 }
 
 #[derive(Debug)]
@@ -97,10 +90,10 @@ pub fn calculate(list: &[ShoppingItemQuery], filters: &StoreFilters) -> Option<C
     // Parse all shopping items and compile short_database and helper maps
     let mut next_item_key: u32 = 0;
     let mut shop_list: Vec<ItemId> = Vec::new();
-    let mut item_lookup: HashMap<ItemId, HashMap<StoreId, ItemInfo>> = HashMap::new();
+    let mut item_lookup: HashMap<ItemId, HashMap<StoreId, ShoppingItem>> = HashMap::new();
     let mut short_database: HashMap<StoreId, HashMap<ItemId, Cost>> = HashMap::new();
     for query in list {
-        let res = resolve(query).unwrap_or(HashMap::new());
+        let mut res = resolve(query).unwrap_or(HashMap::new());
         for store_id in store_lookup.keys() {
             // Mock store specific availability by just assuming same
             // among all stores within a brand
@@ -110,14 +103,8 @@ pub fn calculate(list: &[ShoppingItemQuery], filters: &StoreFilters) -> Option<C
                 StoreBrand::Newworld => 3,
             };
             if (res.contains_key(&store_key)) {
-                let full_item = res.get(&store_key).unwrap();
-                let item: ItemInfo = ItemInfo {
-                    product_name: full_item.name.clone(),
-                    price: Cost::from_cents(full_item.price),
-                    quantity: full_item.quantity.to_string()
-                        + " "
-                        + unit_to_str(full_item.unit.clone()),
-                };
+                let item: ShoppingItem = res.remove(&store_key).unwrap();
+                let price: Cost = item.price.clone();
                 // Add item to item lookup table
                 if (item_lookup.contains_key(&next_item_key)) {
                     item_lookup
@@ -125,7 +112,7 @@ pub fn calculate(list: &[ShoppingItemQuery], filters: &StoreFilters) -> Option<C
                         .unwrap()
                         .insert(*store_id, item);
                 } else {
-                    let mut item_map: HashMap<ItemId, ItemInfo> = HashMap::new();
+                    let mut item_map: HashMap<ItemId, ShoppingItem> = HashMap::new();
                     item_map.insert(*store_id, item);
                     item_lookup.insert(next_item_key, item_map);
                 }
@@ -134,10 +121,10 @@ pub fn calculate(list: &[ShoppingItemQuery], filters: &StoreFilters) -> Option<C
                     short_database
                         .get_mut(&store_id)
                         .unwrap()
-                        .insert(next_item_key, Cost::from_cents(full_item.price));
+                        .insert(next_item_key, price);
                 } else {
                     let mut item_map: HashMap<ItemId, Cost> = HashMap::new();
-                    item_map.insert(next_item_key, Cost::from_cents(full_item.price));
+                    item_map.insert(next_item_key, price);
                     short_database.insert(*store_id, item_map);
                 }
             }
@@ -165,17 +152,19 @@ pub fn calculate(list: &[ShoppingItemQuery], filters: &StoreFilters) -> Option<C
 }
 
 fn delocalize(plan: BestPlan,
-    item_lookup: &HashMap<ItemId, HashMap<StoreId, ItemInfo>>,
+    item_lookup: &HashMap<ItemId, HashMap<StoreId, ShoppingItem>>,
     store_lookup: &HashMap<StoreId, Store>) -> Calculation {
     let mut shopping_plan: Vec<StorePlan> = Vec::new();
     for i in plan.best_shop_plan.keys() {
-        let mut resitem: Vec<ItemInfo> = Vec::new();
+        let mut resitem: Vec<ShoppingItem> = Vec::new();
         for j in plan.best_shop_plan.get(i).unwrap() {
-            let item: &ItemInfo = item_lookup.get(j).unwrap().get(i).unwrap();
-            resitem.push(ItemInfo {
-                product_name: item.product_name.clone(),
+            let item: &ShoppingItem = item_lookup.get(j).unwrap().get(i).unwrap();
+            resitem.push(ShoppingItem {
+                name: item.name.clone(),
+                quantity: item.quantity,
+                unit: item.unit.clone(),
                 price: item.price.clone(),
-                quantity: item.quantity.clone(),
+                store: item.store.clone(),
             });
         }
         shopping_plan.push(StorePlan {
