@@ -21,7 +21,8 @@ use util::store::StoreBrand;
 use crate::price_calculator::{self, item_resolver};
 use crate::route_planner;
 use crate::route_planner::filters::StoreFilters;
-
+use crate::output::OutputPanel;
+use crate::results::ResultsState;
 #[derive(Default, Clone)]
 pub struct LocationState {
     latitude: Option<f64>,
@@ -68,6 +69,9 @@ pub struct MyApp {
     mileage_scratch: String,
     // Shared location state
     location_state: Rc<RefCell<LocationState>>,
+    // fr09 output panel
+    output: OutputPanel,
+    results: ResultsState,
 }
 
 impl MyApp {
@@ -83,8 +87,16 @@ impl MyApp {
             mileage_scratch: Cost::from(MileageOptions::default()).to_string(),
 
             location_state: Rc::new(RefCell::new(LocationState::default())),
+            output: OutputPanel::new(),
+            results: ResultsState::Idle,
         }
     }
+
+    //fr09 output
+    pub fn output_panel(&mut self, ui: &mut egui::Ui) {
+        self.output.show(ui, &self.results);
+    }
+
     // for debugging
     pub fn print_filters(&self, ui: &mut egui::Ui) {
         ui.label("=== Filter values ===");
@@ -295,9 +307,24 @@ impl MyApp {
                 let filters = filters_builder.build();
                 let routes = route_planner::all_possible_routes(&filters);
 
+                routes
+                    .iter()
+                    .for_each(|route| println!("{}", route.pretty_print()));
+
+                let origin_label = self.location_state.borrow().address.clone();
+                
                 // Sam
                 let res = price_calculator::calculate(&self.shopping_items, &filters);
                 log::info!("{:?}", res);
+
+                self.results = match res {
+                    Some(calc) => ResultsState::Ready(Box::new(
+                        crate::results::Results::from_calculation(&calc, origin_label),
+                    )),
+                    None => ResultsState::Failed(
+                        "No combination of stores in range can supply this list".to_owned(),
+                    ),
+                };
             }
         });
     }

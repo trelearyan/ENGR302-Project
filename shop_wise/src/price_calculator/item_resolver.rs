@@ -126,26 +126,13 @@ pub fn resolve(item_query: &ShoppingItemQuery) -> Option<HashMap<u32, ShoppingIt
     // vs "Vanilla Coke Zero Sugar"
 }
 
-#[cfg(not(target_arch = "wasm32"))]
-const DB_PATH: &str =
-    concat!(env!("CARGO_MANIFEST_DIR"), "/src/demo_db/shopwise.db");
-
-#[cfg(target_arch = "wasm32")]
 const DB: &[u8] =
     include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/demo_db/shopwise.db"));
 
 fn open_database() -> Result<Connection> {
-    #[cfg(not(target_arch = "wasm32"))]
-    {
-        Connection::open(DB_PATH)
-    }
-
-    #[cfg(target_arch = "wasm32")]
-    {
-        let mut conn = Connection::open_in_memory()?;
-        conn.deserialize_bytes("main", DB)?;
-        Ok(conn)
-    }
+    let mut conn = Connection::open_in_memory()?;
+    conn.deserialize_bytes("main", DB)?;
+    Ok(conn)
 }
 
 /// Mock the sqlite database by using a python version and some jank commands

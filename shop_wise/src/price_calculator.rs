@@ -1,8 +1,16 @@
-pub mod item_resolver;
 
+use std::hash::Hash;
 use std::collections::HashMap;
-use eframe::wgpu::naga::StorageFormat;
 use util::{cost::Cost, store::{Store, StoreBrand}};
+use bigdecimal::BigDecimal;
+use eframe::egui::accesskit::ScrollUnit::Item;
+use util::{search::{ShoppingItem, ShoppingItemQuery, unit_to_str}};
+
+use crate::{price_calculator::item_resolver::resolve, route_planner::{all_possible_routes, all_stores, filters::{StoreFilters, filter_stores}}};
+
+// Public types
+
+pub mod item_resolver;
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct ItemInfo {
@@ -33,15 +41,8 @@ pub struct CalculationTotal {
     pub best: Calculation,
 }
 
-use std::hash::Hash;
+// Private types
 
-use bigdecimal::BigDecimal;
-use eframe::egui::accesskit::ScrollUnit::Item;
-use util::{
-        search::{ShoppingItem, ShoppingItemQuery, unit_to_str},
-    };
-
-use crate::{price_calculator::item_resolver::resolve, route_planner::{all_possible_routes, all_stores, filters::{StoreFilters, filter_stores}}};
 type StoreId = u32;
 type ItemId = u32;
 type RoutePlan = Vec<StoreId>;

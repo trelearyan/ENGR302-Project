@@ -6,7 +6,10 @@ use crate::route_planner::filters::{StoreFilters, filter_stores};
 
 pub mod input_gui;
 pub mod price_calculator;
+pub mod output;
+pub mod results;
 pub mod route_planner;
+
 
 use eframe::egui;
 use input_gui::MyApp;
@@ -61,6 +64,10 @@ impl eframe::App for MyApp {
             self.search_button(ui);
             // for debugging
             self.print_filters(ui);
+
+            //fr09
+            ui.separator();
+            self.output_panel(ui);
         });
     }
 }
