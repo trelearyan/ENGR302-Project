@@ -157,9 +157,8 @@ impl Scenario {
                  let items = infos
                      .iter()
                     .map(|info| ItemLine {
-                        name: info.product_name.clone(),
-                         // TODO: ItemInfo::quantity is string
-                         quantity: 1,
+                        name: info.name.clone(),
+                         quantity: info.quantity,
                          unit_price: info.price.clone(),
                          // TODO: loyalty pricing
                          on_special: false,
