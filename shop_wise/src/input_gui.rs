@@ -72,6 +72,8 @@ pub struct MyApp {
     // fr09 output panel
     output: OutputPanel,
     results: ResultsState,
+    // undo a cleared list
+    cleared_items: Option<Vec<ShoppingItemQuery>>,
 
     //fr13: load/save shopping list
     csv_status: Option<String>,
@@ -91,9 +93,9 @@ impl MyApp {
 
             location_state: Rc::new(RefCell::new(LocationState::default())),
             output: OutputPanel::new(),
-
             results: ResultsState::Idle,
 
+            cleared_items: None,
             //fr13
             csv_status: None,
         }
@@ -174,7 +176,7 @@ impl MyApp {
                     quantity: 1,
                     unit: unit_to_str(EACH).to_string(),
                 });
-
+                self.cleared_items = None;
             }
             if ui.button("Load CSV").clicked() {
                 self.load_csv();
@@ -185,7 +187,14 @@ impl MyApp {
             if ui.add_enabled(has_items, egui::Button::new("Save CSV")).clicked() {
                 self.save_csv();
             }
-
+            if ui
+                .add_enabled(has_items, egui::Button::new("Clear"))
+                .on_hover_text("Remove all items")
+                .clicked()
+            {
+                self.cleared_items = Some(std::mem::take(&mut self.shopping_items));
+                self.csv_status = None;
+            }
         });
 
 
@@ -570,3 +579,4 @@ impl Default for MyApp {
         )
     }
 }
+
