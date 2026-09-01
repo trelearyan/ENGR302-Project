@@ -80,6 +80,7 @@ pub fn calculate(list: &[ShoppingItemQuery], filters: &StoreFilters) -> Option<C
         for shop in route.shops {
             for i in 0..stores.len() {
                 let cstore = &stores[i];
+                // Mocking - identifiy stores by brand and location
                 if (shop.brand == cstore.brand && shop.location == cstore.location) {
                     shops.push(i as u32);
                 }
@@ -103,8 +104,8 @@ pub fn calculate(list: &[ShoppingItemQuery], filters: &StoreFilters) -> Option<C
             // among all stores within a brand
             let store_key = match store_lookup.get(store_id).unwrap().brand {
                 StoreBrand::Paknsave => 1,
-                StoreBrand::Newworld => 2,
-                StoreBrand::Woolworths => 3,
+                StoreBrand::Woolworths => 2,
+                StoreBrand::Newworld => 3,
             };
             if (res.contains_key(&store_key)) {
                 let full_item = res.get(&store_key).unwrap();
