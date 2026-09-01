@@ -71,6 +71,7 @@ pub fn calculate(list: &[ShoppingItemQuery], filters: &StoreFilters) -> Option<C
     let mut i: StoreId = 0;
     for store in stores {
         store_lookup.insert(i, store.clone());
+        i += 1;
     }
     let all_routes = all_possible_routes(filters);
     // Mock route_planner route times
