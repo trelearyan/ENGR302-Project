@@ -23,6 +23,16 @@ use crate::route_planner;
 use crate::route_planner::filters::StoreFilters;
 use crate::output::OutputPanel;
 use crate::results::ResultsState;
+
+#[derive(Default, Clone, PartialEq)]
+pub enum LocationStatus {
+    #[default]
+    Idle,
+    Locating,
+    Success,
+    Error(String),
+}
+
 #[derive(Default, Clone)]
 pub struct LocationState {
     latitude: Option<f64>,
