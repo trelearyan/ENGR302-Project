@@ -394,6 +394,52 @@ impl MyApp {
         success.forget(); // keep this callback alive
     }
 
+    /*
+    Builds the callback fired when the browser successfully returns a position:
+    - stores the coordinates, 
+    - then kicks off reverse-geocoding in the background
+     */
+    #[cfg(target_arch = "wasm32")]
+    fn make_success_callback(state: Rc<RefCell<LocationState>>,ctx: egui::Context) -> wasm_bindgen::closure::Closure<dyn FnMut(web_sys::Position)> {
+        use wasm_bindgen::closure::Closure;
+        use wasm_bindgen_futures::spawn_local;
+ 
+        Closure::<dyn FnMut(web_sys::Position)>::new(move |position: web_sys::Position| {
+            let coords = position.coords();
+            let latitude = coords.latitude();
+            let longitude = coords.longitude();
+            log::info!("Latitude: {}, Longitude: {}", latitude, longitude);
+ 
+            {
+                let mut s = state.borrow_mut();
+                s.latitude = Some(latitude);
+                s.longitude = Some(longitude);
+                s.status = LocationStatus::Success;
+            }
+            ctx.request_repaint();
+ 
+            let state_clone = state.clone();
+            let ctx_clone = ctx.clone();
+            spawn_local(async move {
+                match MyApp::reverse_geocode(latitude, longitude).await {
+                    Ok(address) => {
+                        log::info!("Address: {address}");
+                        state_clone.borrow_mut().address = address;
+                    }
+                    Err(err) => {
+                        log::error!("Reverse geocode failed: {err}");
+                        // We still have coordinates and can search with them; we
+                        // just couldn't turn them into a readable address.
+                        state_clone.borrow_mut().address =
+                            "Found your location, but couldn't look up its address."
+                                .to_string();
+                    }
+                }
+                ctx_clone.request_repaint();
+            });
+        })
+    }
+
     // translate coords --> readable address
     #[cfg(target_arch = "wasm32")]
     async fn reverse_geocode(latitude: f64, longitude: f64) -> Result<String, reqwest::Error> {
