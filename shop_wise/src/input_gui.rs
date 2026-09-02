@@ -458,6 +458,37 @@ impl MyApp {
         })
     }
 
+    /*
+    Builds the callback fired when the browser fails to get a position, mapping
+    each PositionError code to a specific, actionable message.
+     */
+    #[cfg(target_arch = "wasm32")]
+    fn make_error_callback(state: Rc<RefCell<LocationState>>,ctx: egui::Context) -> wasm_bindgen::closure::Closure<dyn FnMut(web_sys::PositionError)> {
+        use wasm_bindgen::closure::Closure;
+ 
+        Closure::<dyn FnMut(web_sys::PositionError)>::new(move |err: web_sys::PositionError| {
+            let message = match err.code() {
+                web_sys::PositionError::PERMISSION_DENIED => {
+                    "Location access was denied. Allow it in your browser's site \
+                    settings, or enter your address below instead."
+                }
+                web_sys::PositionError::POSITION_UNAVAILABLE => {
+                    "Your location couldn't be determined right now. Try again, \
+                    or enter your address below instead."
+                }
+                web_sys::PositionError::TIMEOUT => {
+                    "Finding your location took too long. Try again, or enter \
+                    your address below instead."
+                }
+                _ => "Couldn't get your location. Please enter your address below instead.",
+            };
+            log::error!("Geolocation error ({}): {}", err.code(), err.message());
+ 
+            state.borrow_mut().status = LocationStatus::Error(message.to_string());
+            ctx.request_repaint();
+        })
+    }
+
     // translate coords --> readable address
     #[cfg(target_arch = "wasm32")]
     async fn reverse_geocode(latitude: f64, longitude: f64) -> Result<String, reqwest::Error> {
