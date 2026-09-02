@@ -2,7 +2,6 @@ use bigdecimal::BigDecimal;
 use derive_more::{Display, IsVariant};
 use eframe::egui;
 use serde::Deserialize;
-use util::search::SearchUnits::{DOLLAR, EACH, GRAM, KILOGRAM, LITRE, MILLILITRE};
 use std::collections::HashSet;
 use std::fmt::Display;
 use std::ops::Deref;
@@ -14,7 +13,6 @@ use strum_macros::EnumIter;
 use urlencoding::encode;
 use util::coordinate::Coordinate;
 use util::cost::{self, Cost};
-use util::search::{ShoppingItemQuery, unit_to_str};
 use util::distance::Distance;
 use util::search::SearchUnits::{DOLLAR, EACH, GRAM, KILOGRAM, LITRE, MILLILITRE};
 use util::search::{ShoppingItemQuery, unit_to_str};
@@ -25,8 +23,7 @@ use crate::price_calculator::{self, item_resolver, shopping_list_parser};
 use crate::results::ResultsState;
 use crate::route_planner;
 use crate::route_planner::filters::StoreFilters;
-use crate::output::OutputPanel;
-use crate::results::ResultsState;
+
 #[derive(Default, Clone)]
 pub struct LocationState {
     latitude: Option<f64>,
@@ -297,7 +294,6 @@ impl MyApp {
 
                 // Sam
                 let res = price_calculator::calculator::calculate(&self.shopping_items);
-                println!("{:?}", res);
                 //item_resolver(&self.shopping_items);
 
                 // Alex
