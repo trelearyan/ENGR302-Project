@@ -395,6 +395,24 @@ impl MyApp {
     }
 
     /*
+    Gets the Geolocation handle, or records why it isn't available.
+    */ 
+    #[cfg(target_arch = "wasm32")]
+    fn resolve_geolocation(navigator: &web_sys::Navigator,state: &Rc<RefCell<LocationState>>,ctx: &egui::Context) -> Option<web_sys::Geolocation> {
+        match navigator.geolocation() {
+            Ok(g) => Some(g),
+            Err(_) => {
+                state.borrow_mut().status = LocationStatus::Error(
+                    "Geolocation isn't available. This usually means the page \
+                     isn't served over HTTPS, or your browser doesn't support it.".to_string(),
+                );
+                ctx.request_repaint();
+                None
+            }
+        }
+    }
+
+    /*
     Builds the callback fired when the browser successfully returns a position:
     - stores the coordinates, 
     - then kicks off reverse-geocoding in the background
