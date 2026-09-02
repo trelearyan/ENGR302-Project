@@ -284,114 +284,56 @@ impl MyApp {
         });
     }
 
-    pub fn search_button(&mut self, ui: &mut egui::Ui) {
-        ui.horizontal(|ui| {
-            if ui.button("Search").clicked() {
-                log::info!("the search button is clicked!");
-                // First: check if both shopping list and location are not empty
-
-                // Sam
-                let res = price_calculator::calculator::calculate(&self.shopping_items);
-                println!("{:?}", res);
-                //item_resolver(&self.shopping_items);
-
-                // Alex
-                // TODO: Fix this up once we have a better format of all the stores and individual location blacklisting
-                let mut banned_stores = HashSet::<StoreBrand>::new();
-
-                if !self.filters.include_paknsave {
-                    banned_stores.insert(StoreBrand::Paknsave);
-                }
-                if !self.filters.include_newworld {
-                    banned_stores.insert(StoreBrand::Newworld);
-                }
-                if !self.filters.include_woolies {
-                    banned_stores.insert(StoreBrand::Woolworths);
-                }
-
-                let mut filters = StoreFilters::builder()
-                    .location(
-                        <RefCell<LocationState> as Clone>::clone(&self.location_state)
-                            .into_inner()
-                            .clone()
-                            .into(),
-                    )
-                    .range(self.filters.max_range.clone())
-                    .max_store_visits(self.filters.max_stores as usize)
-                    .disallow_brands(banned_stores.iter().copied().collect::<Vec<_>>().deref());
-                let routes = route_planner::all_possible_routes(&filters.build());
-
-                routes
-                    .iter()
-                    .for_each(|route| println!("{}", route.pretty_print()));
-
-                let origin_label = self.location_state.borrow().address.clone();
-                self.results = match price_calculator::calculator::calculate(&self.shopping_items) {
-                    Some(calc) => ResultsState::Ready(Box::new(
-                        crate::results::Results::from_calculation(&calc, origin_label),
-                    )),
-                    None => ResultsState::Failed(
-                        "No combination of stores in range can supply this list".to_owned(),
-                    ),
-                };
-            }
-        });
-    }
-
     /*
     Getting the user location
-     */
+    */
     #[cfg(target_arch = "wasm32")]
-    fn get_current_location(&self, state: Rc<RefCell<LocationState>>) {
+    fn get_current_location(&self, state: Rc<RefCell<LocationState>>, ctx: egui::Context) {
         use wasm_bindgen::JsCast;
-        use wasm_bindgen::closure::Closure;
-        // get browser window
-        let window = web_sys::window().unwrap();
-
+ 
+        let window = match web_sys::window() {
+            Some(w) => w,
+            None => return,
+        };
         let navigator = window.navigator();
-
-        let geolocation = navigator.geolocation().unwrap();
-
-        // call back
-        let success =
-            Closure::<dyn FnMut(web_sys::Position)>::new(move |position: web_sys::Position| {
-                use wasm_bindgen_futures::spawn_local;
-
-                log::info!("SUCCESS CALLBACK CALLED"); // debug
-                let coords = position.coords();
-
-                let latitude = coords.latitude();
-                let longitude = coords.longitude();
-                {
-                    let mut state = state.borrow_mut();
-
-                    state.latitude = Some(latitude);
-                    state.longitude = Some(longitude);
-                }
-                log::info!("Latitude: {}, Longitude: {}", latitude, longitude); // debug
-                let state_clone = state.clone();
-                spawn_local(async move {
-                    match MyApp::reverse_geocode(latitude, longitude).await {
-                        Ok(address) => {
-                            log::info!("Address: {address}"); // debug
-
-                            let mut state = state_clone.borrow_mut();
-                            state.address = address;
-                        }
-                        Err(err) => {
-                            log::error!("Reverse geocode failed: {err}");
-
-                            let mut state = state_clone.borrow_mut();
-                            state.address = "Failed to get address.".to_string();
-                        }
-                    }
-                });
-            });
-
-        geolocation
-            .get_current_position(success.as_ref().unchecked_ref())
-            .unwrap();
-        success.forget(); // keep this callback alive
+ 
+        let geolocation = match Self::resolve_geolocation(&navigator, &state, &ctx) {
+            Some(g) => g,
+            None => return,
+        };
+ 
+        // egui only repaints in response to input events by default without this, a state change made from a background/async callback might not actually appear on screen until the user happens to move the mouse.
+        state.borrow_mut().status = LocationStatus::Locating;
+        ctx.request_repaint();
+ 
+        // Options control "browser hangs forever" failure mode:
+        // - timeout: give up after 10s instead of waiting indefinitely
+        // - maximum_age: accept a cached fix up to 60s old so a repeat click returns near-instantly
+        let mut options = web_sys::PositionOptions::new();
+        options.set_timeout(10_000);
+        options.set_maximum_age(60_000);
+ 
+        let success = Self::make_success_callback(state.clone(), ctx.clone());
+        let error = Self::make_error_callback(state.clone(), ctx.clone());
+ 
+        let request = geolocation.get_current_position_with_error_callback_and_options(
+            success.as_ref().unchecked_ref(),
+            Some(error.as_ref().unchecked_ref()),
+            &options,
+        );
+ 
+        if let Err(err) = request {
+            log::error!("Failed to request geolocation: {:?}", err);
+            state.borrow_mut().status = LocationStatus::Error(
+                "Couldn't start the location lookup. Please enter your address below instead."
+                    .to_string(),
+            );
+            ctx.request_repaint();
+        }
+ 
+        // Keep both callbacks alive for as long as the JS side might call them.
+        success.forget();
+        error.forget();
     }
 
     /*
