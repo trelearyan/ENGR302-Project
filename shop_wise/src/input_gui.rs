@@ -224,6 +224,60 @@ impl MyApp {
         });
     }
 
+    pub fn search_button(&mut self, ui: &mut egui::Ui) {
+        ui.horizontal(|ui| {
+            if ui.button("Search").clicked() {
+                log::info!("the search button is clicked!");
+                // First: check if both shopping list and location are not empty
+
+                // Sam
+                let res = price_calculator::calculator::calculate(&self.shopping_items);
+                println!("{:?}", res);
+                //item_resolver(&self.shopping_items);
+
+                // Alex
+                // TODO: Fix this up once we have a better format of all the stores and individual location blacklisting
+                let mut banned_stores = HashSet::<StoreBrand>::new();
+
+                if !self.filters.include_paknsave {
+                    banned_stores.insert(StoreBrand::Paknsave);
+                }
+                if !self.filters.include_newworld {
+                    banned_stores.insert(StoreBrand::Newworld);
+                }
+                if !self.filters.include_woolies {
+                    banned_stores.insert(StoreBrand::Woolworths);
+                }
+
+                let mut filters = StoreFilters::builder()
+                    .location(
+                        <RefCell<LocationState> as Clone>::clone(&self.location_state)
+                            .into_inner()
+                            .clone()
+                            .into(),
+                    )
+                    .range(self.filters.max_range.clone())
+                    .max_store_visits(self.filters.max_stores as usize)
+                    .disallow_brands(banned_stores.iter().copied().collect::<Vec<_>>().deref());
+                let routes = route_planner::all_possible_routes(&filters.build());
+
+                routes
+                    .iter()
+                    .for_each(|route| println!("{}", route.pretty_print()));
+
+                let origin_label = self.location_state.borrow().address.clone();
+                self.results = match price_calculator::calculator::calculate(&self.shopping_items) {
+                    Some(calc) => ResultsState::Ready(Box::new(
+                        crate::results::Results::from_calculation(&calc, origin_label),
+                    )),
+                    None => ResultsState::Failed(
+                        "No combination of stores in range can supply this list".to_owned(),
+                    ),
+                };
+            }
+        });
+    }
+
     pub fn location(&mut self, ui: &mut egui::Ui) {
         ui.heading("Location");
 
