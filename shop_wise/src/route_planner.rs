@@ -1,47 +1,80 @@
 use bigdecimal::ToPrimitive;
 use itertools::Itertools;
-use std::fmt::{Debug, Display};
+use std::{
+    fmt::{Debug, Display},
+    iter,
+    rc::Rc,
+    sync::Arc,
+    time::Duration,
+};
 
 use util::{
     coordinate::Coordinate,
     cost::Cost,
+    distance::Distance,
     store::{Store, StoreBrand},
 };
 
 use crate::{
-    input_gui::LocationState,
+    input_gui::{LocationState, MileageOptions},
     route_planner::filters::{StoreFilters, filter_stores},
 };
 
 pub mod filters;
 
 #[derive(Debug, PartialEq)]
-pub struct Route {
-    pub shops: Box<[Store]>,
-    pub route_cost: Cost,
+/// An incomplete shopping plan. Note that the stop order should only include
+/// stops and has not been optimised for the visit order yet.
+pub struct RoutePlan {
+    pub unordered_stops: Rc<[Coordinate]>,
+    pub start_stop: Coordinate,
+    pub end_stop: Coordinate,
+    pub mileage: MileageOptions,
 }
 
-impl Route {
-    /// Returns the optimal route between all of this Route's shops and
-    /// (optionally) a starting and ending point. Should only be called on the
-    /// final route after price calculator has narrowed down the item costs.
-    pub fn optimal_route(start: Option<&LocationState>, end: Option<&LocationState>) {
-        todo!();
+/// Complete shopping plan. Note ordered_stops includes the start and end stop
+/// (the user location)
+pub struct RoutePath {
+    pub ordered_stops: Rc<[Coordinate]>,
+    pub mileage: MileageOptions,
+    pub travel_distance: Distance,
+    pub travel_cost: Cost,
+    pub travel_time: Duration,
+}
+
+impl RoutePlan {
+    pub fn calculate(&self) -> RoutePath {
+        // let ordered_stops = iter::onceself.start_stopself.optimise_order();
+
+        let ordered_stops: Rc<[Coordinate]> = iter::once(&self.start_stop)
+            .chain(self.optimise_order().into_iter())
+            .chain(iter::once(&self.end_stop))
+            .map(|a| a.clone())
+            .collect_vec()
+            .into();
+
+        let travel_distance: Distance = ordered_stops
+            .array_windows::<2>()
+            .map(|a| a[0].distance_to(a[1].clone()))
+            .reduce(|acc, next| acc + next)
+            .expect("Expected there to be more than 0 stops");
+
+        let travel_time: Duration = travel_distance.clone() / self.mileage.average_speed();
+
+        let travel_cost = Cost::from(self.mileage.clone()) * travel_distance.inner();
+
+        RoutePath {
+            ordered_stops,
+            mileage: self.mileage.clone(),
+            travel_distance,
+            travel_cost,
+            travel_time,
+        }
     }
 
-    pub fn pretty_print(&self) -> String {
-        let cost = self.route_cost.clone().inner().to_f32().unwrap();
-        let mut shops = String::new();
-        for shop in self.shops.clone() {
-            shops += format!(
-                "\n        Shop({:?}, lat: {:.6}, long: {:.6})",
-                shop.brand,
-                shop.location.latitude.to_f32().unwrap(),
-                shop.location.longitude.to_f32().unwrap()
-            )
-            .as_str();
-        }
-        format!("Route (\n    Cost: {cost:?}\n    Shops: {shops}\n)")
+    fn optimise_order(&self) -> Rc<[Coordinate]> {
+        // TODO: implement stop order optimisation
+        self.unordered_stops.clone()
     }
 }
 
@@ -63,20 +96,4 @@ pub fn all_stores() -> Box<[Store]> {
             location: Coordinate::default(),
         },
     ])
-}
-
-// Returns every possible route the user could take between supermarkets based
-// on their filters.
-#[must_use]
-pub fn all_possible_routes(filters: &StoreFilters) -> Box<[Route]> {
-    let stores = filter_stores(&all_stores(), filters);
-
-    (1..=filters.max_store_visits)
-        .flat_map(|store_visits| stores.iter().cloned().combinations(store_visits))
-        .map(|stores| Route {
-            shops: stores.into_boxed_slice(),
-            route_cost: 0.into(),
-        })
-        .collect_vec()
-        .into_boxed_slice()
 }
