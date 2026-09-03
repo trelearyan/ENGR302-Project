@@ -41,4 +41,6 @@ features = [
     "Geolocation",
     "Position",
     "Coordinates",
+    "PositionOptions",
+    "PositionError",
 ]
