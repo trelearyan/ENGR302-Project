@@ -526,32 +526,29 @@ impl MyApp {
     }
 
     #[cfg(target_arch = "wasm32")]
-    async fn geocode(address: &str) -> Result<(f64, f64, String), reqwest::Error> {
-        let encoded_address = encode(address);
-
+    async fn geocode_suggestions(query: &str) -> Result<Vec<AddressSuggestion>, reqwest::Error> {
+        let encoded_query = encode(query);
+ 
+        // countrycodes=nz narrows results to New Zealand
         let url = format!(
-            "https://nominatim.openstreetmap.org/search?q={}&format=jsonv2&limit=1",
-            encoded_address
+            "https://nominatim.openstreetmap.org/search?q={}&format=jsonv2&limit=5&countrycodes=nz",encoded_query
         );
-
-        let response = reqwest::Client::new()
-            .get(url)
-            .header("User-Agent", "ShopWise")
-            .send()
-            .await?;
-
-        let result: Vec<GeocodeResponse> = response.json().await?;
-
-        if let Some(first) = result.first() {
-            let latitude = first.lat.parse::<f64>().unwrap();
-            let longitude = first.lon.parse::<f64>().unwrap();
-
-            Ok((latitude, longitude, first.display_name.clone()))
-        } else {
-            log::error!("Location not found.");
-
-            Ok((0.0, 0.0, "Location not found".to_string()))
-        }
+ 
+        let response = reqwest::Client::new().get(url).header("User-Agent", "ShopWise").send().await?;
+ 
+        let results: Vec<GeocodeResponse> = response.json().await?;
+ 
+        Ok(results
+            .into_iter()
+            .filter_map(|r| {
+                let lat = r.lat.parse::<f64>().ok()?;
+                let lon = r.lon.parse::<f64>().ok()?;
+                Some(AddressSuggestion {
+                    display_name: r.display_name,
+                    lat,
+                    lon,
+                })
+            }).collect())
     }
 }
 
