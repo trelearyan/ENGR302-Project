@@ -299,64 +299,114 @@ impl MyApp {
         });
     }
 
+    /// Location panel with live autocomplete.
     pub fn location(&mut self, ui: &mut egui::Ui) {
         ui.heading("Location");
-
+ 
         if ui.button("Use Current Location").clicked() {
             log::info!("Requesting location...");
-
             #[cfg(target_arch = "wasm32")]
-            self.get_current_location(self.location_state.clone());
+            self.get_current_location(self.location_state.clone(), ui.ctx().clone());
         }
-
+ 
         ui.separator();
-
+ 
+        let now = ui.input(|i| i.time);
         let mut state = self.location_state.borrow_mut();
-
-        ui.horizontal(|ui| {
-            ui.add(egui::TextEdit::singleline(&mut state.address).hint_text("Enter an address"));
-
-            let response = ui.add_enabled(
-                !state.address.trim().is_empty(),
-                egui::Button::new("Find Location"),
-            );
-
-            if response.clicked() {
+ 
+        let response = ui.add(
+            egui::TextEdit::singleline(&mut state.address)
+                .hint_text("e.g. 12 Example Street, Suburb, City"),
+        );
+ 
+        let enter_pressed = response.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter));
+ 
+        if response.changed() {
+            state.status = LocationStatus::Idle;
+            state.suggestions.clear();
+            state.latitude = None;
+            state.longitude = None;
+            state.last_edit_time = Some(now);
+        }
+ 
+        // on Enter, Fire a search once the debounce window has elapsed, or immediately
+        let should_fire = match state.last_edit_time {
+            Some(last_edit) if enter_pressed => true,
+            Some(last_edit) if now - last_edit >= DEBOUNCE_SECONDS => true,
+            _ => false,
+        };
+ 
+        if should_fire {
+            let query = state.address.trim().to_string();
+            state.last_edit_time = None;
+ 
+            if query.len() < MIN_QUERY_LEN {
+                state.status = LocationStatus::Idle;
+            } else {
+                state.status = LocationStatus::Searching;
+                state.request_id += 1;
+                let this_request = state.request_id;
+                let state_clone = self.location_state.clone();
+ 
                 #[cfg(target_arch = "wasm32")]
                 {
                     use wasm_bindgen_futures::spawn_local;
-
-                    let address = state.address.clone();
-                    let state_clone = self.location_state.clone();
-
                     spawn_local(async move {
-                        match MyApp::geocode(&address).await {
-                            Ok((lat, lon, display_name)) => {
-                                log::info!("User entered location: {}", address);
-                                log::info!("Latitude: {}, Longitude: {}", lat, lon);
-                                log::info!("Formatted address: {}", display_name);
-
+                        match MyApp::geocode_suggestions(&query).await {
+                            Ok(results) => {
                                 let mut state = state_clone.borrow_mut();
-
-                                if display_name == "Location not found" {
-                                    state.latitude = None;
-                                    state.longitude = None;
-                                    state.address = display_name;
-                                } else {
-                                    state.latitude = Some(lat);
-                                    state.longitude = Some(lon);
-                                    state.address = display_name;
+                                if state.request_id == this_request {
+                                    if results.is_empty() {
+                                        state.status = LocationStatus::NotFound;
+                                    } else {
+                                        state.suggestions = results;
+                                        state.status = LocationStatus::Suggesting;
+                                    }
                                 }
                             }
-
                             Err(err) => {
-                                log::error!("Failed to geocode address: {}", err);
+                                log::error!("Geocode search failed: {}", err);
+                                let mut state = state_clone.borrow_mut();
+                                if state.request_id == this_request {
+                                    state.status = LocationStatus::NotFound;
+                                }
                             }
                         }
                     });
                 }
             }
-        });
+        }
+ 
+        match &state.status {
+            LocationStatus::Searching => { ui.label("Searching…");}
+            LocationStatus::NotFound => {
+                ui.colored_label(
+                egui::Color32::from_rgb(200, 60, 60),
+                "No matching address found — try adding your suburb or city.",
+                );
+            }
+            LocationStatus::Resolved | LocationStatus::Success => { ui.colored_label(egui::Color32::from_rgb(60, 160, 60), "Location set");}
+            LocationStatus::Locating => { ui.label("Finding your current location…");}
+            LocationStatus::Error(message) => { ui.colored_label(egui::Color32::from_rgb(200, 60, 60), message.clone());}
+            LocationStatus::Idle | LocationStatus::Suggesting => {}
+        }
+ 
+        // suggestions dropdown 
+        if state.status == LocationStatus::Suggesting {
+            let suggestions = state.suggestions.clone();
+            egui::Frame::popup(ui.style()).show(ui, |ui| {
+                for s in &suggestions {
+                    if ui.selectable_label(false, &s.display_name).clicked() {
+                        state.address = s.display_name.clone();
+                        state.latitude = Some(s.lat);
+                        state.longitude = Some(s.lon);
+                        state.status = LocationStatus::Resolved;
+                        state.suggestions.clear();
+                        state.last_edit_time = None;
+                    }
+                }
+            });
+        }
     }
 
     /*
