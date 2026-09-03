@@ -327,6 +327,7 @@ impl MyApp {
             state.latitude = None;
             state.longitude = None;
             state.last_edit_time = Some(now);
+            ui.ctx().request_repaint_after(std::time::Duration::from_secs_f64(DEBOUNCE_SECONDS));
         }
  
         // on Enter, Fire a search once the debounce window has elapsed, or immediately
@@ -347,7 +348,7 @@ impl MyApp {
                 state.request_id += 1;
                 let this_request = state.request_id;
                 let state_clone = self.location_state.clone();
- 
+                let ctx_clone = ui.ctx().clone();
                 #[cfg(target_arch = "wasm32")]
                 {
                     use wasm_bindgen_futures::spawn_local;
@@ -372,6 +373,7 @@ impl MyApp {
                                 }
                             }
                         }
+                        ctx_clone.request_repaint(); 
                     });
                 }
             }
