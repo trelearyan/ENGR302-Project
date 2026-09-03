@@ -16,6 +16,7 @@ use util::cost::{self, Cost};
 use util::distance::Distance;
 use util::search::SearchUnits::{DOLLAR, EACH, GRAM, KILOGRAM, LITRE, MILLILITRE};
 use util::search::{ShoppingItemQuery, unit_to_str};
+use util::speed::Speed;
 use util::store::StoreBrand;
 
 use crate::output::OutputPanel;
@@ -23,20 +24,6 @@ use crate::price_calculator::{self, item_resolver};
 use crate::results::ResultsState;
 use crate::route_planner;
 use crate::route_planner::filters::StoreFilters;
-
-#[derive(Default, Clone, PartialEq)]
-pub enum LocationStatus {
-    #[default]
-    Idle,
-    Searching,
-    Suggesting,
-    NotFound,
-    Resolved,
-
-    Locating,
-    Success,
-    Error(String),
-}
 
 #[derive(Default, Clone)]
 pub struct LocationState {
@@ -431,6 +418,12 @@ impl MyApp {
                 let filters = filters_builder.build();
                 let routes = route_planner::all_possible_routes(&filters);
 
+                routes
+                    .iter()
+                    .for_each(|route| println!("{}", route.pretty_print()));
+
+                let origin_label = self.location_state.borrow().address.clone();
+
                 // Sam
                 let res = price_calculator::calculate(&self.shopping_items, &filters);
                 log::info!("{:?}", res);
@@ -755,7 +748,7 @@ impl MyApp {
 
 // https://www.ird.govt.nz/income-tax/income-tax-for-businesses-and-organisations/types-of-business-expenses/claiming-vehicle-expenses/kilometre-rates-2025-2026
 #[derive(Debug, Display, EnumIter, IsVariant, Clone, PartialEq, Default)]
-enum MileageOptions {
+pub enum MileageOptions {
     #[default]
     Petrol,
     Diesel,
@@ -790,6 +783,14 @@ impl From<Cost> for MileageOptions {
             x if x == Cost::from_cents(0) => MileageOptions::DontCalculateMileage,
             custom => MileageOptions::Custom(custom),
         }
+    }
+}
+
+impl MileageOptions {
+    pub fn average_speed(&self) -> Speed {
+        // Assuming slightly under standard city limit of 50 due to traffic,
+        // starting and ending on a lower speed local road, etc.
+        Speed::from_kilometres_per_hour(40)
     }
 }
 
