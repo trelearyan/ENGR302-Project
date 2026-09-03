@@ -28,6 +28,11 @@ use crate::results::ResultsState;
 pub enum LocationStatus {
     #[default]
     Idle,
+    Searching,
+    Suggesting,
+    NotFound,
+    Resolved,
+
     Locating,
     Success,
     Error(String),
@@ -39,7 +44,23 @@ pub struct LocationState {
     longitude: Option<f64>,
     // location (what the user sees)
     address: String,
+    status: LocationStatus,
+    suggestions: Vec<AddressSuggestion>,
+
+    request_id: u64,
+    last_edit_time: Option<f64>,
 }
+
+// A single resolved candidate shown in the suggestions dropdown.
+#[derive(Clone)]
+struct AddressSuggestion {
+    display_name: String,
+    lat: f64,
+    lon: f64,
+}
+ 
+const DEBOUNCE_SECONDS: f64 = 0.4;
+const MIN_QUERY_LEN: usize = 3;
 
 impl From<LocationState> for Coordinate {
     fn from(value: LocationState) -> Self {
