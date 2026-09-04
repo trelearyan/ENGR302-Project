@@ -420,7 +420,7 @@ impl MyApp {
                 let origin_label = self.location_state.borrow().address.clone();
 
                 // Sam
-                let res = price_calculator::calculate(&self.shopping_items, &filters);
+                let res = price_calculator::calculate(&self.shopping_items, &filters, &self.mileage_option);
                 log::info!("{:?}", res);
 
                 let origin_label = self.location_state.borrow().address.clone();
