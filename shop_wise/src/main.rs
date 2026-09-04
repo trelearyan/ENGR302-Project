@@ -1,12 +1,11 @@
 use std::fs::read_to_string;
 
 use util::store::Store;
-
 use crate::route_planner::filters::{StoreFilters, filter_stores};
 
 pub mod input_gui;
-pub mod price_calculator;
 pub mod output;
+pub mod price_calculator;
 pub mod results;
 pub mod route_planner;
 pub mod csv;

@@ -2,7 +2,6 @@ use bigdecimal::BigDecimal;
 use derive_more::{Display, IsVariant};
 use eframe::egui;
 use serde::Deserialize;
-use util::search::SearchUnits::{DOLLAR, EACH, GRAM, KILOGRAM, LITRE, MILLILITRE};
 use std::collections::HashSet;
 use std::fmt::Display;
 use std::ops::Deref;
@@ -14,15 +13,17 @@ use strum_macros::EnumIter;
 use urlencoding::encode;
 use util::coordinate::Coordinate;
 use util::cost::{self, Cost};
-use util::search::{ShoppingItemQuery, unit_to_str};
 use util::distance::Distance;
+use util::search::SearchUnits::{DOLLAR, EACH, GRAM, KILOGRAM, LITRE, MILLILITRE};
+use util::search::{ShoppingItemQuery, unit_to_str};
 use util::store::StoreBrand;
 
+use crate::output::OutputPanel;
 use crate::price_calculator::{self, item_resolver, shopping_list_parser};
+use crate::results::ResultsState;
 use crate::route_planner;
 use crate::route_planner::filters::StoreFilters;
-use crate::output::OutputPanel;
-use crate::results::ResultsState;
+
 #[derive(Default, Clone)]
 pub struct LocationState {
     latitude: Option<f64>,
@@ -185,12 +186,36 @@ impl MyApp {
                 egui::ComboBox::from_id_salt(i)
                     .selected_text(&item.unit)
                     .show_ui(ui, |ui| {
-                        ui.selectable_value(&mut item.unit, unit_to_str(EACH).to_string(),unit_to_str(EACH));
-                        ui.selectable_value(&mut item.unit, unit_to_str(GRAM).to_string(), unit_to_str(GRAM));
-                        ui.selectable_value(&mut item.unit, unit_to_str(KILOGRAM).to_string(), unit_to_str(KILOGRAM));
-                        ui.selectable_value(&mut item.unit, unit_to_str(MILLILITRE).to_string(), unit_to_str(MILLILITRE));
-                        ui.selectable_value(&mut item.unit, unit_to_str(LITRE).to_string(), unit_to_str(LITRE));
-                        ui.selectable_value(&mut item.unit, unit_to_str(DOLLAR).to_string(), unit_to_str(DOLLAR));
+                        ui.selectable_value(
+                            &mut item.unit,
+                            unit_to_str(EACH).to_string(),
+                            unit_to_str(EACH),
+                        );
+                        ui.selectable_value(
+                            &mut item.unit,
+                            unit_to_str(GRAM).to_string(),
+                            unit_to_str(GRAM),
+                        );
+                        ui.selectable_value(
+                            &mut item.unit,
+                            unit_to_str(KILOGRAM).to_string(),
+                            unit_to_str(KILOGRAM),
+                        );
+                        ui.selectable_value(
+                            &mut item.unit,
+                            unit_to_str(MILLILITRE).to_string(),
+                            unit_to_str(MILLILITRE),
+                        );
+                        ui.selectable_value(
+                            &mut item.unit,
+                            unit_to_str(LITRE).to_string(),
+                            unit_to_str(LITRE),
+                        );
+                        ui.selectable_value(
+                            &mut item.unit,
+                            unit_to_str(DOLLAR).to_string(),
+                            unit_to_str(DOLLAR),
+                        );
                     });
             });
         }
@@ -335,7 +360,6 @@ impl MyApp {
 
                 // Sam
                 let res = price_calculator::calculator::calculate(&self.shopping_items);
-                println!("{:?}", res);
                 //item_resolver(&self.shopping_items);
 
                 // Alex
@@ -363,11 +387,6 @@ impl MyApp {
                     .max_store_visits(self.filters.max_stores as usize)
                     .disallow_brands(banned_stores.iter().copied().collect::<Vec<_>>().deref());
                 let routes = route_planner::all_possible_routes(&filters.build());
-
-                routes
-                    .iter()
-                    .for_each(|route| println!("{}", route.pretty_print()));
-
                 let origin_label = self.location_state.borrow().address.clone();
                 self.results = match price_calculator::calculator::calculate(&self.shopping_items) {
                     Some(calc) => ResultsState::Ready(Box::new(

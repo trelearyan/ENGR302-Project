@@ -9,7 +9,6 @@ pub type ItemId = u32;
 pub type RoutePlan = Vec<StoreId>;
 pub type ShoppingPlan = HashMap<StoreId, Vec<ItemId>>;
 
-
 #[derive(Debug, PartialEq, Eq)]
 pub struct ItemInfo {
     pub product_name: String,
@@ -41,14 +40,12 @@ pub(crate) struct LocalRoute<'a> {
     route_time_cost: Cost,
 }
 
-
 #[derive(Debug, PartialEq)]
 pub struct Calculation {
     pub total_shop_cost: Cost,
     pub total_item_cost: Cost,
     pub total_travel_cost: Cost,
-    //pub total_time_cost: Cost,
-    pub shopping_plan: HashMap<StoreId, Vec<ItemInfo>>
+    pub shopping_plan: HashMap<StoreId, Vec<ItemInfo>>,
 }
 
 #[derive(Debug, PartialEq)]
@@ -64,9 +61,9 @@ pub mod calculator {
     use bigdecimal::BigDecimal;
     use eframe::egui::accesskit::ScrollUnit::Item;
     use util::{
-            search::{ShoppingItem, ShoppingItemQuery, unit_to_str},
-            store::Store,
-        };
+        search::{ShoppingItem, ShoppingItemQuery, unit_to_str},
+        store::Store,
+    };
 
     use crate::price_calculator::{item_resolver::resolve, *};
 
@@ -94,37 +91,37 @@ pub mod calculator {
             LocalRoute {
                 shops: Box::new([&s1]),
                 route_travel_cost: Cost::from_cents(422), // 11.4 km
-                route_time_cost: Cost::from_cents(1200), // 24 min
+                route_time_cost: Cost::from_cents(1200),  // 24 min
             },
             LocalRoute {
                 shops: Box::new([&s2]),
                 route_travel_cost: Cost::from_cents(141), // 3.8 km
-                route_time_cost: Cost::from_cents(600), // 12 min
+                route_time_cost: Cost::from_cents(600),   // 12 min
             },
             LocalRoute {
                 shops: Box::new([&s3]),
                 route_travel_cost: Cost::from_cents(111), // 3 km
-                route_time_cost: Cost::from_cents(500), // 12 min
+                route_time_cost: Cost::from_cents(500),   // 12 min
             },
             LocalRoute {
                 shops: Box::new([&s1, &s2]),
                 route_travel_cost: Cost::from_cents(492), // 13.3 km
-                route_time_cost: Cost::from_cents(1600), // 32 min
+                route_time_cost: Cost::from_cents(1600),  // 32 min
             },
             LocalRoute {
                 shops: Box::new([&s1, &s3]),
                 route_travel_cost: Cost::from_cents(466), // 12.6 km
-                route_time_cost: Cost::from_cents(1500), // 30 min
+                route_time_cost: Cost::from_cents(1500),  // 30 min
             },
             LocalRoute {
                 shops: Box::new([&s2, &s3]),
                 route_travel_cost: Cost::from_cents(141), // 3.8 km
-                route_time_cost: Cost::from_cents(650), // 13 min
+                route_time_cost: Cost::from_cents(650),   // 13 min
             },
             LocalRoute {
                 shops: Box::new([&s1, &s2, &s3]),
                 route_travel_cost: Cost::from_cents(492), // 13.3 km
-                route_time_cost: Cost::from_cents(1650), // 33 min
+                route_time_cost: Cost::from_cents(1650),  // 33 min
             },
         ];
         // Parse all shopping items and compile short_database and helper maps
