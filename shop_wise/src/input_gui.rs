@@ -125,7 +125,12 @@ impl MyApp {
     }
 
     pub fn save_csv(&mut self) {
-        let text = crate::csv::write_to_csv(&self.shopping_items);
+        let text = crate::csv::write_to_csv(
+            self.shopping_items
+                .iter()
+                .filter(|item| !item.name.trim().is_empty()),
+        );
+        //let text = crate::csv::write_to_csv(&self.shopping_items);
         self.files
             .save(text, "Shopwise shopping list.csv".to_owned(), "CSV", &["csv"]);
     }
@@ -168,8 +173,15 @@ impl MyApp {
             if ui.button("Load CSV").clicked() {
                 self.load_csv();
             }
-            let can_save = !self.shopping_items.is_empty();
-            if ui.add_enabled(can_save, egui::Button::new("Save CSV")).clicked() {
+            let can_save = self
+                .shopping_items
+                .iter()
+                .any(|item| !item.name.trim().is_empty());
+
+            if ui
+                .add_enabled(can_save, egui::Button::new("Save CSV"))
+                .clicked()
+            {
                 self.save_csv();
             }
         });

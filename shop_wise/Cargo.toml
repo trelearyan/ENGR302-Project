@@ -43,6 +43,11 @@ features = [
     "Geolocation",
     "Position",
     "Coordinates",
+
+    # Saving a file
+    "Element",
+    "HtmlElement",
+    "HtmlAnchorElement",
 ]
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
