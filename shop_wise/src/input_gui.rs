@@ -247,10 +247,24 @@ impl MyApp {
 
     pub fn search_button(&mut self, ui: &mut egui::Ui) {
         ui.horizontal(|ui| {
-            if ui.button("Search").clicked() {
-                log::info!("the search button is clicked!");
-                // First: check if both shopping list and location are not empty
+            // First: check if both shopping list and location are not empty
+            let has_items = self.shopping_items.iter().any(|item| !item.name.trim().is_empty());
+            let location_ready = matches!(self.location_state.borrow().status,LocationStatus::Resolved | LocationStatus::Success);
 
+            let can_search = has_items && location_ready;
+
+            let mut button = ui.add_enabled(can_search, egui::Button::new("Search"));
+
+            if !can_search {
+                let reason = match (has_items, location_ready) {
+                    (false, false) => "Add an item and set a valid location to search",
+                    (false, true) => "Add at least one item to your shopping list",
+                    (true, false) => "Choose a location from the suggestions (or use current location)",
+                    (true, true) => unreachable!(),
+                };
+                button = button.on_disabled_hover_text(reason);
+            }
+            if button.clicked() {
                 // Sam
                 let res = price_calculator::calculator::calculate(&self.shopping_items);
                 println!("{:?}", res);
