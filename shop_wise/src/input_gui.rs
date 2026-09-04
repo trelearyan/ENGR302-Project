@@ -74,6 +74,7 @@ pub struct MyApp {
     results: ResultsState,
 
     //fr13: load/save shopping list
+    files: crate::file_dialog::FileChannel,
     csv_status: Option<String>,
 }
 
@@ -94,6 +95,7 @@ impl MyApp {
             results: ResultsState::Idle,
 
             //fr13
+            files: crate::file_dialog::FileChannel::default(),
             csv_status: None,
         }
     }
@@ -118,48 +120,36 @@ impl MyApp {
 
     //fr13
     pub fn load_csv(&mut self) {
-        let Some(path) = rfd::FileDialog::new()
-            .add_filter("CSV", &["csv"])
-            .set_title("Pick your shopping list")
-            .pick_file()
-        else {
-            return;
-        };
-
-        let name = path
-            .file_name()
-            .map(|n| n.to_string_lossy().to_string())
-            .unwrap_or_default();
-
-        self.csv_status = Some(match std::fs::read_to_string(&path) {
-            Ok(text) => match crate::csv::read_csv(&text) {
-                Ok(items) => {
-                    let count = items.len();
-                    self.shopping_items = items;
-                    format!("Loaded {name}")
-                }
-                Err(error) => format!("Could not read {name}: {error}"),
-            },
-            Err(error) => format!("Could not open {name}: {error}"),
-        });
+        self.files.open("CSV", & ["csv"]);
     }
 
     pub fn save_csv(&mut self) {
-        let Some(path) = rfd::FileDialog::new()
-            .add_filter("CSV", &["csv"])
-            .set_file_name("Shopwise shopping list.csv")
-            .set_title("Save your shopping list")
-            .save_file()
-        else {
-            return;
-        };
-
         let text = crate::csv::write_to_csv(&self.shopping_items);
-        self.csv_status = Some(match std::fs::write(&path, text) {
-            Ok(()) => format!("Saved {} items", self.shopping_items.len()),
-            Err(error) => format!("Could not save: {error}"),
-        });
+        self.files
+            .save(text, "Shopwise shopping list.csv".to_owned(), "CSV", &["csv"]);
     }
+
+    pub fn check_file_results(&mut self) {
+        use crate::file_dialog::FileOutcome;
+
+        while let Some(outcome) = self.files.poll() {
+            self.csv_status = Some(match outcome {
+                FileOutcome::Opened { text, name } => match crate::csv::read_csv(&text) {
+                    Ok(items) => {
+                        let count = items.len();
+                        self.shopping_items = items;
+                        //self.undo = None;
+                        format!("Loaded {name}")
+                    }
+                    Err(error) => format!("could not read {name}: {error}"),
+                },
+                FileOutcome::Saved { name } => format!("Saved to {name}"),
+                FileOutcome::Failed(reason) => reason,
+            });
+        }
+    }
+
+
     /*
     Your shopping list
      */
