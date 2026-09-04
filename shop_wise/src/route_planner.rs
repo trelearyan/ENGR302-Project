@@ -97,3 +97,27 @@ pub fn all_stores() -> Box<[Store]> {
         },
     ])
 }
+
+// Returns every possible route the user could take between supermarkets based
+// on their filters.
+#[must_use]
+pub fn all_possible_routes(filters: &StoreFilters, mileage: &MileageOptions) -> Box<[RoutePath]> {
+    let stores = filter_stores(&all_stores(), filters);
+
+    (1..=filters.max_store_visits)
+        .flat_map(|store_visits| stores.iter().cloned().combinations(store_visits))
+        .map(|stores| RoutePlan {
+            unordered_stops: stores
+                .iter()
+                .map(|a| a.location.clone())
+                .collect_vec()
+                .as_slice()
+                .into(),
+            start_stop: filters.location.clone(),
+            end_stop: filters.location.clone(),
+            mileage: mileage.clone(),
+        })
+        .map(|plan| plan.calculate())
+        .collect_vec()
+        .into_boxed_slice()
+}

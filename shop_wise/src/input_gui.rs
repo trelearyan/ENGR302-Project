@@ -331,11 +331,6 @@ impl MyApp {
                     .max_store_visits(self.filters.max_stores as usize)
                     .disallow_brands(banned_stores.iter().copied().collect::<Vec<_>>().deref());
                 let filters = filters_builder.build();
-                let routes = route_planner::all_possible_routes(&filters);
-
-                routes
-                    .iter()
-                    .for_each(|route| println!("{}", route.pretty_print()));
 
                 let origin_label = self.location_state.borrow().address.clone();
 
