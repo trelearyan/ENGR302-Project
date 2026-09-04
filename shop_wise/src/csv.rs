@@ -83,7 +83,7 @@ pub fn read_csv(text: &str) -> Result<Vec<ShoppingItemQuery>, CsvError> {
     Ok(items)
 }
 
-pub fn write_to_csv(items: &[ShoppingItemQuery]) -> String {
+pub fn write_to_csv<'a>(items: impl IntoIterator<Item = &'a ShoppingItemQuery>) -> String  {
     let mut writer = csv::Writer::from_writer(Vec::new());
 
     let _ = writer.write_record(["name", "quantity", "unit"]);
