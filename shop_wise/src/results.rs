@@ -181,8 +181,8 @@ impl Scenario {
              stops,
              // TODO: calc output has no travel, distance and driving time
              travel_cost: Some(calc.total_travel_cost.clone()),
-             distance_km: None,
-             duration_min: None,
+             distance_km: Some(calc.total_dist.clone()),
+             duration_min: Some((calc.total_time.as_secs() / 60) as f32),
          }
     }
 }
