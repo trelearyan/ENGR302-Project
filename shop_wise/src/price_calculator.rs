@@ -148,7 +148,7 @@ pub fn calculate(shop_list: &[ShoppingItemQuery], filters: &StoreFilters, mileag
     // Calculate minimising for combined item and travel cost
     let cheap = delocalise(
         calculate_minimised(
-            shop_list.len()-1,
+            shop_list.len(),
             &local_routes,
             &short_database, 
             |a: &u32, b: &LocalRoute| -> u32 {
@@ -161,7 +161,7 @@ pub fn calculate(shop_list: &[ShoppingItemQuery], filters: &StoreFilters, mileag
     // Calculate minimising only for travel time
     let fast = delocalise(
         calculate_minimised(
-            shop_list.len()-1,
+            shop_list.len(),
             &local_routes,
             &short_database, 
             |a: &u32, b: &LocalRoute| -> u32 {
@@ -174,7 +174,7 @@ pub fn calculate(shop_list: &[ShoppingItemQuery], filters: &StoreFilters, mileag
     // Calculate minimising for total cost, with a $30 hourly rate
     let best = delocalise(
         calculate_minimised(
-            shop_list.len()-1,
+            shop_list.len(),
             &local_routes,
             &short_database, 
             |a: &u32, b: &LocalRoute| -> u32 {
@@ -329,7 +329,7 @@ mod tests {
         store1.push(Some(1299));
         database.push(store1);
         let result: Option<BestPlan> = calculate_minimised(
-            items.len()-1,
+            items.len(),
             routes.as_ref(),
             &database,
             |a: &u32, b: &LocalRoute| -> u32 {
