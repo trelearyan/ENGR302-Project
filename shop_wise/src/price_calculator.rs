@@ -1,6 +1,7 @@
 
 use std::{hash::Hash, time::Duration};
 use std::collections::HashMap;
+use util::distance::Distance;
 use util::{cost::Cost, store::{Store, StoreBrand}};
 use bigdecimal::{BigDecimal, ToPrimitive};
 use eframe::egui::accesskit::ScrollUnit::Item;
@@ -24,6 +25,7 @@ pub struct Calculation {
     pub total_item_cost: Cost,
     pub total_travel_cost: Cost,
     pub total_time: Duration,
+    pub total_dist: Distance,
     pub shopping_plan: Vec<StorePlan>,
 }
 
@@ -229,6 +231,7 @@ fn delocalise(plan: BestPlan,
         total_item_cost: Cost::from_cents(plan.total_item_cost),
         total_travel_cost: Cost::from_cents(plan.total_travel_cost),
         total_time: Duration::from_secs(plan.total_time as u64),
+        total_dist: rp.travel_distance.clone(),
         shopping_plan: shopping_plan,
         //route: rp,
     }
