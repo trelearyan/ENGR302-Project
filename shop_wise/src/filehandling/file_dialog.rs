@@ -1,11 +1,15 @@
-use std::sync::mpsc::{channel, Receiver, Sender};
+use std::sync::mpsc::{Receiver, Sender, channel};
 
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug)]
 pub enum FileOutcome {
     Opened { text: String, name: String },
     Saved { name: String },
     Failed(String),
 }
 
+#[derive(Debug)]
 pub struct FileChannel {
     sender: Sender<FileOutcome>,
     receiver: Receiver<FileOutcome>,

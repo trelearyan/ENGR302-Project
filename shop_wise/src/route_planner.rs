@@ -16,7 +16,7 @@ use util::{
 };
 
 use crate::{
-    input_gui::{LocationState, MileageOptions},
+    gui::transit::MileageOptions,
     route_planner::filters::{StoreFilters, filter_stores},
 };
 
