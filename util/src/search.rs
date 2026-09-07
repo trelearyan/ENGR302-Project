@@ -1,5 +1,9 @@
+use serde::{Deserialize, Serialize};
+
 use crate::{
-    cost::Cost, search::SearchUnits::{DOLLAR, EACH, GRAM, KILOGRAM, LITRE, MILLILITRE}, store::{
+    cost::Cost,
+    search::SearchUnits::{DOLLAR, EACH, GRAM, KILOGRAM, LITRE, MILLILITRE},
+    store::{
         Store,
         StoreBrand::{self, Newworld, Paknsave, Woolworths},
     },
@@ -137,7 +141,7 @@ pub fn match_sid_to_brand(sid: u32) -> Option<StoreBrand> {
     }
 }
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq, Clone, Serialize, Deserialize)]
 pub struct ShoppingItemQuery {
     pub name: String,
     pub quantity: u32,
