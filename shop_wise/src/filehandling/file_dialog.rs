@@ -1,6 +1,5 @@
 use std::sync::mpsc::{Receiver, Sender, channel};
 
-
 #[derive(Debug)]
 pub enum FileOutcome {
     Opened { text: String, name: String },
@@ -110,6 +109,7 @@ fn save_impl(
     let _ = sender.send(outcome);
 }
 
+#[cfg(target_arch = "wasm32")]
 fn download(text: &str, filename: &str) -> Result<(), String> {
     use wasm_bindgen::JsCast;
 
