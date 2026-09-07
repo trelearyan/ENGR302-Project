@@ -24,13 +24,43 @@ use crate::results::ResultsState;
 use crate::route_planner;
 use crate::route_planner::filters::StoreFilters;
 
+#[derive(Default, Clone, PartialEq)]
+pub enum LocationStatus {
+    #[default]
+    Idle,
+    Searching,
+    Suggesting,
+    NotFound,
+    Resolved,
+
+    Locating,
+    Success,
+    Error(String),
+}
+
 #[derive(Default, Clone)]
 pub struct LocationState {
     latitude: Option<f64>,
     longitude: Option<f64>,
     // location (what the user sees)
     address: String,
+    status: LocationStatus,
+    suggestions: Vec<AddressSuggestion>,
+
+    request_id: u64,
+    last_edit_time: Option<f64>,
 }
+
+// A single resolved candidate shown in the suggestions dropdown.
+#[derive(Clone)]
+struct AddressSuggestion {
+    display_name: String,
+    lat: f64,
+    lon: f64,
+}
+ 
+const DEBOUNCE_SECONDS: f64 = 0.4;
+const MIN_QUERY_LEN: usize = 3;
 
 impl From<LocationState> for Coordinate {
     fn from(value: LocationState) -> Self {
@@ -304,72 +334,26 @@ impl MyApp {
         });
     }
 
-    pub fn location(&mut self, ui: &mut egui::Ui) {
-        ui.heading("Location");
-
-        if ui.button("Use Current Location").clicked() {
-            log::info!("Requesting location...");
-
-            #[cfg(target_arch = "wasm32")]
-            self.get_current_location(self.location_state.clone());
-        }
-
-        ui.separator();
-
-        let mut state = self.location_state.borrow_mut();
-
-        ui.horizontal(|ui| {
-            ui.add(egui::TextEdit::singleline(&mut state.address).hint_text("Enter an address"));
-
-            let response = ui.add_enabled(
-                !state.address.trim().is_empty(),
-                egui::Button::new("Find Location"),
-            );
-
-            if response.clicked() {
-                #[cfg(target_arch = "wasm32")]
-                {
-                    use wasm_bindgen_futures::spawn_local;
-
-                    let address = state.address.clone();
-                    let state_clone = self.location_state.clone();
-
-                    spawn_local(async move {
-                        match MyApp::geocode(&address).await {
-                            Ok((lat, lon, display_name)) => {
-                                log::info!("User entered location: {}", address);
-                                log::info!("Latitude: {}, Longitude: {}", lat, lon);
-                                log::info!("Formatted address: {}", display_name);
-
-                                let mut state = state_clone.borrow_mut();
-
-                                if display_name == "Location not found" {
-                                    state.latitude = None;
-                                    state.longitude = None;
-                                    state.address = display_name;
-                                } else {
-                                    state.latitude = Some(lat);
-                                    state.longitude = Some(lon);
-                                    state.address = display_name;
-                                }
-                            }
-
-                            Err(err) => {
-                                log::error!("Failed to geocode address: {}", err);
-                            }
-                        }
-                    });
-                }
-            }
-        });
-    }
-
     pub fn search_button(&mut self, ui: &mut egui::Ui) {
         ui.horizontal(|ui| {
-            if ui.button("Search").clicked() {
-                log::info!("the search button is clicked!");
-                // First: check if both shopping list and location are not empty
+            // First: check if both shopping list and location are not empty
+            let has_items = self.shopping_items.iter().any(|item| !item.name.trim().is_empty());
+            let location_ready = matches!(self.location_state.borrow().status,LocationStatus::Resolved | LocationStatus::Success);
 
+            let can_search = has_items && location_ready;
+
+            let mut button = ui.add_enabled(can_search, egui::Button::new("Search"));
+
+            if !can_search {
+                let reason = match (has_items, location_ready) {
+                    (false, false) => "Add an item and set a valid location to search",
+                    (false, true) => "Add at least one item to your shopping list",
+                    (true, false) => "Choose a location from the suggestions (or use current location)",
+                    (true, true) => unreachable!(),
+                };
+                button = button.on_disabled_hover_text(reason);
+            }
+            if button.clicked() {
                 // Sam
                 let res = price_calculator::calculator::calculate(&self.shopping_items);
                 //item_resolver(&self.shopping_items);
@@ -412,60 +396,263 @@ impl MyApp {
         });
     }
 
+    /// Location panel with live autocomplete.
+    pub fn location(&mut self, ui: &mut egui::Ui) {
+        ui.heading("Location");
+ 
+        if ui.button("Use Current Location").clicked() {
+            log::info!("Requesting location...");
+            #[cfg(target_arch = "wasm32")]
+            self.get_current_location(self.location_state.clone(), ui.ctx().clone());
+        }
+ 
+        ui.separator();
+ 
+        let now = ui.input(|i| i.time);
+        let mut state = self.location_state.borrow_mut();
+ 
+        let response = ui.add(
+            egui::TextEdit::singleline(&mut state.address)
+                .hint_text("e.g. 12 Example Street, Suburb, City"),
+        );
+ 
+        let enter_pressed = response.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter));
+ 
+        if response.changed() {
+            state.status = LocationStatus::Idle;
+            state.suggestions.clear();
+            state.latitude = None;
+            state.longitude = None;
+            state.last_edit_time = Some(now);
+            ui.ctx().request_repaint_after(std::time::Duration::from_secs_f64(DEBOUNCE_SECONDS));
+        }
+ 
+        // on Enter, Fire a search once the debounce window has elapsed, or immediately
+        let should_fire = match state.last_edit_time {
+            Some(last_edit) if enter_pressed => true,
+            Some(last_edit) if now - last_edit >= DEBOUNCE_SECONDS => true,
+            _ => false,
+        };
+ 
+        if should_fire {
+            let query = state.address.trim().to_string();
+            state.last_edit_time = None;
+ 
+            if query.len() < MIN_QUERY_LEN {
+                state.status = LocationStatus::Idle;
+            } else {
+                state.status = LocationStatus::Searching;
+                state.request_id += 1;
+                let this_request = state.request_id;
+                let state_clone = self.location_state.clone();
+                let ctx_clone = ui.ctx().clone();
+                #[cfg(target_arch = "wasm32")]
+                {
+                    use wasm_bindgen_futures::spawn_local;
+                    spawn_local(async move {
+                        match MyApp::geocode_suggestions(&query).await {
+                            Ok(results) => {
+                                let mut state = state_clone.borrow_mut();
+                                if state.request_id == this_request {
+                                    if results.is_empty() {
+                                        state.status = LocationStatus::NotFound;
+                                    } else {
+                                        state.suggestions = results;
+                                        state.status = LocationStatus::Suggesting;
+                                    }
+                                }
+                            }
+                            Err(err) => {
+                                log::error!("Geocode search failed: {}", err);
+                                let mut state = state_clone.borrow_mut();
+                                if state.request_id == this_request {
+                                    state.status = LocationStatus::NotFound;
+                                }
+                            }
+                        }
+                        ctx_clone.request_repaint(); 
+                    });
+                }
+            }
+        }
+ 
+        match &state.status {
+            LocationStatus::Searching => { ui.label("Searching…");}
+            LocationStatus::NotFound => {
+                ui.colored_label(
+                egui::Color32::from_rgb(200, 60, 60),
+                "No matching address found — try adding your suburb or city.",
+                );
+            }
+            LocationStatus::Resolved | LocationStatus::Success => { ui.colored_label(egui::Color32::from_rgb(60, 160, 60), "Location set");}
+            LocationStatus::Locating => { ui.label("Finding your current location…");}
+            LocationStatus::Error(message) => { ui.colored_label(egui::Color32::from_rgb(200, 60, 60), message.clone());}
+            LocationStatus::Idle | LocationStatus::Suggesting => {}
+        }
+ 
+        // suggestions dropdown 
+        if state.status == LocationStatus::Suggesting {
+            let suggestions = state.suggestions.clone();
+            egui::Frame::popup(ui.style()).show(ui, |ui| {
+                for s in &suggestions {
+                    if ui.selectable_label(false, &s.display_name).clicked() {
+                        state.address = s.display_name.clone();
+                        state.latitude = Some(s.lat);
+                        state.longitude = Some(s.lon);
+                        state.status = LocationStatus::Resolved;
+                        state.suggestions.clear();
+                        state.last_edit_time = None;
+                    }
+                }
+            });
+        }
+    }
+
     /*
     Getting the user location
+    */
+    #[cfg(target_arch = "wasm32")]
+    fn get_current_location(&self, state: Rc<RefCell<LocationState>>, ctx: egui::Context) {
+        use wasm_bindgen::JsCast;
+ 
+        let window = match web_sys::window() {
+            Some(w) => w,
+            None => return,
+        };
+        let navigator = window.navigator();
+ 
+        let geolocation = match Self::resolve_geolocation(&navigator, &state, &ctx) {
+            Some(g) => g,
+            None => return,
+        };
+ 
+        // egui only repaints in response to input events by default without this, a state change made from a background/async callback might not actually appear on screen until the user happens to move the mouse.
+        state.borrow_mut().status = LocationStatus::Locating;
+        ctx.request_repaint();
+ 
+        // Options control "browser hangs forever" failure mode:
+        // - timeout: give up after 10s instead of waiting indefinitely
+        // - maximum_age: accept a cached fix up to 60s old so a repeat click returns near-instantly
+        let mut options = web_sys::PositionOptions::new();
+        options.set_timeout(10_000);
+        options.set_maximum_age(60_000);
+ 
+        let success = Self::make_success_callback(state.clone(), ctx.clone());
+        let error = Self::make_error_callback(state.clone(), ctx.clone());
+ 
+        let request = geolocation.get_current_position_with_error_callback_and_options(
+            success.as_ref().unchecked_ref(),
+            Some(error.as_ref().unchecked_ref()),
+            &options,
+        );
+ 
+        if let Err(err) = request {
+            log::error!("Failed to request geolocation: {:?}", err);
+            state.borrow_mut().status = LocationStatus::Error(
+                "Couldn't start the location lookup. Please enter your address below instead."
+                    .to_string(),
+            );
+            ctx.request_repaint();
+        }
+ 
+        // Keep both callbacks alive for as long as the JS side might call them.
+        success.forget();
+        error.forget();
+    }
+
+    /*
+    Gets the Geolocation handle, or records why it isn't available.
+    */ 
+    #[cfg(target_arch = "wasm32")]
+    fn resolve_geolocation(navigator: &web_sys::Navigator,state: &Rc<RefCell<LocationState>>,ctx: &egui::Context) -> Option<web_sys::Geolocation> {
+        match navigator.geolocation() {
+            Ok(g) => Some(g),
+            Err(_) => {
+                state.borrow_mut().status = LocationStatus::Error(
+                    "Geolocation isn't available. This usually means the page \
+                     isn't served over HTTPS, or your browser doesn't support it.".to_string(),
+                );
+                ctx.request_repaint();
+                None
+            }
+        }
+    }
+
+    /*
+    Builds the callback fired when the browser successfully returns a position:
+    - stores the coordinates, 
+    - then kicks off reverse-geocoding in the background
      */
     #[cfg(target_arch = "wasm32")]
-    fn get_current_location(&self, state: Rc<RefCell<LocationState>>) {
-        use wasm_bindgen::JsCast;
+    fn make_success_callback(state: Rc<RefCell<LocationState>>,ctx: egui::Context) -> wasm_bindgen::closure::Closure<dyn FnMut(web_sys::Position)> {
         use wasm_bindgen::closure::Closure;
-        // get browser window
-        let window = web_sys::window().unwrap();
-
-        let navigator = window.navigator();
-
-        let geolocation = navigator.geolocation().unwrap();
-
-        // call back
-        let success =
-            Closure::<dyn FnMut(web_sys::Position)>::new(move |position: web_sys::Position| {
-                use wasm_bindgen_futures::spawn_local;
-
-                log::info!("SUCCESS CALLBACK CALLED"); // debug
-                let coords = position.coords();
-
-                let latitude = coords.latitude();
-                let longitude = coords.longitude();
-                {
-                    let mut state = state.borrow_mut();
-
-                    state.latitude = Some(latitude);
-                    state.longitude = Some(longitude);
-                }
-                log::info!("Latitude: {}, Longitude: {}", latitude, longitude); // debug
-                let state_clone = state.clone();
-                spawn_local(async move {
-                    match MyApp::reverse_geocode(latitude, longitude).await {
-                        Ok(address) => {
-                            log::info!("Address: {address}"); // debug
-
-                            let mut state = state_clone.borrow_mut();
-                            state.address = address;
-                        }
-                        Err(err) => {
-                            log::error!("Reverse geocode failed: {err}");
-
-                            let mut state = state_clone.borrow_mut();
-                            state.address = "Failed to get address.".to_string();
-                        }
+        use wasm_bindgen_futures::spawn_local;
+ 
+        Closure::<dyn FnMut(web_sys::Position)>::new(move |position: web_sys::Position| {
+            let coords = position.coords();
+            let latitude = coords.latitude();
+            let longitude = coords.longitude();
+            log::info!("Latitude: {}, Longitude: {}", latitude, longitude);
+ 
+            {
+                let mut s = state.borrow_mut();
+                s.latitude = Some(latitude);
+                s.longitude = Some(longitude);
+                s.status = LocationStatus::Success;
+            }
+            ctx.request_repaint();
+ 
+            let state_clone = state.clone();
+            let ctx_clone = ctx.clone();
+            spawn_local(async move {
+                match MyApp::reverse_geocode(latitude, longitude).await {
+                    Ok(address) => {
+                        log::info!("Address: {address}");
+                        state_clone.borrow_mut().address = address;
                     }
-                });
+                    Err(err) => {
+                        log::error!("Reverse geocode failed: {err}");
+                        // We still have coordinates and can search with them; we
+                        // just couldn't turn them into a readable address.
+                        state_clone.borrow_mut().address =
+                            "Found your location, but couldn't look up its address."
+                                .to_string();
+                    }
+                }
+                ctx_clone.request_repaint();
             });
+        })
+    }
 
-        geolocation
-            .get_current_position(success.as_ref().unchecked_ref())
-            .unwrap();
-        success.forget(); // keep this callback alive
+    /*
+    Builds the callback fired when the browser fails to get a position, mapping
+    each PositionError code to a specific, actionable message.
+     */
+    #[cfg(target_arch = "wasm32")]
+    fn make_error_callback(state: Rc<RefCell<LocationState>>,ctx: egui::Context) -> wasm_bindgen::closure::Closure<dyn FnMut(web_sys::PositionError)> {
+        use wasm_bindgen::closure::Closure;
+ 
+        Closure::<dyn FnMut(web_sys::PositionError)>::new(move |err: web_sys::PositionError| {
+            let message = match err.code() {
+                web_sys::PositionError::PERMISSION_DENIED => {
+                    "Location access was denied. Allow it in your browser's site \
+                    settings, or enter your address below instead."
+                }
+                web_sys::PositionError::POSITION_UNAVAILABLE => {
+                    "Your location couldn't be determined right now. Try again, \
+                    or enter your address below instead."
+                }
+                web_sys::PositionError::TIMEOUT => {
+                    "Finding your location took too long. Try again, or enter \
+                    your address below instead."
+                }
+                _ => "Couldn't get your location. Please enter your address below instead.",
+            };
+            log::error!("Geolocation error ({}): {}", err.code(), err.message());
+ 
+            state.borrow_mut().status = LocationStatus::Error(message.to_string());
+            ctx.request_repaint();
+        })
     }
 
     // translate coords --> readable address
@@ -488,32 +675,29 @@ impl MyApp {
     }
 
     #[cfg(target_arch = "wasm32")]
-    async fn geocode(address: &str) -> Result<(f64, f64, String), reqwest::Error> {
-        let encoded_address = encode(address);
-
+    async fn geocode_suggestions(query: &str) -> Result<Vec<AddressSuggestion>, reqwest::Error> {
+        let encoded_query = encode(query);
+ 
+        // countrycodes=nz narrows results to New Zealand
         let url = format!(
-            "https://nominatim.openstreetmap.org/search?q={}&format=jsonv2&limit=1",
-            encoded_address
+            "https://nominatim.openstreetmap.org/search?q={}&format=jsonv2&limit=5&countrycodes=nz",encoded_query
         );
-
-        let response = reqwest::Client::new()
-            .get(url)
-            .header("User-Agent", "ShopWise")
-            .send()
-            .await?;
-
-        let result: Vec<GeocodeResponse> = response.json().await?;
-
-        if let Some(first) = result.first() {
-            let latitude = first.lat.parse::<f64>().unwrap();
-            let longitude = first.lon.parse::<f64>().unwrap();
-
-            Ok((latitude, longitude, first.display_name.clone()))
-        } else {
-            log::error!("Location not found.");
-
-            Ok((0.0, 0.0, "Location not found".to_string()))
-        }
+ 
+        let response = reqwest::Client::new().get(url).header("User-Agent", "ShopWise").send().await?;
+ 
+        let results: Vec<GeocodeResponse> = response.json().await?;
+ 
+        Ok(results
+            .into_iter()
+            .filter_map(|r| {
+                let lat = r.lat.parse::<f64>().ok()?;
+                let lon = r.lon.parse::<f64>().ok()?;
+                Some(AddressSuggestion {
+                    display_name: r.display_name,
+                    lat,
+                    lon,
+                })
+            }).collect())
     }
 }
 
