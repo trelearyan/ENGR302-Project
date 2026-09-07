@@ -212,7 +212,7 @@ impl LocationData {
         // - timeout: give up after 10s instead of waiting indefinitely
         // - maximum_age: accept a cached fix up to 60s old so a repeat click
         //   returns near-instantly
-        let mut options = web_sys::PositionOptions::new();
+        let options = web_sys::PositionOptions::new();
         options.set_timeout(10_000);
         options.set_maximum_age(60_000);
 
