@@ -1,5 +1,4 @@
 use eframe::egui;
-use serde::{Deserialize, Serialize};
 
 use crate::{
     gui::ShowableWidget,
@@ -10,7 +9,7 @@ use crate::{
 };
 
 impl ShowableWidget for OutputRoutesData {
-    fn show(&mut self, ui: &mut egui::Ui) {}
+    fn show(&mut self, _ui: &mut egui::Ui) {}
 }
 
 const STACK_BELOW_WIDTH: f32 = 760.0;
@@ -27,7 +26,6 @@ pub enum PanelLayout {
 pub struct OutputRoutesData {
     selected: ScenarioKind,
     layout: PanelLayout,
-    results_state: ResultsState,
 }
 
 impl Default for OutputRoutesData {
@@ -35,20 +33,22 @@ impl Default for OutputRoutesData {
         Self {
             selected: ScenarioKind::Best,
             layout: PanelLayout::Cards,
-            results_state: ResultsState::Idle,
         }
     }
 }
 
 impl OutputRoutesData {
+    #[must_use]
     pub fn new() -> Self {
         Self::default()
     }
 
+    #[must_use]
     pub fn selected(&self) -> ScenarioKind {
         self.selected
     }
 
+    #[must_use]
     pub fn layout(&self) -> PanelLayout {
         self.layout
     }
@@ -57,6 +57,7 @@ impl OutputRoutesData {
         self.layout = layout;
     }
 
+    #[must_use]
     pub fn with_layout(mut self, layout: PanelLayout) -> Self {
         self.layout = layout;
         self
@@ -177,15 +178,15 @@ impl OutputRoutesData {
             ui.vertical(|ui| {
                 ui.horizontal_wrapped(|ui| {
                     ui.label(egui::RichText::new(kind.label()).heading());
-                    if kind == ScenarioKind::Cheapest {
-                        if let Some(saving) = results.headline_saving() {
-                            ui.label(
-                                egui::RichText::new(format!("saves {}", format_money(&saving)))
-                                    .small()
-                                    .strong()
-                                    .color(positive),
-                            );
-                        }
+                    if kind == ScenarioKind::Cheapest
+                        && let Some(saving) = results.headline_saving()
+                    {
+                        ui.label(
+                            egui::RichText::new(format!("saves {}", format_money(&saving)))
+                                .small()
+                                .strong()
+                                .color(positive),
+                        );
                     }
                 });
                 ui.label(egui::RichText::new(kind.blurb()).small().weak());

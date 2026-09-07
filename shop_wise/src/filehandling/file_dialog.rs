@@ -1,6 +1,5 @@
 use std::sync::mpsc::{Receiver, Sender, channel};
 
-use serde::{Deserialize, Serialize};
 
 #[derive(Debug)]
 pub enum FileOutcome {
@@ -23,6 +22,7 @@ impl Default for FileChannel {
 }
 
 impl FileChannel {
+    #[must_use]
     pub fn poll(&self) -> Option<FileOutcome> {
         self.receiver.try_recv().ok()
     }

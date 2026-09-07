@@ -19,6 +19,7 @@ pub enum SearchUnits {
     DOLLAR,
 }
 
+#[must_use]
 pub fn measurement_type(unit: SearchUnits) -> &'static str {
     match unit {
         EACH => "count",
@@ -30,6 +31,7 @@ pub fn measurement_type(unit: SearchUnits) -> &'static str {
     }
 }
 
+#[must_use]
 pub fn unit_to_str(unit: SearchUnits) -> &'static str {
     match unit {
         EACH => "ea",
@@ -41,6 +43,7 @@ pub fn unit_to_str(unit: SearchUnits) -> &'static str {
     }
 }
 
+#[must_use]
 pub fn match_to_unit(name: &str) -> Option<SearchUnits> {
     match name {
         "ea" => Some(EACH),
@@ -53,8 +56,9 @@ pub fn match_to_unit(name: &str) -> Option<SearchUnits> {
     }
 }
 
+#[must_use]
 pub fn match_sid_to_brand(sid: u32) -> Option<StoreBrand> {
-    match (sid) {
+    match sid  {
         1 => Some(Paknsave),
         2 => Some(Woolworths),
         3 => Some(Newworld),

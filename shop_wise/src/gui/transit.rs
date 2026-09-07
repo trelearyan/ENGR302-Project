@@ -102,6 +102,7 @@ impl From<Cost> for MileageOptions {
 }
 
 impl MileageOptions {
+    #[must_use]
     pub fn average_speed(&self) -> Speed {
         // Assuming slightly under standard city limit of 50 due to traffic,
         // starting and ending on a lower speed local road, etc.

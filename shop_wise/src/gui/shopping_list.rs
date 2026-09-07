@@ -2,7 +2,7 @@ use std::rc::Rc;
 
 use eframe::egui::{self, Ui};
 use serde::ser::SerializeStruct;
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 use util::search::SearchUnits::{DOLLAR, EACH, GRAM, KILOGRAM, LITRE, MILLILITRE};
 use util::search::{ShoppingItemQuery, unit_to_str};
 
@@ -174,7 +174,7 @@ impl ShoppingListData {
                 FileOutcome::Opened { text, name } => {
                     match crate::filehandling::csv::read_csv(&text) {
                         Ok(items) => {
-                            let count = items.len();
+                            let _count = items.len();
                             self.shopping_items = items;
                             //self.undo = None;
                             format!("Loaded {name}")
