@@ -5,6 +5,7 @@ use derive_more::{
     Add, AddAssign, Constructor, Display, Div, DivAssign, Mul, MulAssign, Neg, Rem, RemAssign, Sub,
     SubAssign, Sum,
 };
+use serde::{Deserialize, Serialize};
 
 #[derive(
     Clone,
@@ -28,6 +29,8 @@ use derive_more::{
     Sub,
     SubAssign,
     Sum,
+    Serialize,
+    Deserialize,
 )]
 #[display("{:.2}", inner)]
 pub struct Cost {
