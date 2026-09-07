@@ -1,7 +1,6 @@
 use eframe::egui::{self, CentralPanel, Panel, ScrollArea, Ui};
 use std::collections::HashSet;
 use std::ops::Deref;
-use strum::IntoEnumIterator;
 use util::coordinate::Coordinate;
 use util::store::StoreBrand;
 
