@@ -1,5 +1,9 @@
 
-use crate::gui::ShowableWidget;
+use crate::{
+    gui::ShowableWidget,
+    route_planner::filters::{StoreFilters, filter_stores},
+};
+use util::store::Store;
 
 pub mod filehandling;
 

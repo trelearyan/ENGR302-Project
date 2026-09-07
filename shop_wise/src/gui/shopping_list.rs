@@ -1,20 +1,20 @@
 use std::rc::Rc;
 
 use eframe::egui::{self, Ui};
-use serde::Serialize;
 use serde::ser::SerializeStruct;
+use serde::{Deserialize, Serialize};
 use util::search::SearchUnits::{DOLLAR, EACH, GRAM, KILOGRAM, LITRE, MILLILITRE};
 use util::search::{ShoppingItemQuery, unit_to_str};
 
-use crate::filehandling::file_dialog::FileChannel;
+use crate::filehandling::file_dialog::{FileChannel, FileOutcome};
 use crate::gui::ShowableWidget;
 
 #[derive(Clone, Debug, Default)]
 pub struct ShoppingListData {
-    pub shopping_items: Vec<ShoppingItemQuery>,
-    pub files: Rc<FileChannel>,
-    pub csv_status: Option<String>,
-    pub cleared_items: Option<Vec<ShoppingItemQuery>>,
+    shopping_items: Vec<ShoppingItemQuery>,
+    files: Rc<FileChannel>,
+    csv_status: Option<String>,
+    cleared_items: Option<Vec<ShoppingItemQuery>>,
 }
 
 impl Serialize for ShoppingListData {
@@ -32,13 +32,10 @@ impl Serialize for ShoppingListData {
 
 impl ShowableWidget for ShoppingListData {
     fn show(&mut self, ui: &mut Ui) {
-        self.check_file_results();
         ui.heading("Your shopping list");
 
         ui.horizontal(|ui| {
-            if ui.button("+ Add Item")
-                .on_hover_text("Add an item to your shopping list")
-                .clicked() {
+            if ui.button("+ Add Item").clicked() {
                 self.shopping_items.push(ShoppingItemQuery {
                     name: String::new(),
                     quantity: 1,
@@ -47,9 +44,7 @@ impl ShowableWidget for ShoppingListData {
                 self.cleared_items = None;
             }
 
-            if ui.button("Load CSV")
-                .on_hover_text("Load in your own shopping list CSV file")
-                .clicked() {
+            if ui.button("Load CSV").clicked() {
                 self.load_csv();
             }
 
@@ -60,8 +55,6 @@ impl ShowableWidget for ShoppingListData {
 
             if ui
                 .add_enabled(can_save, egui::Button::new("Save CSV"))
-                .on_hover_text("Save your shopping list as a CSV file")
-                .on_disabled_hover_text("Add items to your Shopping List to save")
                 .clicked()
             {
                 self.save_csv();
@@ -70,8 +63,7 @@ impl ShowableWidget for ShoppingListData {
             let has_items = !self.shopping_items.is_empty();
             if ui
                 .add_enabled(has_items, egui::Button::new("Clear"))
-                .on_hover_text("Remove all items from your Shopping List")
-                .on_disabled_hover_text("Add items to your Shopping List use clear button")
+                .on_hover_text("Remove all items")
                 .clicked()
             {
                 self.cleared_items = Some(std::mem::take(&mut self.shopping_items));
@@ -87,9 +79,7 @@ impl ShowableWidget for ShoppingListData {
                         .small()
                         .weak(),
                 );
-                if ui.button("Undo")
-                    .on_hover_text("Return your cleared items back to your shopping list")
-                    .clicked()
+                if ui.button("Undo").clicked()
                     && let Some(items) = self.cleared_items.take()
                 {
                     self.shopping_items = items;
@@ -104,14 +94,11 @@ impl ShowableWidget for ShoppingListData {
 
         for (i, item) in self.shopping_items.iter_mut().enumerate() {
             ui.horizontal(|ui| {
-                ui.text_edit_singleline(&mut item.name)
-                    .on_hover_text("Enter product name, e.g. Anchor Blue Milk 2L");
-                ui.add(egui::DragValue::new(&mut item.quantity))
-                    .on_hover_text("Select what quantity of this item you would like");
+                ui.text_edit_singleline(&mut item.name);
+                ui.add(egui::DragValue::new(&mut item.quantity));
 
                 egui::ComboBox::from_id_salt(i)
                     .selected_text(&item.unit)
-                    //.on_hover_text("Select the appropriate unit for this item")
                     .show_ui(ui, |ui| {
                         ui.selectable_value(
                             &mut item.unit,
@@ -143,13 +130,11 @@ impl ShowableWidget for ShoppingListData {
                             unit_to_str(DOLLAR).to_string(),
                             unit_to_str(DOLLAR),
                         );
-                    })
-                    .response
-                    .on_hover_text("Select the appropriate unit for this item");
+                    });
 
                 if ui
                     .add(egui::Button::new("X").fill(egui::Color32::RED))
-                    .on_hover_text("Remove this item from your shopping list")
+                    .on_hover_text("Remove item")
                     .clicked()
                 {
                     remove_index = Some(i);
@@ -183,20 +168,18 @@ impl ShoppingListData {
         );
     }
 
-    pub fn check_file_results(&mut self) {
-        use crate::filehandling::file_dialog::FileOutcome;
-
+    fn check_file_results(&mut self) {
         while let Some(outcome) = self.files.poll() {
             self.csv_status = Some(match outcome {
                 FileOutcome::Opened { text, name } => {
                     match crate::filehandling::csv::read_csv(&text) {
                         Ok(items) => {
-                            let _count = items.len();
+                            let count = items.len();
                             self.shopping_items = items;
-                            self.cleared_items = None;
+                            //self.undo = None;
                             format!("Loaded {name}")
                         }
-                        Err(error) => format!("Could not load {name}: {error}"),
+                        Err(error) => format!("could not read {name}: {error}"),
                     }
                 }
                 FileOutcome::Saved { name } => format!("Saved to {name}"),
@@ -205,4 +188,3 @@ impl ShoppingListData {
         }
     }
 }
-

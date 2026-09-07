@@ -1,10 +1,13 @@
-use std::collections::HashMap;
-use std::time::Duration;
-use util::distance::Distance;
-use util::{cost::Cost, store::{Store, StoreBrand}};
 use bigdecimal::{BigDecimal, ToPrimitive};
 use eframe::egui::accesskit::ScrollUnit::Item;
-use util::{search::{ShoppingItem, ShoppingItemQuery}};
+use std::collections::HashMap;
+use std::{hash::Hash, time::Duration};
+use util::distance::Distance;
+use util::search::{ShoppingItem, ShoppingItemQuery};
+use util::{
+    cost::Cost,
+    store::{Store, StoreBrand},
+};
 
 use crate::{
     gui::transit::MileageOptions,
@@ -71,7 +74,6 @@ struct LocalRoute {
 }
 
 // Given the parsed shopping list, perform price optimisation
-#[must_use]
 pub fn calculate(
     shop_list: &[ShoppingItemQuery],
     filters: &StoreFilters,
@@ -80,7 +82,9 @@ pub fn calculate(
     // Get all visitable stores, position in Vec is local ID (StoreId)
     let stores: Vec<Store> = filter_stores(&all_stores(), filters)
         .iter()
-        .map(|a: &Store| -> Store { a.to_owned() })
+        .map(|a: &Store| -> Store {
+            return a.to_owned();
+        })
         .collect();
     // Fetch all (2^n-1) routes for the n stores in range
     let routes: Box<[RoutePath]> = all_possible_routes(filters, mileage);
@@ -167,7 +171,9 @@ pub fn calculate(
             shop_list.len(),
             &local_routes,
             &short_database,
-            |a: &u32, b: &LocalRoute| -> u32 { a + b.route_travel_cost },
+            |a: &u32, b: &LocalRoute| -> u32 {
+                return a + b.route_travel_cost;
+            },
         )?,
         &item_lookup,
         &stores,
@@ -179,7 +185,9 @@ pub fn calculate(
             shop_list.len(),
             &local_routes,
             &short_database,
-            |_a: &u32, b: &LocalRoute| -> u32 { b.route_time as u32 },
+            |a: &u32, b: &LocalRoute| -> u32 {
+                return b.route_time as u32;
+            },
         )?,
         &item_lookup,
         &stores,
@@ -193,7 +201,7 @@ pub fn calculate(
             &short_database,
             |a: &u32, b: &LocalRoute| -> u32 {
                 // Assume people would drive an hour to save 30 dollars for now (5/6 cents per second)
-                a + b.route_travel_cost + ((5 * b.route_time) / 6) as u32
+                return a + b.route_travel_cost + ((5 * b.route_time) / 6) as u32;
             },
         )?,
         &item_lookup,
@@ -204,7 +212,7 @@ pub fn calculate(
     Some(CalculationTotal {
         cheapest: cheap,
         fastest: fast,
-        best,
+        best: best,
     })
 }
 
@@ -220,7 +228,7 @@ fn delocalise(
         let mut items: Vec<ShoppingItem> = Vec::new();
         for item_id in 0..item_lookup.len() {
             // If this item was brought at the cuurent store
-            if *plan.best_shop_plan.get(item_id).unwrap() == shop_id {
+            if (*plan.best_shop_plan.get(item_id).unwrap() == shop_id) {
                 let item: &ShoppingItem =
                     item_lookup.get(item_id).unwrap().get(&(shop_id)).unwrap();
                 items.push(ShoppingItem {
@@ -270,10 +278,12 @@ fn calculate_minimised(
             let mut best_place: Option<StoreId> = None;
             let mut best_cost: u32 = u32::MAX;
             for shop in &route.shops {
-                let temp_cost: Option<u32> = *short_database.get(*shop)?.get(item)?;
-                if (temp_cost.is_some()) && (best_place.is_none() || temp_cost? < best_cost) {
-                    best_cost = temp_cost?;
-                    best_place = Some(*shop);
+                let temp_cost: Option<u32> = *short_database.get(*shop as usize)?.get(item)?;
+                if (temp_cost.is_some()) {
+                    if (best_place.is_none() || temp_cost? < best_cost) {
+                        best_cost = temp_cost?;
+                        best_place = Some(*shop);
+                    }
                 }
             }
             // If no store sells this item - abandon route and skip to next

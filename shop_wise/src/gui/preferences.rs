@@ -6,25 +6,21 @@ use crate::gui::ShowableWidget;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PreferencesData {
-    pub max_range: Distance,
-    pub max_stores: usize,
+    max_range: Distance,
+    max_stores: u32,
 }
 
 impl ShowableWidget for PreferencesData {
     fn show(&mut self, ui: &mut Ui) {
         ui.heading("Preferences");
 
-        ui.label("Max Range")
-            .on_hover_text("How far would you want to travel from your location");
+        ui.label("Max Range");
         let mut maxrange = self.max_range.kilometres();
-        ui.add(egui::Slider::new(&mut maxrange, 1.0..=50.).text("(km)"))
-            .on_hover_text("Use the slider to pick up your range");
+        ui.add(egui::Slider::new(&mut maxrange, 1.0..=50.).text("(km)"));
         self.max_range = Distance::from_kilometres_f64(maxrange);
 
-        ui.label("Max Stores per Trip")
-            .on_hover_text("Select the amount of stores to place your range");
-        ui.add(egui::Slider::new(&mut self.max_stores, 1..=10))
-            .on_hover_text("Move the slider to select your maximum stores");
+        ui.label("Max Stores per Trip");
+        ui.add(egui::Slider::new(&mut self.max_stores, 1..=10));
     }
 }
 
