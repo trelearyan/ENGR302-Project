@@ -31,7 +31,14 @@ impl ShowableWidget for LocationData {
             log::info!("Requesting location...");
 
             #[cfg(target_arch = "wasm32")]
-            evil_wasm::get_current_location(Rc::new(RefCell::new(self.clone())), ui.ctx().clone());
+            {
+                use std::{cell::RefCell, rc::Rc};
+
+                evil_wasm::get_current_location(
+                    Rc::new(RefCell::new(self.clone())),
+                    ui.ctx().clone(),
+                );
+            }
         }
 
         let now = ui.input(|i| i.time);
