@@ -20,6 +20,37 @@ pub struct LocationData {
     pub last_edit_time: Option<f64>,
 }
 
+// A single resolved candidate shown in the suggestions dropdown.
+#[derive(Clone, Serialize, Deserialize, Debug)]
+pub struct AddressSuggestion {
+    display_name: String,
+    lat: f64,
+    lon: f64,
+}
+
+#[derive(Debug, Default, Clone, PartialEq, Serialize, Deserialize)]
+pub enum LocationStatus {
+    #[default]
+    Idle,
+    Searching,
+    Suggesting,
+    NotFound,
+    Resolved,
+
+    Locating,
+    Success,
+    Error(String),
+}
+
+impl From<LocationData> for Coordinate {
+    fn from(value: LocationData) -> Self {
+        if let (Some(latitude), Some(longitude)) = (value.latitude, value.longitude) {
+            Coordinate::from_lat_long_f64(latitude, longitude)
+        } else {
+            Coordinate::default()
+        }
+    }
+}
 impl ShowableWidget for LocationData {
     fn show(&mut self, ui: &mut Ui) {
         ui.heading("Location");
@@ -137,20 +168,6 @@ impl ShowableWidget for LocationData {
             });
         }
     }
-}
-
-#[derive(Debug, Default, Clone, PartialEq, Serialize, Deserialize)]
-pub enum LocationStatus {
-    #[default]
-    Idle,
-    Searching,
-    Suggesting,
-    NotFound,
-    Resolved,
-
-    Locating,
-    Success,
-    Error(String),
 }
 
 /*
@@ -361,20 +378,4 @@ async fn geocode_suggestions(query: &str) -> Result<Vec<AddressSuggestion>, reqw
         .collect())
 }
 
-// A single resolved candidate shown in the suggestions dropdown.
-#[derive(Clone, Serialize, Deserialize, Debug)]
-pub struct AddressSuggestion {
-    display_name: String,
-    lat: f64,
-    lon: f64,
-}
 
-impl From<LocationData> for Coordinate {
-    fn from(value: LocationData) -> Self {
-        if let (Some(latitude), Some(longitude)) = (value.latitude, value.longitude) {
-            Coordinate::from_lat_long_f64(latitude, longitude)
-        } else {
-            Coordinate::default()
-        }
-    }
-}
