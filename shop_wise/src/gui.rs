@@ -1,23 +1,8 @@
-use bigdecimal::BigDecimal;
-use derive_more::{Display, IsVariant};
 use eframe::egui::{self, CentralPanel, Panel, ScrollArea, Ui};
-use itertools::Itertools;
-use serde::{Deserialize, Serialize};
-use std::cell::OnceCell;
 use std::collections::HashSet;
-use std::fmt::Display;
 use std::ops::Deref;
-use std::rc::Rc;
-use std::sync::Arc;
-use std::{cell::RefCell, str::FromStr};
 use strum::IntoEnumIterator;
-use strum_macros::EnumIter;
-use urlencoding::encode;
 use util::coordinate::Coordinate;
-use util::cost::{self, Cost};
-use util::distance::Distance;
-use util::search::SearchUnits::{DOLLAR, EACH, GRAM, KILOGRAM, LITRE, MILLILITRE};
-use util::search::{ShoppingItemQuery, unit_to_str};
 use util::store::StoreBrand;
 
 use crate::gui::location_search::{LocationData, LocationStatus};
@@ -27,8 +12,7 @@ use crate::gui::shopping_list::ShoppingListData;
 use crate::gui::supermarkets::SupermarketsData;
 use crate::gui::transit::TransitData;
 use crate::price_calculator::results::ResultsState;
-use crate::price_calculator::{self, item_resolver};
-use crate::route_planner;
+use crate::price_calculator::{self};
 use crate::route_planner::filters::StoreFilters;
 
 pub mod location_search;
@@ -119,18 +103,18 @@ impl AppData {
                     banned_stores.insert(StoreBrand::Woolworths);
                 }
 
-                let mut filters_builder = StoreFilters::builder()
+                let filters_builder = StoreFilters::builder()
                     // TODO: fix panic if no configured location
                     .location(Coordinate::from_lat_long_f64(
                         self.location_search.latitude.unwrap(),
                         self.location_search.longitude.unwrap(),
                     ))
                     .range(self.preferences.max_range.clone())
-                    .max_store_visits(self.preferences.max_stores as usize)
+                    .max_store_visits(self.preferences.max_stores)
                     .disallow_brands(banned_stores.iter().copied().collect::<Vec<_>>().deref());
                 let filters = filters_builder.build();
 
-                let origin_label = self.location_search.address.clone();
+                let _origin_label = self.location_search.address.clone();
 
                 // Sam
                 let res = price_calculator::calculate(
@@ -138,7 +122,7 @@ impl AppData {
                     &filters,
                     &self.transit.mileage_option,
                 );
-                log::info!("{:?}", res);
+                log::info!("{res:?}");
 
                 let origin_label = self.location_search.address.clone();
                 self.output_routes.results = match res {
