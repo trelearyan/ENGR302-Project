@@ -189,26 +189,13 @@ impl MyApp {
     }
 
 
-    // for debugging
-    pub fn print_filters(&self, ui: &mut egui::Ui) {
-        ui.label("=== Filter values ===");
-        ui.label(format!(
-            "Max Range: {}",
-            self.filters.max_range.kilometres()
-        ));
-        ui.label(format!("Max Stores: {}", self.filters.max_stores));
-        ui.label(format!("Pak'nSave: {}", self.filters.include_paknsave));
-        ui.label(format!("New World: {}", self.filters.include_newworld));
-        ui.label(format!("Woolworths: {}", self.filters.include_woolies));
-    }
-
     /*
     Your shopping list
      */
     pub fn shopping_list_ui(&mut self, ui: &mut egui::Ui) {
         ui.heading("Your shopping list");
-        // if the user clicks + Add Item button, creates an empty ShoppingingItem
-        ui.horizontal (|ui|{
+
+        ui.horizontal(|ui| {
             if ui.button("+ Add Item").clicked() {
                 self.shopping_items.push(ShoppingItemQuery {
                     name: String::new(),
@@ -218,6 +205,22 @@ impl MyApp {
                 self.cleared_items = None;
             }
 
+            if ui.button("Load CSV").clicked() {
+                self.load_csv();
+            }
+
+            let can_save = self
+                .shopping_items
+                .iter()
+                .any(|item| !item.name.trim().is_empty());
+
+            if ui
+                .add_enabled(can_save, egui::Button::new("Save CSV"))
+                .clicked()
+            {
+                self.save_csv();
+            }
+
             let has_items = !self.shopping_items.is_empty();
             if ui
                 .add_enabled(has_items, egui::Button::new("Clear"))
@@ -225,11 +228,10 @@ impl MyApp {
                 .clicked()
             {
                 self.cleared_items = Some(std::mem::take(&mut self.shopping_items));
-                //self.csv_status = None;
+                self.csv_status = None;
             }
         });
 
-        //undo
         if let Some(cleared) = &self.cleared_items {
             let count = cleared.len();
             ui.horizontal(|ui| {
@@ -244,36 +246,14 @@ impl MyApp {
                     }
                 }
             });
-        ui.horizontal (|ui|{
-            if ui.button("+ Add Item").clicked() {
-                self.shopping_items.push(ShoppingItemQuery {
-                    name: String::new(),
-                    quantity: 1,
-                    unit: unit_to_str(EACH).to_string(),
-                });
-            }
-            if ui.button("Load CSV").clicked() {
-                self.load_csv();
-            }
-            let can_save = self
-                .shopping_items
-                .iter()
-                .any(|item| !item.name.trim().is_empty());
+        }
 
-            if ui
-                .add_enabled(can_save, egui::Button::new("Save CSV"))
-                .clicked()
-            {
-                self.save_csv();
-            }
-        });
         if let Some(status) = &self.csv_status {
             ui.label(egui::RichText::new(status).small().weak());
         }
-
-
         let mut remove_index: Option<usize> = None;
-        for (i, item) in &mut self.shopping_items.iter_mut().enumerate() {
+
+        for (i, item) in self.shopping_items.iter_mut().enumerate() {
             ui.horizontal(|ui| {
                 ui.text_edit_singleline(&mut item.name);
                 ui.add(egui::DragValue::new(&mut item.quantity));
@@ -312,6 +292,7 @@ impl MyApp {
                             unit_to_str(DOLLAR),
                         );
                     });
+
                 if ui
                     .add(egui::Button::new("X").fill(egui::Color32::RED))
                     .on_hover_text("Remove item")
@@ -321,6 +302,7 @@ impl MyApp {
                 }
             });
         }
+
         if let Some(i) = remove_index {
             self.shopping_items.remove(i);
         }
@@ -819,3 +801,4 @@ impl Default for MyApp {
         )
     }
 }
+
