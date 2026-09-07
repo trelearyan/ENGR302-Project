@@ -6,8 +6,8 @@ use crate::gui::ShowableWidget;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PreferencesData {
-    max_range: Distance,
-    max_stores: u32,
+    pub max_range: Distance,
+    pub max_stores: usize,
 }
 
 impl ShowableWidget for PreferencesData {

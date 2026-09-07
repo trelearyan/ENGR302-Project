@@ -12,8 +12,8 @@ use crate::gui::ShowableWidget;
 
 #[derive(Default, Clone, Serialize, Deserialize, Debug)]
 pub struct TransitData {
-    mileage_option: MileageOptions,
-    mileage_scratch: String,
+    pub mileage_option: MileageOptions,
+    pub mileage_scratch: String,
 }
 
 impl ShowableWidget for TransitData {
