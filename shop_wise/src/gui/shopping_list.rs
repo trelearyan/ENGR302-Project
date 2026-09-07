@@ -1,8 +1,8 @@
 use std::rc::Rc;
 
 use eframe::egui::{self, Ui};
-use serde::ser::SerializeStruct;
 use serde::Serialize;
+use serde::ser::SerializeStruct;
 use util::search::SearchUnits::{DOLLAR, EACH, GRAM, KILOGRAM, LITRE, MILLILITRE};
 use util::search::{ShoppingItemQuery, unit_to_str};
 
@@ -166,25 +166,5 @@ impl ShoppingListData {
             "CSV",
             &["csv"],
         );
-    }
-
-    fn check_file_results(&mut self) {
-        while let Some(outcome) = self.files.poll() {
-            self.csv_status = Some(match outcome {
-                FileOutcome::Opened { text, name } => {
-                    match crate::filehandling::csv::read_csv(&text) {
-                        Ok(items) => {
-                            let _count = items.len();
-                            self.shopping_items = items;
-                            //self.undo = None;
-                            format!("Loaded {name}")
-                        }
-                        Err(error) => format!("could not read {name}: {error}"),
-                    }
-                }
-                FileOutcome::Saved { name } => format!("Saved to {name}"),
-                FileOutcome::Failed(reason) => reason,
-            });
-        }
     }
 }
