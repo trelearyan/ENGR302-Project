@@ -122,7 +122,7 @@ pub fn make_success_callback(
             match reverse_geocode(latitude, longitude).await {
                 Ok(address) => {
                     log::info!("Address: {address}");
-                    state_clone.borrow_mut().address = address;
+                    state.borrow_mut().address = address;
                 }
                 Err(err) => {
                     log::error!("Reverse geocode failed: {err}");
