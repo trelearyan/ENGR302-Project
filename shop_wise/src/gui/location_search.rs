@@ -4,7 +4,6 @@ use util::coordinate::Coordinate;
 use std::cell::RefCell;
 use std::rc::Rc;
 
-
 const DEBOUNCE_SECONDS: f64 = 0.4;
 const MIN_QUERY_LEN: usize = 3;
 
@@ -112,13 +111,14 @@ impl LocationData {
             } else {
                 state.status = LocationStatus::Searching;
                 state.request_id += 1;
-                let this_request = state.request_id;
-                let state_clone = this.clone();
-                let ctx_clone = ui.ctx().clone();
+                
 
                 #[cfg(target_arch = "wasm32")]
                 {
                     use wasm_bindgen_futures::spawn_local;
+                    let this_request = state.request_id;
+                    let state_clone = this.clone();
+                    let ctx_clone = ui.ctx().clone();
                     spawn_local(async move {
                         match LocationData::geocode_suggestions(&query).await {
                             Ok(results) => {
