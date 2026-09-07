@@ -9,15 +9,15 @@ const MIN_QUERY_LEN: usize = 3;
 
 #[derive(Default, Clone, Serialize, Deserialize, Debug)]
 pub struct LocationData {
-    latitude: Option<f64>,  // TODO: this should be one Option<Coordinate>
-    longitude: Option<f64>, // , not possible to have one but not the other
+    pub latitude: Option<f64>,  // TODO: this should be one Option<Coordinate>
+    pub longitude: Option<f64>, // , not possible to have one but not the other
 
-    address: String,
-    status: LocationStatus,
-    suggestions: Vec<AddressSuggestion>,
+    pub address: String,
+    pub status: LocationStatus,
+    pub suggestions: Vec<AddressSuggestion>,
 
-    request_id: u64,
-    last_edit_time: Option<f64>,
+    pub request_id: u64,
+    pub last_edit_time: Option<f64>,
 }
 
 impl ShowableWidget for LocationData {

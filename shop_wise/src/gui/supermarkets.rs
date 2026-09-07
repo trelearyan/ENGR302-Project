@@ -5,9 +5,9 @@ use crate::gui::ShowableWidget;
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct SupermarketsData {
-    include_paknsave: bool,
-    include_newworld: bool,
-    include_woolies: bool,
+    pub include_paknsave: bool,
+    pub include_newworld: bool,
+    pub include_woolies: bool,
 }
 
 impl ShowableWidget for SupermarketsData {

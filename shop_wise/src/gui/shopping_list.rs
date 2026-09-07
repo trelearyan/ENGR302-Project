@@ -11,10 +11,10 @@ use crate::gui::ShowableWidget;
 
 #[derive(Clone, Debug, Default)]
 pub struct ShoppingListData {
-    shopping_items: Vec<ShoppingItemQuery>,
-    files: Rc<FileChannel>,
-    csv_status: Option<String>,
-    cleared_items: Option<Vec<ShoppingItemQuery>>,
+    pub shopping_items: Vec<ShoppingItemQuery>,
+    pub files: Rc<FileChannel>,
+    pub csv_status: Option<String>,
+    pub cleared_items: Option<Vec<ShoppingItemQuery>>,
 }
 
 impl Serialize for ShoppingListData {

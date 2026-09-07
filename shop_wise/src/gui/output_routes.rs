@@ -24,8 +24,9 @@ pub enum PanelLayout {
 
 #[derive(Clone, Debug)]
 pub struct OutputRoutesData {
-    selected: ScenarioKind,
-    layout: PanelLayout,
+    pub selected: ScenarioKind,
+    pub layout: PanelLayout,
+    pub results: ResultsState,
 }
 
 impl Default for OutputRoutesData {
@@ -33,6 +34,7 @@ impl Default for OutputRoutesData {
         Self {
             selected: ScenarioKind::Best,
             layout: PanelLayout::Cards,
+            results: ResultsState::Idle,
         }
     }
 }
