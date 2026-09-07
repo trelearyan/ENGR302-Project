@@ -88,7 +88,7 @@ pub fn calculate(shop_list: &[ShoppingItemQuery], filters: &StoreFilters, mileag
                 }
             }
             if (found_id.is_none()) {
-                panic!("Given store that is not in given stores!?");
+                continue;
             }
             visited.push(found_id.unwrap());
         }
