@@ -42,6 +42,19 @@ pub enum LocationStatus {
     Error(String),
 }
 
+#[derive(Deserialize)]
+struct GeocodeResponse {
+    lat: String,
+    lon: String,
+    display_name: String,
+}
+
+// store readable address (after converting from coords to address)
+#[derive(Deserialize)]
+struct ReverseResponse {
+    display_name: String,
+}
+
 impl From<LocationData> for Coordinate {
     fn from(value: LocationData) -> Self {
         if let (Some(latitude), Some(longitude)) = (value.latitude, value.longitude) {
