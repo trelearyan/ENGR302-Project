@@ -3,6 +3,8 @@ use std::collections::HashSet;
 use std::ops::Deref;
 use util::coordinate::Coordinate;
 use util::store::StoreBrand;
+use std::cell::RefCell;
+use std::rc::Rc;
 
 use crate::gui::location_search::{LocationData, LocationStatus};
 use crate::gui::output_routes::OutputRoutesData;
@@ -27,7 +29,7 @@ pub struct AppData {
     preferences: PreferencesData,
     supermarkets: SupermarketsData,
     transit: TransitData,
-    location_search: LocationData,
+    location_search: Rc<RefCell<LocationData>>,
     output_routes: OutputRoutesData,
 }
 
@@ -47,7 +49,7 @@ impl ShowableWidget for AppData {
                 ui.separator();
                 self.transit.show(ui);
                 ui.separator();
-                self.location_search.show(ui);
+                LocationData::show(&self.location_search, ui);
             });
 
             CentralPanel::default().show_inside(ui, |ui| {
@@ -68,7 +70,7 @@ impl AppData {
                 .iter()
                 .any(|item| !item.name.trim().is_empty());
             let location_ready = matches!(
-                self.location_search.status,
+                self.location_search.borrow().status,
                 LocationStatus::Resolved | LocationStatus::Success
             );
 
