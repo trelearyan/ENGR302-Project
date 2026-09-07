@@ -147,12 +147,11 @@ impl Scenario {
 
          let stops = store_plans
              .into_iter()
-             .filter_map(|store_plan| {
-                 let infos = store_plan;
+             .filter_map(|infos| {
 
                 // TODO: shopping_plan store name
                  // TODO: fix match_sid_to_brand and calculate mapping
-                 let brand = store_plan.store.brand.clone();
+                 let brand = infos.store.brand;
 
                  let items = infos.items
                      .iter()

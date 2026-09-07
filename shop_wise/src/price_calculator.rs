@@ -36,6 +36,8 @@ pub struct CalculationTotal {
     pub best: Calculation,
 }
 
+// Private types
+
 type StoreId = usize;
 type GlobalStoreId = u32;
 type ItemId = usize;
