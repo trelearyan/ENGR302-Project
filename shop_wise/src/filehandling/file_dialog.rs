@@ -1,5 +1,6 @@
 use std::sync::mpsc::{Receiver, Sender, channel};
 
+
 #[derive(Debug)]
 pub enum FileOutcome {
     Opened { text: String, name: String },
@@ -107,6 +108,35 @@ fn save_impl(
         Err(reason) => FileOutcome::Failed(reason),
     };
     let _ = sender.send(outcome);
+}
+
+fn download(text: &str, filename: &str) -> Result<(), String> {
+    use wasm_bindgen::JsCast;
+
+    let document = web_sys::window()
+        .and_then(|window| window.document())
+        .ok_or_else(|| "no browser document available".to_owned())?;
+
+    let url = format!("data:text/csv;charset=utf-8,{}", urlencoding::encode(text));
+
+    let anchor = document
+        .create_element("a")
+        .map_err(|_| "could not prepare the download".to_owned())?
+        .dyn_into::<web_sys::HtmlAnchorElement>()
+        .map_err(|_| "could not prepare the download".to_owned())?;
+
+    anchor.set_href(&url);
+    anchor.set_download(filename);
+
+    if let Some(body) = document.body() {
+        let _ = body.append_child(&anchor);
+        anchor.click();
+        let _ = body.remove_child(&anchor);
+    } else {
+        anchor.click();
+    }
+
+    Ok(())
 }
 
 #[cfg(not(target_arch = "wasm32"))]
