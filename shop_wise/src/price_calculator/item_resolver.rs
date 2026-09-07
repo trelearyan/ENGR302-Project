@@ -2,9 +2,6 @@ use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::collections::hash_map::Iter as HashIter;
 use std::slice::Iter as VecIter;
-use std::fs;
-use std::path::Path;
-use std::process::Command;
 use util::coordinate::Coordinate;
 use util::cost::Cost;
 use util::search::{SearchUnits, ShoppingItem, ShoppingItemQuery, match_sid_to_brand};
@@ -57,7 +54,7 @@ pub fn search(item_query: &ShoppingItemQuery, num_options: u32) -> Option<Vec<Sa
         .collect::<Vec<_>>();
     // Sort descending
     list.sort_by(|a , b|->Ordering {b.1.cmp(&a.1)});
-    if (list.len() >= num_options as usize) {
+    if list.len() >= num_options as usize {
         Some(list.iter()
             .take(num_options as usize)
             .map(|f|->SantizedSearchResult {
@@ -73,7 +70,7 @@ pub fn search(item_query: &ShoppingItemQuery, num_options: u32) -> Option<Vec<Sa
     }
 }
 
-/// Resolve a ShoppingItemQuery into a ShoppingItem for each store
+/// Resolve a `ShoppingItemQuery` into a `ShoppingItem` for each store
 /// <br>
 /// Returns:
 /// <br>
@@ -81,6 +78,7 @@ pub fn search(item_query: &ShoppingItemQuery, num_options: u32) -> Option<Vec<Sa
 /// ShoppingItem. This contains only entries for stores where shopping items were found
 /// <br>
 /// None if the string could not be resolved
+#[must_use]
 pub fn resolve(item_query: &ShoppingItemQuery) -> Option<HashMap<u32, ShoppingItem>> {
     // Split item_query into search terms
     let terms: Vec<&str> = item_query.name.split(' ').collect();
@@ -90,20 +88,18 @@ pub fn resolve(item_query: &ShoppingItemQuery) -> Option<HashMap<u32, ShoppingIt
     // For each store (future narrow to allowed)
     for i in 1..=3 {
         // stores not available at the moment, only brands
-        let shop_id: &str = &i.to_string();
+        let _shop_id: &str = &i.to_string();
         let mut itemlist: HashMap<u32, SearchResult> = HashMap::new();
         // Get every item that matches some whole term of the query
         for j in 0..terms.len() {
-            let term = *terms.get(j).unwrap();
+            let _term = *terms.get(j).unwrap();
             let found = search.get_mut(&j)?.remove(&i);
-            if (found.is_none()) {
+            if found.is_none()  {
                 continue;
             }
             // Only add item if it wasn't already in the map
             for item in found.unwrap() {
-                if !itemlist.contains_key(&item.item_id) {
-                    itemlist.insert(item.item_id, item);
-                }
+                itemlist.entry(item.item_id).or_insert(item);
             }
         }
         // Score each item based on whether it fits the right department,
@@ -118,11 +114,11 @@ pub fn resolve(item_query: &ShoppingItemQuery) -> Option<HashMap<u32, ShoppingIt
             let item: &&SearchResult = &itemlist.get(key).unwrap();
             let mul: Option<u32> = search_unit
                 .scale_to_match(item_query.quantity, &item.unit, item.quantity, item.price);
-            if (mul.is_none()) {
+            if mul.is_none() {
                 continue;
             }
             let price: u32 = item.price * mul.unwrap();
-            let mut score: i32 = score_item(&terms, item, price);
+            let score: i32 = score_item(&terms, item, price);
             // Return best match per store
             if score > best_score {
                 best_key = Some(*key as i32);
@@ -130,7 +126,7 @@ pub fn resolve(item_query: &ShoppingItemQuery) -> Option<HashMap<u32, ShoppingIt
                 best_mul = mul;
             }
         }
-        if (best_key.is_none()) {
+        if best_key.is_none() {
             continue;
         }
         let best = itemlist.get(&(best_key.unwrap() as u32)).unwrap();
@@ -180,7 +176,7 @@ fn score_item(terms: &[&str], item: &&SearchResult, price: u32) -> i32 {
         let mut tscore = 1;
         let term: &str = *terms.get(j).unwrap();
         &item.name.split(' ').for_each(|x: &str| {
-            tscore += if (x.to_lowercase().contains(&term.to_lowercase())) {
+            tscore += if x.to_lowercase().contains(&term.to_lowercase()) {
                 10
             } else {
                 -1
@@ -214,7 +210,7 @@ fn demo_db(search_terms: &[&str]) -> Result<HashMap<usize, HashMap<u32, Vec<Sear
         let search_term = search_terms.get(term_i).unwrap();
         let mut term_results: HashMap<u32, Vec<SearchResult>> = HashMap::new();
         for i in 1..=3 {
-            let shop_id = &i.to_string();
+            let _shop_id = &i.to_string();
             let sql_query = "
                 SELECT id, supermarket_id, name, price, volume_size, image_url
                 FROM products p
@@ -237,7 +233,7 @@ fn demo_db(search_terms: &[&str]) -> Result<HashMap<usize, HashMap<u32, Vec<Sear
                         image_url: row.get(5)?,
                     })
             })?;
-            let shop_results: Vec<SearchResult> = res.map(|f: std::prelude::v1::Result<SearchResult, Error>|->SearchResult{return f.unwrap();}).collect();
+            let shop_results: Vec<SearchResult> = res.map(|f: std::prelude::v1::Result<SearchResult, Error>|->SearchResult{f.unwrap()}).collect();
             term_results.insert(i, shop_results);
         }
         result.insert(term_i, term_results);
@@ -279,7 +275,7 @@ fn get_unit(unit_text: String) -> (u32, SearchUnits) {
         .take(2)
         .map(|x|-> f32 {x.as_str().parse::<f32>().unwrap_or(f32::NAN)})
         .collect::<Vec<f32>>();
-    if (values.is_empty() || !values.get(0).unwrap().is_finite()) {
+    if values.is_empty() || !values.get(0).unwrap().is_finite() {
         return DEFAULT_UNIT;
     }
     let mut quantity: f32 = *values.get(0).unwrap();
@@ -292,7 +288,7 @@ fn get_unit(unit_text: String) -> (u32, SearchUnits) {
         }
     }
     // Make sure quantity is positive
-    if (quantity <= 0.0) {
+    if quantity <= 0.0 {
         return DEFAULT_UNIT;
     }
     // Replace all the digits with whitespace, then lower and strip again
@@ -305,7 +301,7 @@ fn get_unit(unit_text: String) -> (u32, SearchUnits) {
         // If significant remainder do grams
         if quantity % 1.0 > 0.05 {
             let new_quantity = (quantity * 1000.0) as u32;
-            if (new_quantity >= 1) {
+            if new_quantity >= 1 {
                 return (new_quantity, SearchUnits::GRAM);
             }
             return DEFAULT_UNIT;
@@ -325,7 +321,7 @@ fn get_unit(unit_text: String) -> (u32, SearchUnits) {
         // If significant remainder do grams
         if quantity % 1.0 > 0.05 {
             let new_quantity = (quantity * 1000.0) as u32;
-            if (new_quantity >= 1) {
+            if new_quantity >= 1 {
                 return (new_quantity, SearchUnits::MILLILITRE);
             }
             return DEFAULT_UNIT;

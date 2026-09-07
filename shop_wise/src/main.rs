@@ -1,10 +1,5 @@
-use std::fs::read_to_string;
 
-use crate::{
-    gui::ShowableWidget,
-    route_planner::filters::{StoreFilters, filter_stores},
-};
-use util::store::Store;
+use crate::gui::ShowableWidget;
 
 pub mod filehandling;
 

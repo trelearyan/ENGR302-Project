@@ -60,6 +60,7 @@ impl StoreFilters {
     /// example
     /// ```
     /// ```
+    #[must_use]
     pub fn builder() -> StoreFiltersBuilder {
         StoreFiltersBuilder::new()
     }
@@ -111,6 +112,7 @@ impl StoreFiltersBuilder {
     /// example
     /// ```
     /// ```
+    #[must_use]
     pub fn new() -> Self {
         Self {
             location: None,
@@ -121,7 +123,7 @@ impl StoreFiltersBuilder {
     }
 
     // TODO: this doc
-    /// Build the StoreFilters.
+    /// Build the `StoreFilters`.
     ///
     /// detailed explanation
     ///
@@ -130,6 +132,7 @@ impl StoreFiltersBuilder {
     /// example
     /// ```
     /// ```
+    #[must_use]
     pub fn build(self) -> StoreFilters {
         StoreFilters::new(
             // default: wellington
@@ -142,7 +145,7 @@ impl StoreFiltersBuilder {
     }
 
     // TODO: this doc
-    /// Build the StoreFilters.
+    /// Build the `StoreFilters`.
     ///
     /// detailed explanation
     ///
@@ -151,11 +154,13 @@ impl StoreFiltersBuilder {
     /// example
     /// ```
     /// ```
+    #[must_use]
     pub fn range(mut self, range: Distance) -> Self {
         self.max_range_metres = Some(range);
         self
     }
 
+    #[must_use]
     pub fn max_store_visits(mut self, max_store_visits: usize) -> Self {
         self.max_store_visits = Some(max_store_visits);
         self
@@ -172,6 +177,7 @@ impl StoreFiltersBuilder {
     /// filters.location(Coordinate::AUCKLAND);
     /// println!("{:?}", filters.build().location); // Coordinate { longitude: -36.84846, latitude: 174.76334 }
     /// ```
+    #[must_use]
     pub fn location(mut self, location: Coordinate) -> Self {
         self.location = Some(location);
         self
@@ -189,6 +195,7 @@ impl StoreFiltersBuilder {
     /// filters.disallow_brand(StoreBrand::Woolworths);
     /// println!("{:?}", filters.build().allowed_brands); // {Woolworths}
     /// ```
+    #[must_use]
     pub fn disallow_brand(mut self, brand: StoreBrand) -> Self {
         self.disallowed_brands.insert(brand);
         self
@@ -207,6 +214,7 @@ impl StoreFiltersBuilder {
     /// filters.disallow_brands(&[StoreBrand::Paknsave, StoreBrand::Newworld]);
     /// println!("{:?}", filters.build().allowed_brands); // {Paknsave, NewWorld}
     /// ```
+    #[must_use]
     pub fn disallow_brands(mut self, brands: &[StoreBrand]) -> Self {
         for brand in brands {
             self.disallowed_brands.insert(*brand);
@@ -228,6 +236,7 @@ impl StoreFiltersBuilder {
     /// filters.all_brands();
     /// println!("{:?}", filters.build().allowed_brands); // {}
     /// ```
+    #[must_use]
     pub fn all_brands(mut self) -> Self {
         self.disallowed_brands.clear();
         self
@@ -244,6 +253,7 @@ impl StoreFiltersBuilder {
 /// example
 /// ```
 /// ```
+#[must_use]
 pub fn filter_stores(stores: &[Store], filters: &StoreFilters) -> Vec<Store> {
     // stores
     //     .iter()

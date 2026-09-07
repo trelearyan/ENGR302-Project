@@ -35,7 +35,7 @@ pub fn read_csv(text: &str) -> Result<Vec<ShoppingItemQuery>, CsvError> {
         let record = record.map_err(|e| CsvError::Malformed(e.to_string()))?;
 
         // blank lines -> skip
-        if record.iter().all(|field| field.is_empty()) {
+        if record.iter().all(str::is_empty) {
             continue;
         }
 

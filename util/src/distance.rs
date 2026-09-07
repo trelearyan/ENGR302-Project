@@ -1,12 +1,8 @@
-use std::{
-    ops::{Div, Mul},
-    time::Duration,
-};
+use std::{ops::Div, time::Duration};
 
 use bigdecimal::BigDecimal;
 use derive_more::{Add, AddAssign, Sub, SubAssign, Sum};
-use eframe::emath::Numeric;
-use num_traits::{FromPrimitive, ToPrimitive, Zero};
+use num_traits::{FromPrimitive, ToPrimitive};
 use serde::{Deserialize, Serialize};
 
 use crate::speed::Speed;
@@ -33,10 +29,12 @@ pub struct Distance {
 }
 
 impl Distance {
+    #[must_use]
     pub fn from_metres_f64(metres: f64) -> Self {
         Self::from_metres(BigDecimal::from_f64(metres).unwrap())
     }
 
+    #[must_use]
     pub fn from_kilometres_f64(metres: f64) -> Self {
         Self::from_metres(BigDecimal::from_f64(metres * 1000.).unwrap())
     }
@@ -48,16 +46,19 @@ impl Distance {
         }
     }
 
+    #[must_use]
     pub fn metres(&self) -> f64 {
         self.base_value_metres.clone().to_f64().unwrap()
     }
 
+    #[must_use]
     pub fn kilometres(&self) -> f64 {
         (self.base_value_metres.clone() / BigDecimal::from(1000))
             .to_f64()
             .unwrap()
     }
 
+    #[must_use]
     pub fn inner(&self) -> BigDecimal {
         self.base_value_metres.clone()
     }
@@ -73,11 +74,7 @@ impl Div<Speed> for Distance {
 
 #[cfg(test)]
 mod tests {
-    use eframe::wgpu::wgt::strict_assert_eq;
-    use num_traits::Float;
-
     use super::*;
-    use std::{fmt::Debug, str::FromStr};
 
     fn assert_within_tolerance(x: f64, y: f64) {
         const ERROR_EPSILON: f64 = 0.001;

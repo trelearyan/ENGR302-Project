@@ -21,6 +21,7 @@ pub enum SearchUnits {
 
 impl SearchUnits {
     /// Gives the physical quantity that the unit is measuring (e.g. count, mass, volume, cost)
+    #[must_use]
     pub fn measurement_type(&self) -> &'static str {
         match self {
             EACH => "count",
@@ -33,6 +34,7 @@ impl SearchUnits {
     }
 
     /// Gives the string representation of the unit
+    #[must_use]
     pub fn to_str(&self) -> &'static str {
         match self {
             EACH => "ea",
@@ -45,6 +47,7 @@ impl SearchUnits {
     }
 
     /// Matches the string representation to the unit
+    #[must_use]
     pub fn match_to_unit(name: &str) -> Option<SearchUnits> {
         match name {
             "ea" => Some(EACH),
@@ -76,6 +79,7 @@ impl SearchUnits {
     /// stays under your limit
     /// 
     /// If no conversion can be found, None will be returned
+    #[must_use]
     pub fn scale_to_match(&self, search_quantity: u32, base_unit: &SearchUnits, base_quantity: u32, cost_cents: u32) -> Option<u32> {
         match self {
             EACH => {
@@ -122,7 +126,7 @@ impl SearchUnits {
             },
             DOLLAR => {
                 let mul = (search_quantity * 100) / cost_cents;
-                return if (mul >= 1) {
+                return if mul >= 1 {
                     Some(mul)
                 } else {
                     None
@@ -132,8 +136,9 @@ impl SearchUnits {
     }
 }
 
+#[must_use]
 pub fn match_sid_to_brand(sid: u32) -> Option<StoreBrand> {
-    match (sid) {
+    match sid  {
         1 => Some(Paknsave),
         2 => Some(Woolworths),
         3 => Some(Newworld),
@@ -159,7 +164,7 @@ pub struct ShoppingItem {
 
 #[cfg(test)]
 mod test {
-    use crate::search::SearchUnits::{self, EACH};
+    use crate::search::SearchUnits::{self};
 
     #[test]
     fn test_symettric() {
