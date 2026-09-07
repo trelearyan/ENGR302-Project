@@ -41,7 +41,7 @@ pub enum LocationStatus {
     Success,
     Error(String),
 }
-
+#[cfg(target_arch = "wasm32")]
 #[derive(Deserialize)]
 struct GeocodeResponse {
     lat: String,
@@ -50,6 +50,7 @@ struct GeocodeResponse {
 }
 
 // store readable address (after converting from coords to address)
+#[cfg(target_arch = "wasm32")]
 #[derive(Deserialize)]
 struct ReverseResponse {
     display_name: String,
