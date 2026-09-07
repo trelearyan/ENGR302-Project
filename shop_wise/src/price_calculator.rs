@@ -36,8 +36,6 @@ pub struct CalculationTotal {
     pub best: Calculation,
 }
 
-use std::hash::Hash;
-
 type StoreId = usize;
 type GlobalStoreId = u32;
 type ItemId = usize;

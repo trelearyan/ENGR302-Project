@@ -17,7 +17,6 @@ use util::speed::Speed;
 use util::distance::Distance;
 use util::search::SearchUnits::{DOLLAR, EACH, GRAM, KILOGRAM, LITRE, MILLILITRE};
 use util::search::{ShoppingItemQuery, unit_to_str};
-use util::speed::Speed;
 use util::store::StoreBrand;
 
 use crate::output::OutputPanel;
@@ -25,6 +24,20 @@ use crate::price_calculator::{self, item_resolver};
 use crate::results::ResultsState;
 use crate::route_planner;
 use crate::route_planner::filters::StoreFilters;
+
+#[derive(Default, Clone, PartialEq)]
+pub enum LocationStatus {
+    #[default]
+    Idle,
+    Searching,
+    Suggesting,
+    NotFound,
+    Resolved,
+
+    Locating,
+    Success,
+    Error(String),
+}
 
 #[derive(Default, Clone)]
 pub struct LocationState {
@@ -387,10 +400,6 @@ impl MyApp {
                 button = button.on_disabled_hover_text(reason);
             }
             if button.clicked() {
-                // Sam
-                let res = price_calculator::calculator::calculate(&self.shopping_items);
-                //item_resolver(&self.shopping_items);
-
                 // Alex
                 // TODO: Fix this up once we have a better format of all the stores and individual location blacklisting
                 let mut banned_stores = HashSet::<StoreBrand>::new();
