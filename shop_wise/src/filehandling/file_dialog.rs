@@ -1,6 +1,5 @@
 use std::sync::mpsc::{Receiver, Sender, channel};
 
-use serde::{Deserialize, Serialize};
 
 #[derive(Debug)]
 pub enum FileOutcome {

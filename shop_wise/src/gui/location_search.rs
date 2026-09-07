@@ -51,7 +51,7 @@ impl ShowableWidget for LocationData {
 
         // on Enter, Fire a search once the debounce window has elapsed, or immediately
         let should_fire = match self.last_edit_time {
-            Some(last_edit) if enter_pressed => true,
+            Some(_last_edit) if enter_pressed => true,
             Some(last_edit) if now - last_edit >= DEBOUNCE_SECONDS => true,
             _ => false,
         };
@@ -65,9 +65,9 @@ impl ShowableWidget for LocationData {
             } else {
                 self.status = LocationStatus::Searching;
                 self.request_id += 1;
-                let this_request = self.request_id;
-                let state_clone = self.clone();
-                let ctx_clone = ui.ctx().clone();
+                let _this_request = self.request_id;
+                let _state_clone = self.clone();
+                let _ctx_clone = ui.ctx().clone();
                 #[cfg(target_arch = "wasm32")]
                 {
                     use wasm_bindgen_futures::spawn_local;
@@ -377,17 +377,4 @@ impl From<LocationData> for Coordinate {
             Coordinate::default()
         }
     }
-}
-
-#[derive(Deserialize)]
-struct GeocodeResponse {
-    lat: String,
-    lon: String,
-    display_name: String,
-}
-
-// store readable address (after converting from coords to address)
-#[derive(Deserialize)]
-struct ReverseResponse {
-    display_name: String,
 }

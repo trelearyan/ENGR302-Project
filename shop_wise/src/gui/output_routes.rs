@@ -1,7 +1,6 @@
 use std::ops::Deref;
 
 use eframe::egui;
-use serde::{Deserialize, Serialize};
 
 use crate::{
     gui::ShowableWidget,
@@ -12,7 +11,7 @@ use crate::{
 };
 
 impl ShowableWidget for OutputRoutesData {
-    fn show(&mut self, ui: &mut egui::Ui) {}
+    fn show(&mut self, _ui: &mut egui::Ui) {}
 }
 
 const STACK_BELOW_WIDTH: f32 = 760.0;
@@ -29,7 +28,6 @@ pub enum PanelLayout {
 pub struct OutputRoutesData {
     selected: ScenarioKind,
     layout: PanelLayout,
-    results_state: ResultsState,
 }
 
 impl Default for OutputRoutesData {
@@ -37,12 +35,12 @@ impl Default for OutputRoutesData {
         Self {
             selected: ScenarioKind::Best,
             layout: PanelLayout::Cards,
-            results_state: ResultsState::Idle,
         }
     }
 }
 
 impl OutputRoutesData {
+    #[must_use]
     pub fn new() -> Self {
         Self::default()
     }

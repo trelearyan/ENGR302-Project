@@ -6,20 +6,22 @@ use util::store::StoreBrand;
 
 // TODO(FR-09):
 // use std::collections::HashMap;
-use util::search::match_sid_to_brand;
 //use crate::price_calculator::StoreId;
 use crate::price_calculator::{Calculation, CalculationTotal};
 
 /// for data that has no output yet
 pub const UNAVAILABLE: &str = "not available";
+#[must_use]
 pub fn format_money(cost: &Cost) -> String {
     format!("${cost}")
 }
 
+#[must_use]
 pub fn format_distance(distance: &Distance) -> String {
     format!("{:.1} km", distance.kilometres())
 }
 
+#[must_use]
 pub fn format_duration(minutes: f32) -> String {
     let total = minutes.round().max(0.0) as u32;
     if total < 60 {
@@ -43,6 +45,7 @@ impl ScenarioKind {
         ScenarioKind::Fastest,
     ];
 
+    #[must_use]
     pub fn label(self) -> &'static str {
         match self {
             ScenarioKind::Best => "Best value",
@@ -51,6 +54,7 @@ impl ScenarioKind {
         }
     }
 
+    #[must_use]
     pub fn blurb(self) -> &'static str {
         match self {
             ScenarioKind::Best => "Balances money saved against time spent",
@@ -60,6 +64,7 @@ impl ScenarioKind {
     }
 }
 
+#[must_use]
 pub fn brand_label(brand: StoreBrand) -> &'static str {
     match brand {
         StoreBrand::Paknsave => "Pak'nSave",
@@ -78,6 +83,7 @@ pub struct ItemLine {
 }
 
 impl ItemLine {
+    #[must_use]
     pub fn line_total(&self) -> Cost {
         self.unit_price.clone() * BigDecimal::from(self.quantity)
     }
@@ -112,12 +118,14 @@ impl Scenario {
         self.stops.iter().map(StoreStop::subtotal).sum()
     }
 
+    #[must_use]
     pub fn total_cost(&self) -> Cost {
         match &self.travel_cost {
             Some(travel) => self.grocery_cost() + travel.clone(),
             None => self.grocery_cost(),
         }
     }
+    #[must_use]
     pub fn item_count(&self) -> u32 {
         self.stops
             .iter()
@@ -126,6 +134,7 @@ impl Scenario {
             .sum()
     }
 
+    #[must_use]
     pub fn store_summary(&self) -> String {
         if self.stops.is_empty() {
             return "No store found".to_owned();
@@ -143,11 +152,11 @@ impl Scenario {
     // TODO(FR-09):when Results::from_calculation works
 
     fn from_calculation(kind: ScenarioKind, calc: &Calculation) -> Self {
-        let mut store_plans = &calc.shopping_plan;
+        let store_plans = &calc.shopping_plan;
         //store_ids.sort();
 
         let stops = store_plans
-            .into_iter()
+            .iter()
             .filter_map(|infos| {
                 // TODO: shopping_plan store name
                 // TODO: fix match_sid_to_brand and calculate mapping
@@ -194,6 +203,7 @@ pub enum UnresolvedReason {
 }
 
 impl UnresolvedReason {
+    #[must_use]
     pub fn message(self) -> &'static str {
         match self {
             UnresolvedReason::NotRecognised => "not recognised, check the spelling",
@@ -218,6 +228,7 @@ pub struct Results {
 }
 
 impl Results {
+    #[must_use]
     pub fn scenario(&self, kind: ScenarioKind) -> &Scenario {
         match kind {
             ScenarioKind::Best => &self.best,
@@ -226,6 +237,7 @@ impl Results {
         }
     }
 
+    #[must_use]
     pub fn headline_saving(&self) -> Option<Cost> {
         let dearest = ScenarioKind::ALL
             .iter()
@@ -237,6 +249,7 @@ impl Results {
 
     // TODO(FR-09): once fields are pub
 
+    #[must_use]
     pub fn from_calculation(calc: &CalculationTotal, origin_label: String) -> Self {
         Self {
             origin_label,
