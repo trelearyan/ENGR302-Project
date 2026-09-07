@@ -1,9 +1,9 @@
-use crate::price_calculator::shopping_list_parser::{CSV, ListParserError, parse_csv};
 use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
 use std::process::Command;
 use util::coordinate::Coordinate;
+use util::cost::Cost;
 use util::search::{SearchUnits, ShoppingItem, ShoppingItemQuery, match_sid_to_brand};
 use util::store::{Store, StoreBrand};
 use rusqlite::{Connection, Error, Result};
@@ -73,7 +73,7 @@ pub fn resolve(item_query: &ShoppingItemQuery) -> Option<HashMap<u32, ShoppingIt
                 });
                 score *= tscore;
             }
-            score *= 1000;
+            score *= 10000;
             // Score based on most popular category of high scoring items (narrow top results - need good already)
             // category not available at the moment
             // Grade on price & quantity matching
@@ -95,7 +95,7 @@ pub fn resolve(item_query: &ShoppingItemQuery) -> Option<HashMap<u32, ShoppingIt
                 name: best.name.clone(),
                 quantity: 1,
                 unit: SearchUnits::EACH,
-                price: best.price,
+                price: Cost::from_cents(best.price),
                 store: Store {
                     brand: best.store,
                     location: Coordinate::from_lat_long_f32(i as f32, i as f32),

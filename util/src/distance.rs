@@ -1,10 +1,15 @@
-use std::ops::Mul;
+use std::{
+    ops::{Div, Mul},
+    time::Duration,
+};
 
 use bigdecimal::BigDecimal;
 use derive_more::{Add, AddAssign, Sub, SubAssign, Sum};
 use eframe::emath::Numeric;
 use num_traits::{FromPrimitive, ToPrimitive, Zero};
 use serde::{Deserialize, Serialize};
+
+use crate::speed::Speed;
 
 #[derive(
     Default,
@@ -24,7 +29,7 @@ use serde::{Deserialize, Serialize};
 )]
 
 pub struct Distance {
-    base_value_metres: BigDecimal,
+    pub(crate) base_value_metres: BigDecimal,
 }
 
 impl Distance {
@@ -51,6 +56,18 @@ impl Distance {
         (self.base_value_metres.clone() / BigDecimal::from(1000))
             .to_f64()
             .unwrap()
+    }
+
+    pub fn inner(&self) -> BigDecimal {
+        self.base_value_metres.clone()
+    }
+}
+
+impl Div<Speed> for Distance {
+    type Output = Duration;
+
+    fn div(self, rhs: Speed) -> Self::Output {
+        Duration::from_millis((self.base_value_metres / rhs.inner()).to_u64().unwrap())
     }
 }
 

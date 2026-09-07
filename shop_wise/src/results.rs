@@ -7,7 +7,7 @@ use util::store::StoreBrand;
 // use std::collections::HashMap;
 use util::search::match_sid_to_brand;
 //use crate::price_calculator::StoreId;
-use crate::price_calculator::{Calculation, CalculationTotal, StoreId};
+use crate::price_calculator::{Calculation, CalculationTotal};
 
 /// for data that has no output yet
 pub const UNAVAILABLE: &str = "not available";
@@ -142,24 +142,22 @@ impl Scenario {
     // TODO(FR-09):when Results::from_calculation works
 
     fn from_calculation(kind: ScenarioKind, calc: &Calculation) -> Self{
-         let mut store_ids: Vec<StoreId> = calc.shopping_plan.keys().copied().collect();
-         store_ids.sort();
+         let mut store_plans = &calc.shopping_plan;
+         //store_ids.sort();
 
-         let stops = store_ids
+         let stops = store_plans
              .into_iter()
-             .filter_map(|store_id| {
-                 let infos = calc.shopping_plan.get(&store_id)?;
+             .filter_map(|infos| {
 
                 // TODO: shopping_plan store name
                  // TODO: fix match_sid_to_brand and calculate mapping
-                 let brand = match_sid_to_brand(store_id)?;
+                 let brand = infos.store.brand;
 
-                 let items = infos
+                 let items = infos.items
                      .iter()
                     .map(|info| ItemLine {
-                        name: info.product_name.clone(),
-                         // TODO: ItemInfo::quantity is string
-                         quantity: 1,
+                        name: info.name.clone(),
+                         quantity: info.quantity,
                          unit_price: info.price.clone(),
                          // TODO: loyalty pricing
                          on_special: false,
@@ -181,9 +179,9 @@ impl Scenario {
              kind,
              stops,
              // TODO: calc output has no travel, distance and driving time
-             travel_cost: None,
-             distance_km: None,
-             duration_min: None,
+             travel_cost: Some(calc.total_travel_cost.clone()),
+             distance_km: Some(calc.total_dist.clone()),
+             duration_min: Some((calc.total_time.as_secs() / 60) as f32),
          }
     }
 }

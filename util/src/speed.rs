@@ -1,10 +1,18 @@
-use std::{num::NonZeroU64, ops::Add, str::FromStr};
+use std::{
+    num::NonZeroU64,
+    ops::{Add, Mul},
+    str::FromStr,
+    time::Duration,
+};
 
 use bigdecimal::{BigDecimal, BigDecimalRef, RoundingMode, Zero};
 use derive_more::{
     Add, AddAssign, Constructor, Display, Div, DivAssign, Mul, MulAssign, Neg, Rem, RemAssign, Sub,
     SubAssign, Sum,
 };
+use num_traits::FromPrimitive;
+
+use crate::distance::Distance;
 
 #[derive(
     Clone,
@@ -17,10 +25,6 @@ use derive_more::{
     Add,
     AddAssign,
     Display,
-    Div,
-    DivAssign,
-    Mul,
-    MulAssign,
     Neg,
     Rem,
     RemAssign,
@@ -65,5 +69,15 @@ impl<NUMBER: Into<BigDecimal>> From<NUMBER> for Speed {
 impl Default for Speed {
     fn default() -> Self {
         Self::new(BigDecimal::zero())
+    }
+}
+
+impl Mul<Duration> for Speed {
+    type Output = Distance;
+
+    fn mul(self, rhs: Duration) -> Self::Output {
+        Distance {
+            base_value_metres: self.inner * BigDecimal::from_f64(rhs.as_secs_f64()).unwrap(),
+        }
     }
 }

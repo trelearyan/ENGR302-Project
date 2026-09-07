@@ -3,8 +3,9 @@ use num_traits::Float;
 pub mod coordinate;
 pub mod cost;
 pub mod distance;
-pub mod store;
 pub mod search;
+pub mod speed;
+pub mod store;
 
 #[cfg(test)]
 mod test {}

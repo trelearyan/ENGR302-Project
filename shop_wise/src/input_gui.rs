@@ -13,13 +13,14 @@ use strum_macros::EnumIter;
 use urlencoding::encode;
 use util::coordinate::Coordinate;
 use util::cost::{self, Cost};
+use util::speed::Speed;
 use util::distance::Distance;
 use util::search::SearchUnits::{DOLLAR, EACH, GRAM, KILOGRAM, LITRE, MILLILITRE};
 use util::search::{ShoppingItemQuery, unit_to_str};
 use util::store::StoreBrand;
 
 use crate::output::OutputPanel;
-use crate::price_calculator::{self, item_resolver, shopping_list_parser};
+use crate::price_calculator::{self, item_resolver};
 use crate::results::ResultsState;
 use crate::route_planner;
 use crate::route_planner::filters::StoreFilters;
@@ -399,10 +400,6 @@ impl MyApp {
                 button = button.on_disabled_hover_text(reason);
             }
             if button.clicked() {
-                // Sam
-                let res = price_calculator::calculator::calculate(&self.shopping_items);
-                //item_resolver(&self.shopping_items);
-
                 // Alex
                 // TODO: Fix this up once we have a better format of all the stores and individual location blacklisting
                 let mut banned_stores = HashSet::<StoreBrand>::new();
@@ -417,7 +414,7 @@ impl MyApp {
                     banned_stores.insert(StoreBrand::Woolworths);
                 }
 
-                let mut filters = StoreFilters::builder()
+                let mut filters_builder = StoreFilters::builder()
                     .location(
                         <RefCell<LocationState> as Clone>::clone(&self.location_state)
                             .into_inner()
@@ -427,9 +424,16 @@ impl MyApp {
                     .range(self.filters.max_range.clone())
                     .max_store_visits(self.filters.max_stores as usize)
                     .disallow_brands(banned_stores.iter().copied().collect::<Vec<_>>().deref());
-                let routes = route_planner::all_possible_routes(&filters.build());
+                let filters = filters_builder.build();
+
                 let origin_label = self.location_state.borrow().address.clone();
-                self.results = match price_calculator::calculator::calculate(&self.shopping_items) {
+
+                // Sam
+                let res = price_calculator::calculate(&self.shopping_items, &filters, &self.mileage_option);
+                log::info!("{:?}", res);
+
+                let origin_label = self.location_state.borrow().address.clone();
+                self.results = match res {
                     Some(calc) => ResultsState::Ready(Box::new(
                         crate::results::Results::from_calculation(&calc, origin_label),
                     )),
@@ -748,7 +752,7 @@ impl MyApp {
 
 // https://www.ird.govt.nz/income-tax/income-tax-for-businesses-and-organisations/types-of-business-expenses/claiming-vehicle-expenses/kilometre-rates-2025-2026
 #[derive(Debug, Display, EnumIter, IsVariant, Clone, PartialEq, Default)]
-enum MileageOptions {
+pub enum MileageOptions {
     #[default]
     Petrol,
     Diesel,
@@ -783,6 +787,14 @@ impl From<Cost> for MileageOptions {
             x if x == Cost::from_cents(0) => MileageOptions::DontCalculateMileage,
             custom => MileageOptions::Custom(custom),
         }
+    }
+}
+
+impl MileageOptions {
+    pub fn average_speed(&self) -> Speed {
+        // Assuming slightly under standard city limit of 50 due to traffic,
+        // starting and ending on a lower speed local road, etc.
+        Speed::from_kilometres_per_hour(40)
     }
 }
 
