@@ -58,7 +58,7 @@ struct AddressSuggestion {
     lat: f64,
     lon: f64,
 }
- 
+
 const DEBOUNCE_SECONDS: f64 = 0.4;
 const MIN_QUERY_LEN: usize = 3;
 
@@ -107,6 +107,8 @@ pub struct MyApp {
     //fr13: load/save shopping list
     files: crate::file_dialog::FileChannel,
     csv_status: Option<String>,
+
+    cleared_items: Option<Vec<ShoppingItemQuery>>,
 }
 
 impl MyApp {
@@ -124,6 +126,7 @@ impl MyApp {
             location_state: Rc::new(RefCell::new(LocationState::default())),
             output: OutputPanel::new(),
             results: ResultsState::Idle,
+            cleared_items: None,
 
             //fr13
             files: crate::file_dialog::FileChannel::default(),
@@ -191,18 +194,21 @@ impl MyApp {
      */
     pub fn shopping_list_ui(&mut self, ui: &mut egui::Ui) {
         ui.heading("Your shopping list");
-        // if the user clicks + Add Item button, creates an empty ShoppingingItem
-        ui.horizontal (|ui|{
+
+        ui.horizontal(|ui| {
             if ui.button("+ Add Item").clicked() {
                 self.shopping_items.push(ShoppingItemQuery {
                     name: String::new(),
                     quantity: 1,
                     unit: unit_to_str(EACH).to_string(),
                 });
+                self.cleared_items = None;
             }
+
             if ui.button("Load CSV").clicked() {
                 self.load_csv();
             }
+
             let can_save = self
                 .shopping_items
                 .iter()
@@ -214,13 +220,40 @@ impl MyApp {
             {
                 self.save_csv();
             }
+
+            let has_items = !self.shopping_items.is_empty();
+            if ui
+                .add_enabled(has_items, egui::Button::new("Clear"))
+                .on_hover_text("Remove all items")
+                .clicked()
+            {
+                self.cleared_items = Some(std::mem::take(&mut self.shopping_items));
+                self.csv_status = None;
+            }
         });
+
+        if let Some(cleared) = &self.cleared_items {
+            let count = cleared.len();
+            ui.horizontal(|ui| {
+                ui.label(
+                    egui::RichText::new(format!("Removed {count} items"))
+                        .small()
+                        .weak(),
+                );
+                if ui.button("Undo").clicked() {
+                    if let Some(items) = self.cleared_items.take() {
+                        self.shopping_items = items;
+                    }
+                }
+            });
+        }
+
         if let Some(status) = &self.csv_status {
             ui.label(egui::RichText::new(status).small().weak());
         }
+        let mut remove_index: Option<usize> = None;
 
-
-        for (i, item) in &mut self.shopping_items.iter_mut().enumerate() {
+        for (i, item) in self.shopping_items.iter_mut().enumerate() {
             ui.horizontal(|ui| {
                 ui.text_edit_singleline(&mut item.name);
                 ui.add(egui::DragValue::new(&mut item.quantity));
@@ -259,7 +292,19 @@ impl MyApp {
                             unit_to_str(DOLLAR),
                         );
                     });
+
+                if ui
+                    .add(egui::Button::new("X").fill(egui::Color32::RED))
+                    .on_hover_text("Remove item")
+                    .clicked()
+                {
+                    remove_index = Some(i);
+                }
             });
+        }
+
+        if let Some(i) = remove_index {
+            self.shopping_items.remove(i);
         }
     }
 
@@ -399,25 +444,25 @@ impl MyApp {
     /// Location panel with live autocomplete.
     pub fn location(&mut self, ui: &mut egui::Ui) {
         ui.heading("Location");
- 
+
         if ui.button("Use Current Location").clicked() {
             log::info!("Requesting location...");
             #[cfg(target_arch = "wasm32")]
             self.get_current_location(self.location_state.clone(), ui.ctx().clone());
         }
- 
+
         ui.separator();
- 
+
         let now = ui.input(|i| i.time);
         let mut state = self.location_state.borrow_mut();
- 
+
         let response = ui.add(
             egui::TextEdit::singleline(&mut state.address)
                 .hint_text("e.g. 12 Example Street, Suburb, City"),
         );
- 
+
         let enter_pressed = response.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter));
- 
+
         if response.changed() {
             state.status = LocationStatus::Idle;
             state.suggestions.clear();
@@ -426,18 +471,18 @@ impl MyApp {
             state.last_edit_time = Some(now);
             ui.ctx().request_repaint_after(std::time::Duration::from_secs_f64(DEBOUNCE_SECONDS));
         }
- 
+
         // on Enter, Fire a search once the debounce window has elapsed, or immediately
         let should_fire = match state.last_edit_time {
             Some(last_edit) if enter_pressed => true,
             Some(last_edit) if now - last_edit >= DEBOUNCE_SECONDS => true,
             _ => false,
         };
- 
+
         if should_fire {
             let query = state.address.trim().to_string();
             state.last_edit_time = None;
- 
+
             if query.len() < MIN_QUERY_LEN {
                 state.status = LocationStatus::Idle;
             } else {
@@ -470,12 +515,12 @@ impl MyApp {
                                 }
                             }
                         }
-                        ctx_clone.request_repaint(); 
+                        ctx_clone.request_repaint();
                     });
                 }
             }
         }
- 
+
         match &state.status {
             LocationStatus::Searching => { ui.label("Searching…");}
             LocationStatus::NotFound => {
@@ -489,8 +534,8 @@ impl MyApp {
             LocationStatus::Error(message) => { ui.colored_label(egui::Color32::from_rgb(200, 60, 60), message.clone());}
             LocationStatus::Idle | LocationStatus::Suggesting => {}
         }
- 
-        // suggestions dropdown 
+
+        // suggestions dropdown
         if state.status == LocationStatus::Suggesting {
             let suggestions = state.suggestions.clone();
             egui::Frame::popup(ui.style()).show(ui, |ui| {
@@ -514,38 +559,38 @@ impl MyApp {
     #[cfg(target_arch = "wasm32")]
     fn get_current_location(&self, state: Rc<RefCell<LocationState>>, ctx: egui::Context) {
         use wasm_bindgen::JsCast;
- 
+
         let window = match web_sys::window() {
             Some(w) => w,
             None => return,
         };
         let navigator = window.navigator();
- 
+
         let geolocation = match Self::resolve_geolocation(&navigator, &state, &ctx) {
             Some(g) => g,
             None => return,
         };
- 
+
         // egui only repaints in response to input events by default without this, a state change made from a background/async callback might not actually appear on screen until the user happens to move the mouse.
         state.borrow_mut().status = LocationStatus::Locating;
         ctx.request_repaint();
- 
+
         // Options control "browser hangs forever" failure mode:
         // - timeout: give up after 10s instead of waiting indefinitely
         // - maximum_age: accept a cached fix up to 60s old so a repeat click returns near-instantly
         let mut options = web_sys::PositionOptions::new();
         options.set_timeout(10_000);
         options.set_maximum_age(60_000);
- 
+
         let success = Self::make_success_callback(state.clone(), ctx.clone());
         let error = Self::make_error_callback(state.clone(), ctx.clone());
- 
+
         let request = geolocation.get_current_position_with_error_callback_and_options(
             success.as_ref().unchecked_ref(),
             Some(error.as_ref().unchecked_ref()),
             &options,
         );
- 
+
         if let Err(err) = request {
             log::error!("Failed to request geolocation: {:?}", err);
             state.borrow_mut().status = LocationStatus::Error(
@@ -554,7 +599,7 @@ impl MyApp {
             );
             ctx.request_repaint();
         }
- 
+
         // Keep both callbacks alive for as long as the JS side might call them.
         success.forget();
         error.forget();
@@ -562,7 +607,7 @@ impl MyApp {
 
     /*
     Gets the Geolocation handle, or records why it isn't available.
-    */ 
+    */
     #[cfg(target_arch = "wasm32")]
     fn resolve_geolocation(navigator: &web_sys::Navigator,state: &Rc<RefCell<LocationState>>,ctx: &egui::Context) -> Option<web_sys::Geolocation> {
         match navigator.geolocation() {
@@ -580,20 +625,20 @@ impl MyApp {
 
     /*
     Builds the callback fired when the browser successfully returns a position:
-    - stores the coordinates, 
+    - stores the coordinates,
     - then kicks off reverse-geocoding in the background
      */
     #[cfg(target_arch = "wasm32")]
     fn make_success_callback(state: Rc<RefCell<LocationState>>,ctx: egui::Context) -> wasm_bindgen::closure::Closure<dyn FnMut(web_sys::Position)> {
         use wasm_bindgen::closure::Closure;
         use wasm_bindgen_futures::spawn_local;
- 
+
         Closure::<dyn FnMut(web_sys::Position)>::new(move |position: web_sys::Position| {
             let coords = position.coords();
             let latitude = coords.latitude();
             let longitude = coords.longitude();
             log::info!("Latitude: {}, Longitude: {}", latitude, longitude);
- 
+
             {
                 let mut s = state.borrow_mut();
                 s.latitude = Some(latitude);
@@ -601,7 +646,7 @@ impl MyApp {
                 s.status = LocationStatus::Success;
             }
             ctx.request_repaint();
- 
+
             let state_clone = state.clone();
             let ctx_clone = ctx.clone();
             spawn_local(async move {
@@ -631,7 +676,7 @@ impl MyApp {
     #[cfg(target_arch = "wasm32")]
     fn make_error_callback(state: Rc<RefCell<LocationState>>,ctx: egui::Context) -> wasm_bindgen::closure::Closure<dyn FnMut(web_sys::PositionError)> {
         use wasm_bindgen::closure::Closure;
- 
+
         Closure::<dyn FnMut(web_sys::PositionError)>::new(move |err: web_sys::PositionError| {
             let message = match err.code() {
                 web_sys::PositionError::PERMISSION_DENIED => {
@@ -649,7 +694,7 @@ impl MyApp {
                 _ => "Couldn't get your location. Please enter your address below instead.",
             };
             log::error!("Geolocation error ({}): {}", err.code(), err.message());
- 
+
             state.borrow_mut().status = LocationStatus::Error(message.to_string());
             ctx.request_repaint();
         })
@@ -677,16 +722,16 @@ impl MyApp {
     #[cfg(target_arch = "wasm32")]
     async fn geocode_suggestions(query: &str) -> Result<Vec<AddressSuggestion>, reqwest::Error> {
         let encoded_query = encode(query);
- 
+
         // countrycodes=nz narrows results to New Zealand
         let url = format!(
             "https://nominatim.openstreetmap.org/search?q={}&format=jsonv2&limit=5&countrycodes=nz",encoded_query
         );
- 
+
         let response = reqwest::Client::new().get(url).header("User-Agent", "ShopWise").send().await?;
- 
+
         let results: Vec<GeocodeResponse> = response.json().await?;
- 
+
         Ok(results
             .into_iter()
             .filter_map(|r| {
@@ -756,3 +801,4 @@ impl Default for MyApp {
         )
     }
 }
+
