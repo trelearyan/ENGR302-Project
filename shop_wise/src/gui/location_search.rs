@@ -187,7 +187,7 @@ impl ShowableWidget for LocationData {
 Getting the user location
 */
 #[cfg(target_arch = "wasm32")]
-fn get_current_location(&self, state: Rc<RefCell<LocationState>>, ctx: egui::Context) {
+fn get_current_location(&self, state: Rc<RefCell<LocationData>>, ctx: egui::Context) {
     use wasm_bindgen::JsCast;
 
     let window = match web_sys::window() {
@@ -241,7 +241,7 @@ Gets the Geolocation handle, or records why it isn't available.
 #[cfg(target_arch = "wasm32")]
 fn resolve_geolocation(
     navigator: &web_sys::Navigator,
-    state: &Rc<RefCell<LocationState>>,
+    state: &Rc<RefCell<LocationData>>,
     ctx: &egui::Context,
 ) -> Option<web_sys::Geolocation> {
     match navigator.geolocation() {
@@ -265,7 +265,7 @@ Builds the callback fired when the browser successfully returns a position:
  */
 #[cfg(target_arch = "wasm32")]
 fn make_success_callback(
-    state: Rc<RefCell<LocationState>>,
+    state: Rc<RefCell<LocationData>>,
     ctx: egui::Context,
 ) -> wasm_bindgen::closure::Closure<dyn FnMut(web_sys::Position)> {
     use wasm_bindgen::closure::Closure;
@@ -312,7 +312,7 @@ each PositionError code to a specific, actionable message.
  */
 #[cfg(target_arch = "wasm32")]
 fn make_error_callback(
-    state: Rc<RefCell<LocationState>>,
+    state: Rc<RefCell<LocationData>>,
     ctx: egui::Context,
 ) -> wasm_bindgen::closure::Closure<dyn FnMut(web_sys::PositionError)> {
     use wasm_bindgen::closure::Closure;
