@@ -13,6 +13,7 @@ use strum_macros::EnumIter;
 use urlencoding::encode;
 use util::coordinate::Coordinate;
 use util::cost::{self, Cost};
+use util::speed::Speed;
 use util::distance::Distance;
 use util::search::SearchUnits::{DOLLAR, EACH, GRAM, KILOGRAM, LITRE, MILLILITRE};
 use util::search::{ShoppingItemQuery, unit_to_str};
@@ -381,7 +382,6 @@ impl MyApp {
                     .max_store_visits(self.filters.max_stores as usize)
                     .disallow_brands(banned_stores.iter().copied().collect::<Vec<_>>().deref());
                 let filters = filters_builder.build();
-                let routes = route_planner::all_possible_routes(&filters.build());
 
                 let origin_label = self.location_state.borrow().address.clone();
 
