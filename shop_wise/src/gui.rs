@@ -105,17 +105,16 @@ impl AppData {
                 }
 
                 let filters_builder = StoreFilters::builder()
-                    // TODO: fix panic if no configured location
                     .location(Coordinate::from_lat_long_f64(
-                        self.location_search.latitude.unwrap(),
-                        self.location_search.longitude.unwrap(),
+                        self.location_search.borrow().latitude.unwrap(),
+                        self.location_search.borrow().longitude.unwrap(),
                     ))
                     .range(self.preferences.max_range.clone())
                     .max_store_visits(self.preferences.max_stores)
                     .disallow_brands(banned_stores.iter().copied().collect::<Vec<_>>().deref());
                 let filters = filters_builder.build();
 
-                let _origin_label = self.location_search.address.clone();
+                let _origin_label = self.location_search.borrow().address.clone(); 
 
                 // Sam
                 let res = price_calculator::calculate(
@@ -125,7 +124,7 @@ impl AppData {
                 );
                 log::info!("{res:?}");
 
-                let origin_label = self.location_search.address.clone();
+                let origin_label = self.location_search.borrow().address.clone(); 
                 self.output_routes.results = match res {
                     Some(calc) => ResultsState::Ready(Box::new(
                         price_calculator::results::Results::from_calculation(&calc, origin_label),
