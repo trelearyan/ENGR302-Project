@@ -1,8 +1,9 @@
 use eframe::egui::{Color32, Frame, Key, TextEdit, Ui};
 use serde::{Deserialize, Serialize};
 use util::coordinate::Coordinate;
+use std::cell::RefCell;
+use std::rc::Rc;
 
-use crate::gui::ShowableWidget;
 
 const DEBOUNCE_SECONDS: f64 = 0.4;
 const MIN_QUERY_LEN: usize = 3;
