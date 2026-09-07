@@ -363,7 +363,7 @@ async fn geocode_suggestions(query: &str) -> Result<Vec<AddressSuggestion>, reqw
 
 // A single resolved candidate shown in the suggestions dropdown.
 #[derive(Clone, Serialize, Deserialize, Debug)]
-struct AddressSuggestion {
+pub struct AddressSuggestion {
     display_name: String,
     lat: f64,
     lon: f64,
