@@ -6,7 +6,7 @@ use serde::ser::SerializeStruct;
 use util::search::SearchUnits::{DOLLAR, EACH, GRAM, KILOGRAM, LITRE, MILLILITRE};
 use util::search::{ShoppingItemQuery, unit_to_str};
 
-use crate::filehandling::file_dialog::{FileChannel, FileOutcome};
+use crate::filehandling::file_dialog::FileChannel;
 use crate::gui::ShowableWidget;
 
 #[derive(Clone, Debug, Default)]
