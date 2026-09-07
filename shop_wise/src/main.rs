@@ -1,7 +1,6 @@
 use std::fs::read_to_string;
 
 use util::store::Store;
-
 use crate::route_planner::filters::{StoreFilters, filter_stores};
 
 pub mod input_gui;
@@ -9,10 +8,13 @@ pub mod output;
 pub mod price_calculator;
 pub mod results;
 pub mod route_planner;
+pub mod csv;
+pub mod file_dialog;
 
 
 use eframe::egui;
 use input_gui::MyApp;
+
 
 fn demo_route_planner() {
     let filters: StoreFilters =
@@ -46,6 +48,7 @@ fn print_bar() {
 
 impl eframe::App for MyApp {
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
+        self.check_file_results();
         egui::Panel::left("left_panel")
             .resizable(true)
             .show_inside(ui, |ui| {
@@ -62,6 +65,8 @@ impl eframe::App for MyApp {
         egui::CentralPanel::default().show_inside(ui, |ui| {
             self.location(ui);
             self.search_button(ui);
+            // for debugging
+            self.print_filters(ui);
             //fr09
             ui.separator();
             self.output_panel(ui);

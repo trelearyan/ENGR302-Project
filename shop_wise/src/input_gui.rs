@@ -103,6 +103,10 @@ pub struct MyApp {
     // fr09 output panel
     output: OutputPanel,
     results: ResultsState,
+
+    //fr13: load/save shopping list
+    files: crate::file_dialog::FileChannel,
+    csv_status: Option<String>,
 }
 
 impl MyApp {
@@ -120,6 +124,10 @@ impl MyApp {
             location_state: Rc::new(RefCell::new(LocationState::default())),
             output: OutputPanel::new(),
             results: ResultsState::Idle,
+
+            //fr13
+            files: crate::file_dialog::FileChannel::default(),
+            csv_status: None,
         }
     }
 
@@ -128,19 +136,89 @@ impl MyApp {
         self.output.show(ui, &self.results);
     }
 
+    // for debugging
+    pub fn print_filters(&self, ui: &mut egui::Ui) {
+        ui.label("=== Filter values ===");
+        ui.label(format!(
+            "Max Range: {}",
+            self.filters.max_range.kilometres()
+        ));
+        ui.label(format!("Max Stores: {}", self.filters.max_stores));
+        ui.label(format!("Pak'nSave: {}", self.filters.include_paknsave));
+        ui.label(format!("New World: {}", self.filters.include_newworld));
+        ui.label(format!("Woolworths: {}", self.filters.include_woolies));
+    }
+
+    //fr13
+    pub fn load_csv(&mut self) {
+        self.files.open("CSV", & ["csv"]);
+    }
+
+    pub fn save_csv(&mut self) {
+        let text = crate::csv::write_to_csv(
+            self.shopping_items
+                .iter()
+                .filter(|item| !item.name.trim().is_empty()),
+        );
+        //let text = crate::csv::write_to_csv(&self.shopping_items);
+        self.files
+            .save(text, "Shopwise shopping list.csv".to_owned(), "CSV", &["csv"]);
+    }
+
+    pub fn check_file_results(&mut self) {
+        use crate::file_dialog::FileOutcome;
+
+        while let Some(outcome) = self.files.poll() {
+            self.csv_status = Some(match outcome {
+                FileOutcome::Opened { text, name } => match crate::csv::read_csv(&text) {
+                    Ok(items) => {
+                        let count = items.len();
+                        self.shopping_items = items;
+                        //self.undo = None;
+                        format!("Loaded {name}")
+                    }
+                    Err(error) => format!("could not read {name}: {error}"),
+                },
+                FileOutcome::Saved { name } => format!("Saved to {name}"),
+                FileOutcome::Failed(reason) => reason,
+            });
+        }
+    }
+
+
     /*
     Your shopping list
      */
     pub fn shopping_list_ui(&mut self, ui: &mut egui::Ui) {
         ui.heading("Your shopping list");
         // if the user clicks + Add Item button, creates an empty ShoppingingItem
-        if ui.button("+ Add Item").clicked() {
-            self.shopping_items.push(ShoppingItemQuery {
-                name: String::new(),
-                quantity: 1,
-                unit: unit_to_str(EACH).to_string(),
-            });
+        ui.horizontal (|ui|{
+            if ui.button("+ Add Item").clicked() {
+                self.shopping_items.push(ShoppingItemQuery {
+                    name: String::new(),
+                    quantity: 1,
+                    unit: unit_to_str(EACH).to_string(),
+                });
+            }
+            if ui.button("Load CSV").clicked() {
+                self.load_csv();
+            }
+            let can_save = self
+                .shopping_items
+                .iter()
+                .any(|item| !item.name.trim().is_empty());
+
+            if ui
+                .add_enabled(can_save, egui::Button::new("Save CSV"))
+                .clicked()
+            {
+                self.save_csv();
+            }
+        });
+        if let Some(status) = &self.csv_status {
+            ui.label(egui::RichText::new(status).small().weak());
         }
+
 
         for (i, item) in &mut self.shopping_items.iter_mut().enumerate() {
             ui.horizontal(|ui| {
