@@ -2,7 +2,6 @@ use bigdecimal::BigDecimal;
 use derive_more::{Display, IsVariant};
 use eframe::egui;
 use serde::Deserialize;
-use util::search::SearchUnits::{DOLLAR, EACH, GRAM, KILOGRAM, LITRE, MILLILITRE};
 use std::collections::HashSet;
 use std::fmt::Display;
 use std::ops::Deref;
@@ -14,15 +13,17 @@ use strum_macros::EnumIter;
 use urlencoding::encode;
 use util::coordinate::Coordinate;
 use util::cost::{self, Cost};
-use util::search::{ShoppingItemQuery, unit_to_str};
 use util::distance::Distance;
+use util::search::SearchUnits::{DOLLAR, EACH, GRAM, KILOGRAM, LITRE, MILLILITRE};
+use util::search::{ShoppingItemQuery, unit_to_str};
 use util::store::StoreBrand;
 
+use crate::output::OutputPanel;
 use crate::price_calculator::{self, item_resolver, shopping_list_parser};
+use crate::results::ResultsState;
 use crate::route_planner;
 use crate::route_planner::filters::StoreFilters;
-use crate::output::OutputPanel;
-use crate::results::ResultsState;
+
 #[derive(Default, Clone)]
 pub struct LocationState {
     latitude: Option<f64>,
@@ -72,9 +73,8 @@ pub struct MyApp {
     // fr09 output panel
     output: OutputPanel,
     results: ResultsState,
+
     cleared_items: Option<Vec<ShoppingItemQuery>>,
-    //fr13: load/save shopping list
-    csv_status: Option<String>,
 }
 
 impl MyApp {
@@ -93,8 +93,6 @@ impl MyApp {
             output: OutputPanel::new(),
             results: ResultsState::Idle,
             cleared_items: None,
-            //fr13
-            csv_status: None,
         }
     }
 
@@ -116,50 +114,6 @@ impl MyApp {
         ui.label(format!("Woolworths: {}", self.filters.include_woolies));
     }
 
-    //fr13
-    pub fn load_csv(&mut self) {
-        let Some(path) = rfd::FileDialog::new()
-            .add_filter("CSV", &["csv"])
-            .set_title("Pick your shopping list")
-            .pick_file()
-        else {
-            return;
-        };
-
-        let name = path
-            .file_name()
-            .map(|n| n.to_string_lossy().to_string())
-            .unwrap_or_default();
-
-        self.csv_status = Some(match std::fs::read_to_string(&path) {
-            Ok(text) => match crate::csv::read_csv(&text) {
-                Ok(items) => {
-                    let count = items.len();
-                    self.shopping_items = items;
-                    format!("Loaded {name}")
-                }
-                Err(error) => format!("Could not read {name}: {error}"),
-            },
-            Err(error) => format!("Could not open {name}: {error}"),
-        });
-    }
-
-    pub fn save_csv(&mut self) {
-        let Some(path) = rfd::FileDialog::new()
-            .add_filter("CSV", &["csv"])
-            .set_file_name("Shopwise shopping list.csv")
-            .set_title("Save your shopping list")
-            .save_file()
-        else {
-            return;
-        };
-
-        let text = crate::csv::write_to_csv(&self.shopping_items);
-        self.csv_status = Some(match std::fs::write(&path, text) {
-            Ok(()) => format!("Saved {} items", self.shopping_items.len()),
-            Err(error) => format!("Could not save: {error}"),
-        });
-    }
     /*
     Your shopping list
      */
@@ -175,22 +129,15 @@ impl MyApp {
                 });
                 self.cleared_items = None;
             }
-            if ui.button("Load CSV").clicked() {
-                self.load_csv();
-            }
 
             let has_items = !self.shopping_items.is_empty();
-
-            if ui.add_enabled(has_items, egui::Button::new("Save CSV")).clicked() {
-                self.save_csv();
-            }
             if ui
                 .add_enabled(has_items, egui::Button::new("Clear"))
                 .on_hover_text("Remove all items")
                 .clicked()
             {
                 self.cleared_items = Some(std::mem::take(&mut self.shopping_items));
-                self.csv_status = None;
+                //self.csv_status = None;
             }
         });
 
@@ -211,13 +158,7 @@ impl MyApp {
             });
         }
 
-        if let Some(status) = &self.csv_status {
-            ui.label(egui::RichText::new(status).small().weak());
-        }
-
-
         let mut remove_index: Option<usize> = None;
-
         for (i, item) in &mut self.shopping_items.iter_mut().enumerate() {
             ui.horizontal(|ui| {
                 ui.text_edit_singleline(&mut item.name);
@@ -226,12 +167,36 @@ impl MyApp {
                 egui::ComboBox::from_id_salt(i)
                     .selected_text(&item.unit)
                     .show_ui(ui, |ui| {
-                        ui.selectable_value(&mut item.unit, unit_to_str(EACH).to_string(),unit_to_str(EACH));
-                        ui.selectable_value(&mut item.unit, unit_to_str(GRAM).to_string(), unit_to_str(GRAM));
-                        ui.selectable_value(&mut item.unit, unit_to_str(KILOGRAM).to_string(), unit_to_str(KILOGRAM));
-                        ui.selectable_value(&mut item.unit, unit_to_str(MILLILITRE).to_string(), unit_to_str(MILLILITRE));
-                        ui.selectable_value(&mut item.unit, unit_to_str(LITRE).to_string(), unit_to_str(LITRE));
-                        ui.selectable_value(&mut item.unit, unit_to_str(DOLLAR).to_string(), unit_to_str(DOLLAR));
+                        ui.selectable_value(
+                            &mut item.unit,
+                            unit_to_str(EACH).to_string(),
+                            unit_to_str(EACH),
+                        );
+                        ui.selectable_value(
+                            &mut item.unit,
+                            unit_to_str(GRAM).to_string(),
+                            unit_to_str(GRAM),
+                        );
+                        ui.selectable_value(
+                            &mut item.unit,
+                            unit_to_str(KILOGRAM).to_string(),
+                            unit_to_str(KILOGRAM),
+                        );
+                        ui.selectable_value(
+                            &mut item.unit,
+                            unit_to_str(MILLILITRE).to_string(),
+                            unit_to_str(MILLILITRE),
+                        );
+                        ui.selectable_value(
+                            &mut item.unit,
+                            unit_to_str(LITRE).to_string(),
+                            unit_to_str(LITRE),
+                        );
+                        ui.selectable_value(
+                            &mut item.unit,
+                            unit_to_str(DOLLAR).to_string(),
+                            unit_to_str(DOLLAR),
+                        );
                     });
                 if ui
                     .add(egui::Button::new("X").fill(egui::Color32::RED))
@@ -386,7 +351,6 @@ impl MyApp {
 
                 // Sam
                 let res = price_calculator::calculator::calculate(&self.shopping_items);
-                println!("{:?}", res);
                 //item_resolver(&self.shopping_items);
 
                 // Alex
@@ -414,11 +378,6 @@ impl MyApp {
                     .max_store_visits(self.filters.max_stores as usize)
                     .disallow_brands(banned_stores.iter().copied().collect::<Vec<_>>().deref());
                 let routes = route_planner::all_possible_routes(&filters.build());
-
-                routes
-                    .iter()
-                    .for_each(|route| println!("{}", route.pretty_print()));
-
                 let origin_label = self.location_state.borrow().address.clone();
                 self.results = match price_calculator::calculator::calculate(&self.shopping_items) {
                     Some(calc) => ResultsState::Ready(Box::new(
@@ -592,4 +551,3 @@ impl Default for MyApp {
         )
     }
 }
-
