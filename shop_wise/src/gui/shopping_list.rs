@@ -32,6 +32,7 @@ impl Serialize for ShoppingListData {
 
 impl ShowableWidget for ShoppingListData {
     fn show(&mut self, ui: &mut Ui) {
+        self.check_file_results();
         ui.heading("Your shopping list");
 
         ui.horizontal(|ui| {
@@ -167,4 +168,27 @@ impl ShoppingListData {
             &["csv"],
         );
     }
+
+    pub fn check_file_results(&mut self) {
+        use crate::filehandling::file_dialog::FileOutcome;
+
+        while let Some(outcome) = self.files.poll() {
+            self.csv_status = Some(match outcome {
+                FileOutcome::Opened { text, name } => {
+                    match crate::filehandling::csv::read_csv(&text) {
+                        Ok(items) => {
+                            let count = items.len();
+                            self.shopping_items = items;
+                            self.cleared_items = None;
+                            format!("Loaded {name}")
+                        }
+                        Err(error) => format!("Could not load {name}: {error}"),
+                    }
+                }
+                FileOutcome::Saved { name } => format!("Saved to {name}"),
+                FileOutcome::Failed(reason) => reason,
+            });
+        }
+    }
 }
+
