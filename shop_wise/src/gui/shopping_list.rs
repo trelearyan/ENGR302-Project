@@ -177,7 +177,7 @@ impl ShoppingListData {
                 FileOutcome::Opened { text, name } => {
                     match crate::filehandling::csv::read_csv(&text) {
                         Ok(items) => {
-                            let count = items.len();
+                            let _count = items.len();
                             self.shopping_items = items;
                             self.cleared_items = None;
                             format!("Loaded {name}")
