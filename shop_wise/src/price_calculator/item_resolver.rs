@@ -14,7 +14,9 @@ struct SearchResult {
     name: String,
     price: u32,
     store: StoreBrand,
-    quantity: f32,
+    quantity: u32,
+    unit: SearchUnits,
+    image_url: String,
 }
 
 
@@ -29,6 +31,17 @@ struct SearchResult {
 /// <br>
 /// None if the string could not be resolved
 pub fn search(item_query: &ShoppingItemQuery, num_options: u32) -> Option<Vec<ShoppingItem>> {
+    let terms: Vec<&str> = item_query.name.split(' ').collect();
+    let res = demo_db(&terms).unwrap();
+    res.iter().for_each(|f|->() {
+        println!("Search Term {:?}", &terms.get(*f.0));
+        f.1.iter().for_each(|g|->() {
+            println!("  Shop ({:?}):", *g.0);
+            g.1.iter().for_each(|h|->(){
+                println!("   - Item: {:?}", h);
+            });
+        });
+    });
     None
 }
 
@@ -163,7 +176,7 @@ fn demo_db(search_terms: &[&str]) -> Result<HashMap<usize, HashMap<u32, Vec<Sear
         for i in 1..=3 {
             let shop_id = &i.to_string();
             let sql_query = "
-                SELECT id, supermarket_id, name, price, volume_size
+                SELECT id, supermarket_id, name, price, volume_size, image_url
                 FROM products p
                 WHERE p.supermarket_id = ?1
                 AND LOWER(p.name) LIKE ?2
@@ -173,12 +186,15 @@ fn demo_db(search_terms: &[&str]) -> Result<HashMap<usize, HashMap<u32, Vec<Sear
             let res = stm.query_map( 
                 rusqlite::params! {i, search_pattern,},
                 |row: &rusqlite::Row<'_>|->Result<SearchResult, Error>{
+                    let amt = get_unit(row.get(4).unwrap_or("ea".to_owned()));
                     Ok(SearchResult {
                         item_id: row.get(0)?,
                         name: row.get(2)?,
                         price: (row.get::<usize,f32>(3)? * 100.0) as u32,
                         store: match_sid_to_brand(row.get(1)?).unwrap(),
-                        quantity: 1.0,
+                        quantity: amt.0,
+                        unit: amt.1,
+                        image_url: row.get(5)?,
                     })
             })?;
             let shop_results: Vec<SearchResult> = res.map(|f: std::prelude::v1::Result<SearchResult, Error>|->SearchResult{return f.unwrap();}).collect();
@@ -189,9 +205,26 @@ fn demo_db(search_terms: &[&str]) -> Result<HashMap<usize, HashMap<u32, Vec<Sear
     Ok(result)
 }
 
+/// Translate the volume sizes: "l pack", "m", " cup", "per kg", " tabs", ".ml",
+/// ".L", " dozen", "pce", " inch", " pack", "pk", "ml each", " serve", " - cm",
+/// "None", ".g", "pr", "ea", "twin pk", "ml", "l  pack", "each", "priced per kilo",
+/// "g tube", "PK", " bags", "s", " piece", " sachets", "G", "L", "m roll", " x  litre",
+/// " sheets", " pieces", " test", "set of ", "extra large", "mm x m", " caps", " pce",
+/// ".l", ".ea", "sugar .kg", "mm", " metres", " pk", "litre", " stick sachets", "g pk",
+/// ".cm", "kg pack", " pellets", ".kg", "pc", "g", " x g", "single slice", "g pack", "ML",
+/// " x pk", "medium", "KG", "ss", "cm", " tablets", " x g pks", "", ".lt", " cup tray",
+/// "kg", "sugar kg", " litre", " size", "l", " slices", ".m", "large", "mtr"
+/// into the best search unit, or simple ea if one doesn't exist
+fn get_unit(unit_text: String) -> (u32, SearchUnits) {
+    print!("{}", unit_text);
+    // lower, strip, seperate the number (or assume 1), strip, and then remove 'x' or '.' if its 
+    // there and then match against list of unit terms - and then treat the rest as ea
+    (1, SearchUnits::EACH)
+}
+
 #[cfg(test)]
 mod tests {
-    use crate::price_calculator::item_resolver::resolve;
+    use crate::price_calculator::item_resolver::{resolve, search};
     use util::search::ShoppingItemQuery;
 
     #[test]
@@ -246,5 +279,14 @@ mod tests {
         .unwrap();
         assert_eq!("Pams Reduced Cream", res.get(&1).unwrap().name);
         assert_eq!("countdown reduced cream ", res.get(&2).unwrap().name);
+    }
+
+    #[test]
+    fn test_search() {
+        search(&ShoppingItemQuery {
+            name: String::from("Milk"),
+            quantity: 1,
+            unit: String::from("ea"),
+        }, 1);
     }
 }
