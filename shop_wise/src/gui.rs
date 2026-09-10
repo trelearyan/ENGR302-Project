@@ -1,10 +1,10 @@
 use eframe::egui::{self, CentralPanel, Panel, ScrollArea, Ui};
+use std::cell::RefCell;
 use std::collections::HashSet;
 use std::ops::Deref;
+use std::rc::Rc;
 use util::coordinate::Coordinate;
 use util::store::StoreBrand;
-use std::cell::RefCell;
-use std::rc::Rc;
 
 use crate::gui::location_search::{LocationData, LocationStatus};
 use crate::gui::output_routes::OutputRoutesData;
@@ -64,21 +64,26 @@ impl AppData {
     pub fn search_button(&mut self, ui: &mut egui::Ui) {
         ui.horizontal(|ui| {
             // First: check if both shopping list and location are not empty
+            log::debug!("search button called");
             let has_items = self
                 .shopping_list
                 .shopping_items
                 .iter()
                 .any(|item| !item.name.trim().is_empty());
+            log::debug!("has items {has_items}");
             let location_ready = matches!(
                 self.location_search.borrow().status,
                 LocationStatus::Resolved | LocationStatus::Success
             );
 
             let can_search = has_items && location_ready;
+            log::debug!("can search {can_search}");
 
             let mut button = ui.add_enabled(can_search, egui::Button::new("Search"));
+            log::debug!("search button");
 
             if !can_search {
+                log::debug!("cant search if");
                 let reason = match (has_items, location_ready) {
                     (false, false) => "Add an item and set a valid location to search",
                     (false, true) => "Add at least one item to your shopping list",
@@ -90,6 +95,7 @@ impl AppData {
                 button = button.on_disabled_hover_text(reason);
             }
             if button.clicked() {
+                log::debug!("button clicked");
                 // Alex
                 // TODO: Fix this up once we have a better format of all the stores and individual location blacklisting
                 let mut banned_stores = HashSet::<StoreBrand>::new();
@@ -114,7 +120,7 @@ impl AppData {
                     .disallow_brands(banned_stores.iter().copied().collect::<Vec<_>>().deref());
                 let filters = filters_builder.build();
 
-                let _origin_label = self.location_search.borrow().address.clone(); 
+                let _origin_label = self.location_search.borrow().address.clone();
 
                 // Sam
                 let res = price_calculator::calculate(
@@ -124,7 +130,7 @@ impl AppData {
                 );
                 log::info!("{res:?}");
 
-                let origin_label = self.location_search.borrow().address.clone(); 
+                let origin_label = self.location_search.borrow().address.clone();
                 self.output_routes.results = match res {
                     Some(calc) => ResultsState::Ready(Box::new(
                         price_calculator::results::Results::from_calculation(&calc, origin_label),
