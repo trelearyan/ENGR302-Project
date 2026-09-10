@@ -1,4 +1,7 @@
+use std::cmp::Ordering;
 use std::collections::HashMap;
+use std::collections::hash_map::Iter as HashIter;
+use std::slice::Iter as VecIter;
 use std::fs;
 use std::path::Path;
 use std::process::Command;
@@ -8,12 +11,20 @@ use util::search::{SearchUnits, ShoppingItem, ShoppingItemQuery, match_sid_to_br
 use util::store::{Store, StoreBrand};
 use rusqlite::{Connection, Error, Result};
 
+
+#[derive(Debug, PartialEq)]
+pub struct SantizedSearchResult {
+    name: String,
+    unit: SearchUnits,
+    image_url: String,
+}
+
 #[derive(Debug, PartialEq)]
 struct SearchResult {
     item_id: u32,
     name: String,
     price: u32,
-    store: StoreBrand,
+    store: StoreBrand, // For now as database is mocked
     quantity: u32,
     unit: SearchUnits,
     image_url: String,
@@ -30,19 +41,32 @@ struct SearchResult {
 /// Listed in descending *calculated* relevancy as index increases
 /// <br>
 /// None if the string could not be resolved
-pub fn search(item_query: &ShoppingItemQuery, num_options: u32) -> Option<Vec<ShoppingItem>> {
+pub fn search(item_query: &ShoppingItemQuery, num_options: u32) -> Option<Vec<SantizedSearchResult>> {
     let terms: Vec<&str> = item_query.name.split(' ').collect();
     let res = demo_db(&terms).unwrap();
-    res.iter().for_each(|f|->() {
-        println!("Search Term {:?}", &terms.get(*f.0));
-        f.1.iter().for_each(|g|->() {
-            println!("  Shop ({:?}):", *g.0);
-            g.1.iter().for_each(|h|->(){
-                println!("   - Item: {:?}", h);
-            });
-        });
-    });
-    None
+    let mut list = res.iter()
+        .flat_map(|search_map: (&usize, &HashMap<u32, Vec<SearchResult>>)|->
+            HashIter<'_, u32, Vec<SearchResult>> {search_map.1.iter()})
+        .flat_map(|store_map: (&u32, &Vec<SearchResult>)|->
+            VecIter<'_, SearchResult> {store_map.1.iter()})
+        .map(|search_result: &SearchResult|->
+            (&SearchResult, i32) {(search_result, score_item(&terms, &search_result))})
+        .collect::<Vec<_>>();
+    list.sort_by(|a , b|->Ordering {(a.1-b.1).cmp(&a.1)});
+    if (list.len() >= num_options as usize) {
+        Some(list.iter()
+            .take(num_options as usize)
+            .map(|f|->SantizedSearchResult {
+                SantizedSearchResult {
+                    name: f.0.name.clone(),
+                    unit: f.0.unit.clone(),
+                    image_url: f.0.image_url.clone(),
+                }})
+            .collect::<Vec<SantizedSearchResult>>()
+        )
+    } else {
+        None
+    }
 }
 
 /// Resolve a ShoppingItemQuery into a ShoppingItem for each store
@@ -101,9 +125,9 @@ pub fn resolve(item_query: &ShoppingItemQuery) -> Option<HashMap<u32, ShoppingIt
             i,
             ShoppingItem {
                 name: best.name.clone(),
-                quantity: 1,
+                quantity: item_query.quantity,
                 unit: SearchUnits::EACH,
-                price: Cost::from_cents(best.price),
+                price: Cost::from_cents(best.price*item_query.quantity),
                 store: Store {
                     brand: best.store,
                     location: Coordinate::from_lat_long_f32(i as f32, i as f32),
@@ -219,7 +243,7 @@ fn demo_db(search_terms: &[&str]) -> Result<HashMap<usize, HashMap<u32, Vec<Sear
 /// "kg", "sugar kg", " litre", " size", "l", " slices", ".m", "large", "mtr"
 /// into the best search unit, or simple ea if one doesn't exist
 fn get_unit(unit_text: String) -> (u32, SearchUnits) {
-    print!("{}", unit_text);
+    //print!("{}", unit_text);
     // lower, strip, seperate the number (or assume 1), strip, and then remove 'x' or '.' if its 
     // there and then match against list of unit terms - and then treat the rest as ea
     (1, SearchUnits::EACH)
