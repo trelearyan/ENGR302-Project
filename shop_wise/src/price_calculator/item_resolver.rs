@@ -44,6 +44,7 @@ struct SearchResult {
 pub fn search(item_query: &ShoppingItemQuery, num_options: u32) -> Option<Vec<SantizedSearchResult>> {
     let terms: Vec<&str> = item_query.name.split(' ').collect();
     let res = demo_db(&terms).unwrap();
+    // Flatten and collect returned items with their scores
     let mut list = res.iter()
         .flat_map(|search_map: (&usize, &HashMap<u32, Vec<SearchResult>>)|->
             HashIter<'_, u32, Vec<SearchResult>> {search_map.1.iter()})
@@ -52,7 +53,8 @@ pub fn search(item_query: &ShoppingItemQuery, num_options: u32) -> Option<Vec<Sa
         .map(|search_result: &SearchResult|->
             (&SearchResult, i32) {(search_result, score_item(&terms, &search_result))})
         .collect::<Vec<_>>();
-    list.sort_by(|a , b|->Ordering {(a.1-b.1).cmp(&a.1)});
+    // Sort descending
+    list.sort_by(|a , b|->Ordering {b.1.cmp(&a.1)});
     if (list.len() >= num_options as usize) {
         Some(list.iter()
             .take(num_options as usize)
@@ -174,10 +176,10 @@ fn score_item(terms: &[&str], item: &&SearchResult) -> i32 {
         });
         score *= tscore;
     }
-    score *= 10000;
+    score *= 1000;
     // Score based on most popular category of high scoring items (narrow top results - need good already)
     // category not available at the moment
-    // Grade on price & quantity matching - skip for now
+    // Grade on price & quantity matching
     score - (item.price as i32) - (item.name.len() as i32)
 }
 
@@ -309,10 +311,10 @@ mod tests {
 
     #[test]
     fn test_search() {
-        search(&ShoppingItemQuery {
+        assert_eq!(10, search(&ShoppingItemQuery {
             name: String::from("Milk"),
             quantity: 1,
             unit: String::from("ea"),
-        }, 1);
+        }, 10).unwrap().len());
     }
 }
