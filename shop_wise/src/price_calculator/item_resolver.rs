@@ -70,7 +70,7 @@ pub fn search(item_query: &ShoppingItemQuery, num_options: u32) -> Option<Vec<Sa
     }
 }
 
-/// Resolve a `ShoppingItemQuery` into a `ShoppingItem` for each store
+/// Resolve a ShoppingItemQuery into a ShoppingItem for each store
 /// <br>
 /// Returns:
 /// <br>
