@@ -18,6 +18,14 @@ pub struct SantizedSearchResult {
     image_url: String,
 }
 
+
+#[derive(Debug, PartialEq)]
+pub struct SantizedSearchResult {
+    name: String,
+    unit: SearchUnits,
+    image_url: String,
+}
+
 #[derive(Debug, PartialEq)]
 struct SearchResult {
     item_id: u32,
