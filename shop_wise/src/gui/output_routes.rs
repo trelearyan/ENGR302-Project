@@ -1,3 +1,5 @@
+use std::ops::Deref;
+
 use eframe::egui;
 
 use crate::{
@@ -9,7 +11,9 @@ use crate::{
 };
 
 impl ShowableWidget for OutputRoutesData {
-    fn show(&mut self, _ui: &mut egui::Ui) {}
+    fn show(&mut self, ui: &mut egui::Ui) {
+        self.showold(ui);
+    }
 }
 
 const STACK_BELOW_WIDTH: f32 = 760.0;
@@ -65,11 +69,11 @@ impl OutputRoutesData {
         self
     }
 
-    pub fn showold(&mut self, ui: &mut egui::Ui, state: &ResultsState) {
+    pub fn showold(&mut self, ui: &mut egui::Ui) {
         let weak_colour = ui.visuals().weak_text_color();
         let error_colour = ui.visuals().error_fg_color;
 
-        match state {
+        match self.results.clone() {
             ResultsState::Idle => Self::message(
                 ui,
                 "Nothing to show yet",
@@ -80,10 +84,10 @@ impl OutputRoutesData {
             ResultsState::Failed(reason) => Self::message(
                 ui,
                 "That search could not be completed",
-                reason,
+                reason.as_str(),
                 error_colour,
             ),
-            ResultsState::Ready(results) => self.ready(ui, results),
+            ResultsState::Ready(results) => self.ready(ui, results.deref()),
         }
     }
 
