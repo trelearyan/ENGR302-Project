@@ -14,12 +14,27 @@ struct SearchResult {
     quantity: f32,
 }
 
-/// Resolve a `ShoppingItemQuery` into a `ShoppingItem` for each store
+
+/// Return a list of the best matching items for the given search
+/// so the user can pick the one that best matches what they mean
+/// or further refine their search if the results aren't as desired
 /// <br>
 /// Returns:
 /// <br>
-/// Some(ShoppingItem) if the string could be resolved as a valid
-/// `ShoppingItem`
+/// Some(Vec<ShoppingItem>>) where the Vec is num_options long
+/// Listed in descending *calculated* relevancy as index increases
+/// <br>
+/// None if the string could not be resolved
+pub fn search(item_query: &ShoppingItemQuery, num_options: u32) -> Option<Vec<ShoppingItem>> {
+    None
+}
+
+/// Resolve a ShoppingItemQuery into a ShoppingItem for each store
+/// <br>
+/// Returns:
+/// <br>
+/// Some(HashMap<StoreID (u32), ShoppingItem>) if the string could be resolved as a valid
+/// ShoppingItem. This contains only entries for stores where shopping items were found
 /// <br>
 /// None if the string could not be resolved
 #[must_use]
