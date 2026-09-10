@@ -75,34 +75,14 @@ pub fn resolve(item_query: &ShoppingItemQuery) -> Option<HashMap<u32, ShoppingIt
         }
         // Score each item based on whether it fits the right department,
         // Multiple words of the query (multiplicative factor), and has
-        // minimal other content. This should reward "Free Range Chicken Breast"
+        // minimal other content. This should reward "Brand Free Range Chicken Breast"
         // over "Brand Pasta Single Snack Chicken Curry Pasta & Sauce" and
-        // "Wet Cat Food Chicken Breast and Herb"
+        // "Brand Wet Cat Food Chicken Breast and Herb"
         let mut best_key: i32 = i32::MIN;
         let mut best_score = i32::MIN;
         for key in itemlist.keys() {
             let item: &&SearchResult = &itemlist.get(key).unwrap();
-            let name: &String = &item.name;
-            let mut score: i32 = 1;
-            // Score name based on search term matches and minimalism (might punish certain items - future)
-            for j in 0..terms.len() {
-                let mut tscore = 1;
-                let term: &str = terms.get(j).unwrap();
-                name.split(' ').for_each(|x: &str| {
-                    tscore += if x.to_lowercase().contains(&term.to_lowercase())  {
-                        10
-                    } else {
-                        -1
-                    };
-                });
-                score *= tscore;
-            }
-            score *= 10000;
-            // Score based on most popular category of high scoring items (narrow top results - need good already)
-            // category not available at the moment
-            // Grade on price & quantity matching
-            score -= item.price as i32;
-            score -= name.len() as i32;
+            let mut score: i32 = score_item(&terms, item);
             // Return best match per store
             if score > best_score {
                 best_key = *key as i32;
@@ -149,6 +129,29 @@ pub fn resolve(item_query: &ShoppingItemQuery) -> Option<HashMap<u32, ShoppingIt
     // table or context (like LLM token co-ordinates)
     // 6) very similar product names that refer to different versions of the same product - e.g. "Vanilla Coke"
     // vs "Vanilla Coke Zero Sugar"
+}
+
+fn score_item(terms: &[&str], item: &&SearchResult) -> i32 {
+
+    let mut score: i32 = 1;
+    // Score name based on search term matches and minimalism (might punish certain items - future)
+    for j in 0..terms.len() {
+        let mut tscore = 1;
+        let term: &str = *terms.get(j).unwrap();
+        &item.name.split(' ').for_each(|x: &str| {
+            tscore += if (x.to_lowercase().contains(&term.to_lowercase())) {
+                10
+            } else {
+                -1
+            };
+        });
+        score *= tscore;
+    }
+    score *= 10000;
+    // Score based on most popular category of high scoring items (narrow top results - need good already)
+    // category not available at the moment
+    // Grade on price & quantity matching - skip for now
+    score - (item.price as i32) - (item.name.len() as i32)
 }
 
 const DB: &[u8] =
