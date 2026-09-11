@@ -1,12 +1,9 @@
-use bigdecimal::ToPrimitive;
 use std::collections::HashMap;
 use std::time::Duration;
 use util::distance::Distance;
-use util::search::{ShoppingItem, ShoppingItemQuery};
-use util::{
-    cost::Cost,
-    store::{Store, StoreBrand},
-};
+use util::{cost::Cost, store::{Store, StoreBrand}};
+use bigdecimal::{BigDecimal, ToPrimitive};
+use util::{search::{ShoppingItem, ShoppingItemQuery}};
 
 use crate::{
     gui::transit::MileageOptions,
