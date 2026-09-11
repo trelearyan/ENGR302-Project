@@ -9,7 +9,9 @@ use util::coordinate::Coordinate;
 use util::cost::Cost;
 use util::search::{SearchUnits, ShoppingItem, ShoppingItemQuery, match_sid_to_brand};
 use util::store::{Store, StoreBrand};
+
 use rusqlite::{Connection, Error, Result};
+use regex::Regex;
 
 
 #[derive(Debug, PartialEq)]
@@ -154,7 +156,7 @@ pub fn resolve(item_query: &ShoppingItemQuery) -> Option<HashMap<u32, ShoppingIt
     // (or weight)
     // 4) "Eggs",6,"ea" -> "Countdown eggs half dozen barn size 6","6pk". need to parse the quantity
     // information which will be different for every chain and type and compare to the users queried amount
-    // (e.g. what if quanity was 1ea, cannot possible try to obtain info from name, i.e. parsing "half dozen")
+    // (e.g. what if quantity was 1ea, cannot possible try to obtain info from name, i.e. parsing "half dozen")
     // 5) '&' vs 'and', 'Large' vs 'Family' vs 'Share', synonomous terms confusing exact match searching without
     // table or context (like LLM token co-ordinates)
     // 6) very similar product names that refer to different versions of the same product - e.g. "Vanilla Coke"
@@ -234,27 +236,100 @@ fn demo_db(search_terms: &[&str]) -> Result<HashMap<usize, HashMap<u32, Vec<Sear
     Ok(result)
 }
 
-/// Translate the volume sizes: "l pack", "m", " cup", "per kg", " tabs", ".ml",
-/// ".L", " dozen", "pce", " inch", " pack", "pk", "ml each", " serve", " - cm",
-/// "None", ".g", "pr", "ea", "twin pk", "ml", "l  pack", "each", "priced per kilo",
-/// "g tube", "PK", " bags", "s", " piece", " sachets", "G", "L", "m roll", " x  litre",
-/// " sheets", " pieces", " test", "set of ", "extra large", "mm x m", " caps", " pce",
-/// ".l", ".ea", "sugar .kg", "mm", " metres", " pk", "litre", " stick sachets", "g pk",
-/// ".cm", "kg pack", " pellets", ".kg", "pc", "g", " x g", "single slice", "g pack", "ML",
-/// " x pk", "medium", "KG", "ss", "cm", " tablets", " x g pks", "", ".lt", " cup tray",
-/// "kg", "sugar kg", " litre", " size", "l", " slices", ".m", "large", "mtr"
-/// into the best search unit, or simple ea if one doesn't exist
+fn simple_query(sql_query: &str) -> Vec<String> {
+    let conn = open_database().unwrap();
+    let mut stm = conn.prepare(sql_query).unwrap();
+    stm.query_map([], |row: &rusqlite::Row<'_>| -> Result<String, Error>{
+            Ok(row.get(0)?)
+        }).unwrap()
+        .map(|f|->String{f.unwrap_or("empty".to_owned())})
+        .collect::<Vec<String>>()
+}
+
+const DEFAULT_UNIT: (u32, SearchUnits) = (1, SearchUnits::EACH);
+
+/// Translate the volume sizes given by the datase into the most
+/// reasonable unit, or just leave as 1 each if none can be found
+/// e.g.
+/// 3.5ml - (3 'ml')
+/// 68g - (68, 'g')
+/// 4 pk - (4, 'ea')
+/// 390G - (390, 'g')
+/// 36pk - (36, 'ea')
+/// 170pk - (170, 'ea')
+/// 720ml - (720, 'ml')
+/// sugar 1.2kg - (1200, 'g')
+/// 10 slices - (10, 'ea')
+/// none - (1, 'ea')
 fn get_unit(unit_text: String) -> (u32, SearchUnits) {
-    //print!("{}", unit_text);
-    // lower, strip, seperate the number (or assume 1), strip, and then remove 'x' or '.' if its 
-    // there and then match against list of unit terms - and then treat the rest as ea
-    (1, SearchUnits::EACH)
+    // Lower and strip
+    let sanitised: String = unit_text.trim().to_lowercase();
+    // Seperate the number if it begins with one, or the two numbers if in the form 2 x 4pk
+    let re = Regex::new(r"[0-9]+(?:\.[0-9]+)?").unwrap();
+    let values: Vec<f32> = re.find_iter(sanitised.as_ref())
+        .take(2)
+        .map(|x|-> f32 {x.as_str().parse::<f32>().unwrap_or(f32::NAN)})
+        .collect::<Vec<f32>>();
+    if (values.is_empty() || !values.get(0).unwrap().is_finite()) {
+        return DEFAULT_UNIT;
+    }
+    let mut quantity: f32 = *values.get(0).unwrap();
+    let mulre = Regex::new(r"[0-9]+ x [0-9]+.*").unwrap();
+    // If follows the 2 x 4pk pattern, multiply the two numbers together
+    if mulre.is_match(sanitised.as_ref()) {
+        let temp: f32 = *values.get(1).unwrap();
+        if temp.is_finite() {
+            quantity *= temp;
+        }
+    }
+    // Make sure quantity is positive
+    if (quantity <= 0.0) {
+        return DEFAULT_UNIT;
+    }
+    // Replace all the digits with whitespace, then lower and strip again
+    let rep_re = Regex::new(r"[0-9]+(?:[0-9]+)?").unwrap();
+    let stripped = rep_re.replace_all(sanitised.as_ref(), " ").trim().to_lowercase();
+    // Search for unit names, taking care to do 'kg' before 'g' and 'ml' before 'l'
+    let text_bits = stripped.split(" ").collect::<Vec<&str>>();
+    // kg
+    if text_bits.clone().into_iter().any(|x|->bool{x == "kg"}) {
+        // If significant remainder do grams
+        if quantity % 1.0 > 0.05 {
+            let new_quantity = (quantity * 1000.0) as u32;
+            if (new_quantity >= 1) {
+                return (new_quantity, SearchUnits::GRAM);
+            }
+            return DEFAULT_UNIT;
+        }
+        return (quantity as u32, SearchUnits::KILOGRAM);
+    }
+    // ml
+    if text_bits.clone().into_iter().any(|x|->bool{x == "ml"}) {
+        return (quantity as u32, SearchUnits::MILLILITRE);
+    }
+    // g
+    if text_bits.clone().into_iter().any(|x|->bool{x == "g"}) {
+        return (quantity as u32, SearchUnits::GRAM);
+    }
+    // l
+    if text_bits.into_iter().any(|x|->bool{x == "l"}) {
+        // If significant remainder do grams
+        if quantity % 1.0 > 0.05 {
+            let new_quantity = (quantity * 1000.0) as u32;
+            if (new_quantity >= 1) {
+                return (new_quantity, SearchUnits::MILLILITRE);
+            }
+            return DEFAULT_UNIT;
+        }
+        return (quantity as u32, SearchUnits::LITRE);
+    }
+    // Otherwise return default
+    DEFAULT_UNIT
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::price_calculator::item_resolver::{resolve, search};
-    use util::search::ShoppingItemQuery;
+    use super::*;
 
     #[test]
     fn test_result() {
@@ -317,5 +392,12 @@ mod tests {
             quantity: 1,
             unit: String::from("ea"),
         }, 10).unwrap().len());
+    }
+
+    #[test]
+    fn test_units() {
+        simple_query("SELECT volume_size FROM products").into_iter()
+            .take(50)
+            .for_each(|x|->(){println!("Unit: {:?} -> {:?}", x.clone(), get_unit(x))});
     }
 }

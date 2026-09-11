@@ -29,6 +29,7 @@ itertools = "0.15.0"
 rusqlite = {version = "0.40.2", features = ["bundled", "serialize", "ffi-sqlite-wasm-rs"] }
 csv = "1.4.0"
 rfd = "0.17.2"
+regex = "1.13.1"
 
 [dependencies.web-sys]
 version = "0.3"
