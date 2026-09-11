@@ -397,7 +397,7 @@ mod tests {
     #[test]
     fn test_units() {
         simple_query("SELECT volume_size FROM products").into_iter()
-            .take(50)
-            .for_each(|x|->(){println!("Unit: {:?} -> {:?}", x.clone(), get_unit(x))});
+            .take(500)
+            .for_each(|x|->(){get_unit(x);});
     }
 }
