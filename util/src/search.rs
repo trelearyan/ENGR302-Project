@@ -87,28 +87,36 @@ impl SearchUnits {
             GRAM => {
                 return match base_unit {
                     KILOGRAM => Some((search_quantity + base_quantity * 1000 - 1) / (base_quantity * 1000)),
+                    LITRE => Some((search_quantity + base_quantity * 1000 - 1) / (base_quantity * 1000)),
                     GRAM => Some((search_quantity + base_quantity - 1) / base_quantity),
+                    MILLILITRE => Some((search_quantity + base_quantity - 1) / base_quantity),
                     _ => None,
                 }
             },
             KILOGRAM => {
                 return match base_unit {
                     GRAM => Some((search_quantity * 1000 + base_quantity - 1) / base_quantity),
+                    MILLILITRE => Some((search_quantity * 1000 + base_quantity - 1) / base_quantity),
                     KILOGRAM => Some((search_quantity + base_quantity - 1) / base_quantity),
+                    LITRE => Some((search_quantity + base_quantity - 1) / base_quantity),
                     _ => None,
                 }
             },
             MILLILITRE => {
                 return match base_unit {
                     LITRE => Some((search_quantity + base_quantity * 1000 - 1) / (base_quantity * 1000)),
+                    KILOGRAM => Some((search_quantity + base_quantity * 1000 - 1) / (base_quantity * 1000)),
                     MILLILITRE => Some((search_quantity + base_quantity - 1) / base_quantity),
+                    GRAM => Some((search_quantity + base_quantity - 1) / base_quantity),
                     _ => None,
                 }
             },
             LITRE => {
                 return match base_unit {
                     MILLILITRE => Some((search_quantity * 1000 + base_quantity - 1) / base_quantity),
+                    GRAM => Some((search_quantity * 1000 + base_quantity - 1) / base_quantity),
                     LITRE => Some((search_quantity + base_quantity - 1) / base_quantity),
+                    KILOGRAM => Some((search_quantity + base_quantity - 1) / base_quantity),
                     _ => None,
                 }
             },
@@ -220,6 +228,39 @@ mod test {
         );
         assert_eq!(
             SearchUnits::KILOGRAM.scale_to_match(5, &SearchUnits::KILOGRAM, 2, 100),
+            Some(3)
+        );
+        // Test Physical scaling swapping volume and weight
+        assert_eq!(
+            SearchUnits::KILOGRAM.scale_to_match(3, &SearchUnits::MILLILITRE, 2500, 100),
+            Some(2)
+        );
+        assert_eq!(
+            SearchUnits::GRAM.scale_to_match(3000, &SearchUnits::LITRE, 2, 100),
+            Some(2)
+        );
+        assert_eq!(
+            SearchUnits::KILOGRAM.scale_to_match(4, &SearchUnits::LITRE, 2, 100),
+            Some(2)
+        );
+        assert_eq!(
+            SearchUnits::KILOGRAM.scale_to_match(5, &SearchUnits::LITRE, 2, 100),
+            Some(3)
+        );
+        assert_eq!(
+            SearchUnits::LITRE.scale_to_match(3, &SearchUnits::GRAM, 2500, 100),
+            Some(2)
+        );
+        assert_eq!(
+            SearchUnits::MILLILITRE.scale_to_match(3000, &SearchUnits::KILOGRAM, 2, 100),
+            Some(2)
+        );
+        assert_eq!(
+            SearchUnits::LITRE.scale_to_match(4, &SearchUnits::KILOGRAM, 2, 100),
+            Some(2)
+        );
+        assert_eq!(
+            SearchUnits::LITRE.scale_to_match(5, &SearchUnits::KILOGRAM, 2, 100),
             Some(3)
         );
         // Test Dollar scaling
