@@ -31,7 +31,7 @@ create-main-pages:
     - cargo install --locked trunk
   script:
     - cd shop_wise
-    - export TRUNK_BUILD_PUBLIC_URL="https://gitlab-web.ecs.vuw.ac.nz/shopwise-0c4d83/"
+    - export TRUNK_BUILD_PUBLIC_URL="https://gitlab-web.ecs.vuw.ac.nz/shopwise/"
     - trunk build --release
 
 
@@ -48,9 +48,9 @@ create-test-pages:
     - rustup target add wasm32-unknown-unknown
     - cargo install --locked trunk
   script:
-    - export TRUNK_BUILD_PUBLIC_URL=https://gitlab-web.ecs.vuw.ac.nz/shopwise-0c4d83/test-$CI_COMMIT_SHA
+    - export TRUNK_BUILD_PUBLIC_URL=https://gitlab-web.ecs.vuw.ac.nz/shopwise/test-$CI_COMMIT_SHA
     - echo $TRUNK_BUILD_PUBLIC_URL
-    - echo https://gitlab-web.ecs.vuw.ac.nz/shopwise-0c4d83/test-$CI_COMMIT_SHA
+    - echo https://gitlab-web.ecs.vuw.ac.nz/shopwise/test-$CI_COMMIT_SHA
     - echo $CI_COMMIT_SHA
     - cd shop_wise
     - trunk build --release

@@ -1,12 +1,22 @@
+use std::ops::Deref;
+
 use eframe::egui;
 
-use crate::results::{
-    Results, ResultsState, Scenario, ScenarioKind, StoreStop, UNAVAILABLE, UnresolvedItem,
-    brand_label, format_distance, format_duration, format_money,
+use crate::{
+    gui::ShowableWidget,
+    price_calculator::results::{
+        Results, ResultsState, Scenario, ScenarioKind, StoreStop, UNAVAILABLE, UnresolvedItem,
+        brand_label, format_distance, format_duration, format_money,
+    },
 };
 
-const STACK_BELOW_WIDTH: f32 = 760.0;
+impl ShowableWidget for OutputRoutesData {
+    fn show(&mut self, ui: &mut egui::Ui) {
+        self.showold(ui);
+    }
+}
 
+const STACK_BELOW_WIDTH: f32 = 760.0;
 const CARD_MIN_HEIGHT: f32 = 170.0;
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -16,30 +26,35 @@ pub enum PanelLayout {
     Tabs,
 }
 
-#[derive(Debug)]
-pub struct OutputPanel {
-    selected: ScenarioKind,
-    layout: PanelLayout,
+#[derive(Clone, Debug)]
+pub struct OutputRoutesData {
+    pub selected: ScenarioKind,
+    pub layout: PanelLayout,
+    pub results: ResultsState,
 }
 
-impl Default for OutputPanel {
+impl Default for OutputRoutesData {
     fn default() -> Self {
         Self {
             selected: ScenarioKind::Best,
             layout: PanelLayout::Cards,
+            results: ResultsState::Idle,
         }
     }
 }
 
-impl OutputPanel {
+impl OutputRoutesData {
+    #[must_use]
     pub fn new() -> Self {
         Self::default()
     }
 
+    #[must_use]
     pub fn selected(&self) -> ScenarioKind {
         self.selected
     }
 
+    #[must_use]
     pub fn layout(&self) -> PanelLayout {
         self.layout
     }
@@ -48,16 +63,17 @@ impl OutputPanel {
         self.layout = layout;
     }
 
+    #[must_use]
     pub fn with_layout(mut self, layout: PanelLayout) -> Self {
         self.layout = layout;
         self
     }
 
-    pub fn show(&mut self, ui: &mut egui::Ui, state: &ResultsState) {
+    pub fn showold(&mut self, ui: &mut egui::Ui) {
         let weak_colour = ui.visuals().weak_text_color();
         let error_colour = ui.visuals().error_fg_color;
 
-        match state {
+        match self.results.clone() {
             ResultsState::Idle => Self::message(
                 ui,
                 "Nothing to show yet",
@@ -68,10 +84,10 @@ impl OutputPanel {
             ResultsState::Failed(reason) => Self::message(
                 ui,
                 "That search could not be completed",
-                reason,
+                reason.as_str(),
                 error_colour,
             ),
-            ResultsState::Ready(results) => self.ready(ui, results),
+            ResultsState::Ready(results) => self.ready(ui, results.deref()),
         }
     }
 
@@ -168,15 +184,15 @@ impl OutputPanel {
             ui.vertical(|ui| {
                 ui.horizontal_wrapped(|ui| {
                     ui.label(egui::RichText::new(kind.label()).heading());
-                    if kind == ScenarioKind::Cheapest {
-                        if let Some(saving) = results.headline_saving() {
-                            ui.label(
-                                egui::RichText::new(format!("saves {}", format_money(&saving)))
-                                    .small()
-                                    .strong()
-                                    .color(positive),
-                            );
-                        }
+                    if kind == ScenarioKind::Cheapest
+                        && let Some(saving) = results.headline_saving()
+                    {
+                        ui.label(
+                            egui::RichText::new(format!("saves {}", format_money(&saving)))
+                                .small()
+                                .strong()
+                                .color(positive),
+                        );
                     }
                 });
                 ui.label(egui::RichText::new(kind.blurb()).small().weak());

@@ -1,10 +1,8 @@
-use bigdecimal::ToPrimitive;
 use itertools::Itertools;
 use std::{
-    fmt::{Debug, Display},
+    fmt::Debug,
     iter,
     rc::Rc,
-    sync::Arc,
     time::Duration,
 };
 
@@ -16,7 +14,7 @@ use util::{
 };
 
 use crate::{
-    input_gui::{LocationState, MileageOptions},
+    gui::transit::MileageOptions,
     route_planner::filters::{StoreFilters, filter_stores},
 };
 
@@ -32,7 +30,7 @@ pub struct RoutePlan {
     pub mileage: MileageOptions,
 }
 
-/// Complete shopping plan. Note ordered_stops includes the start and end stop
+/// Complete shopping plan. Note `ordered_stops` includes the start and end stop
 /// (the user location)
 pub struct RoutePath {
     pub ordered_stops: Rc<[Coordinate]>,
@@ -43,13 +41,14 @@ pub struct RoutePath {
 }
 
 impl RoutePlan {
+    #[must_use]
     pub fn calculate(&self) -> RoutePath {
         // let ordered_stops = iter::onceself.start_stopself.optimise_order();
 
         let ordered_stops: Rc<[Coordinate]> = iter::once(&self.start_stop)
-            .chain(self.optimise_order().into_iter())
+            .chain(&*self.optimise_order())
             .chain(iter::once(&self.end_stop))
-            .map(|a| a.clone())
+            .map(std::clone::Clone::clone)
             .collect_vec()
             .into();
 

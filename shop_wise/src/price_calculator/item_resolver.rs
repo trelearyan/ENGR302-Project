@@ -1,7 +1,4 @@
 use std::collections::HashMap;
-use std::fs;
-use std::path::Path;
-use std::process::Command;
 use util::coordinate::Coordinate;
 use util::cost::Cost;
 use util::search::{SearchUnits, ShoppingItem, ShoppingItemQuery, match_sid_to_brand};
@@ -17,14 +14,15 @@ struct SearchResult {
     quantity: f32,
 }
 
-/// Resolve a ShoppingItemQuery into a ShoppingItem for each store
+/// Resolve a `ShoppingItemQuery` into a `ShoppingItem` for each store
 /// <br>
 /// Returns:
 /// <br>
 /// Some(ShoppingItem) if the string could be resolved as a valid
-/// ShoppingItem
+/// `ShoppingItem`
 /// <br>
 /// None if the string could not be resolved
+#[must_use]
 pub fn resolve(item_query: &ShoppingItemQuery) -> Option<HashMap<u32, ShoppingItem>> {
     // Split item_query into search terms
     let terms: Vec<&str> = item_query.name.split(' ').collect();
@@ -33,20 +31,18 @@ pub fn resolve(item_query: &ShoppingItemQuery) -> Option<HashMap<u32, ShoppingIt
     // For each store (future narrow to allowed)
     for i in 1..=3 {
         // stores not available at the moment, only brands
-        let shop_id: &str = &i.to_string();
+        let _shop_id: &str = &i.to_string();
         let mut itemlist: HashMap<u32, SearchResult> = HashMap::new();
         // Get every item that matches some whole term of the query
         for j in 0..terms.len() {
-            let term = *terms.get(j).unwrap();
+            let _term = *terms.get(j).unwrap();
             let found = search.get_mut(&j)?.remove(&i);
-            if (found.is_none()) {
+            if found.is_none()  {
                 continue;
             }
             // Only add item if it wasn't already in the map
             for item in found.unwrap() {
-                if !itemlist.contains_key(&item.item_id) {
-                    itemlist.insert(item.item_id, item);
-                }
+                itemlist.entry(item.item_id).or_insert(item);
             }
         }
         // Score each item based on whether it fits the right department,
@@ -63,9 +59,9 @@ pub fn resolve(item_query: &ShoppingItemQuery) -> Option<HashMap<u32, ShoppingIt
             // Score name based on search term matches and minimalism (might punish certain items - future)
             for j in 0..terms.len() {
                 let mut tscore = 1;
-                let term: &str = *terms.get(j).unwrap();
+                let term: &str = terms.get(j).unwrap();
                 name.split(' ').for_each(|x: &str| {
-                    tscore += if (x.to_lowercase().contains(&term.to_lowercase())) {
+                    tscore += if x.to_lowercase().contains(&term.to_lowercase())  {
                         10
                     } else {
                         -1
@@ -85,7 +81,7 @@ pub fn resolve(item_query: &ShoppingItemQuery) -> Option<HashMap<u32, ShoppingIt
                 best_score = score;
             }
         }
-        if (best_key < 0) {
+        if best_key < 0  {
             continue;
         }
         let best = itemlist.get(&(best_key as u32)).unwrap();
@@ -146,7 +142,7 @@ fn demo_db(search_terms: &[&str]) -> Result<HashMap<usize, HashMap<u32, Vec<Sear
         let search_term = search_terms.get(term_i).unwrap();
         let mut term_results: HashMap<u32, Vec<SearchResult>> = HashMap::new();
         for i in 1..=3 {
-            let shop_id = &i.to_string();
+            let _shop_id = &i.to_string();
             let sql_query = "
                 SELECT id, supermarket_id, name, price, volume_size
                 FROM products p
@@ -166,7 +162,7 @@ fn demo_db(search_terms: &[&str]) -> Result<HashMap<usize, HashMap<u32, Vec<Sear
                         quantity: 1.0,
                     })
             })?;
-            let shop_results: Vec<SearchResult> = res.map(|f: std::prelude::v1::Result<SearchResult, Error>|->SearchResult{return f.unwrap();}).collect();
+            let shop_results: Vec<SearchResult> = res.map(|f: std::prelude::v1::Result<SearchResult, Error>|->SearchResult{f.unwrap()}).collect();
             term_results.insert(i, shop_results);
         }
         result.insert(term_i, term_results);

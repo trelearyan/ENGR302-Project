@@ -1,11 +1,13 @@
-use std::sync::mpsc::{channel, Receiver, Sender};
+use std::sync::mpsc::{Receiver, Sender, channel};
 
+#[derive(Debug)]
 pub enum FileOutcome {
     Opened { text: String, name: String },
     Saved { name: String },
     Failed(String),
 }
 
+#[derive(Debug)]
 pub struct FileChannel {
     sender: Sender<FileOutcome>,
     receiver: Receiver<FileOutcome>,
@@ -19,6 +21,7 @@ impl Default for FileChannel {
 }
 
 impl FileChannel {
+    #[must_use]
     pub fn poll(&self) -> Option<FileOutcome> {
         self.receiver.try_recv().ok()
     }
@@ -106,6 +109,7 @@ fn save_impl(
     let _ = sender.send(outcome);
 }
 
+#[cfg(target_arch = "wasm32")]
 fn download(text: &str, filename: &str) -> Result<(), String> {
     use wasm_bindgen::JsCast;
 
@@ -134,7 +138,6 @@ fn download(text: &str, filename: &str) -> Result<(), String> {
 
     Ok(())
 }
-
 #[cfg(not(target_arch = "wasm32"))]
 fn spawn<F>(future: F)
 where

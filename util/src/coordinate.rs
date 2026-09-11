@@ -84,9 +84,11 @@ impl Coordinate {
         &self.distance_to(other) <= range_metres
     }
 
+    #[must_use]
     pub fn wellington() -> Self {
         Coordinate::from_lat_long_str("-41.2866", "174.7756").unwrap()
     }
+    #[must_use]
     pub fn auckland() -> Self {
         Coordinate::from_lat_long_str("-36.848461", "174.763336").unwrap()
     }
