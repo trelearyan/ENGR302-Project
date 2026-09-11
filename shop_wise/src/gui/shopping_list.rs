@@ -36,7 +36,9 @@ impl ShowableWidget for ShoppingListData {
         ui.heading("Your shopping list");
 
         ui.horizontal(|ui| {
-            if ui.button("+ Add Item").clicked() {
+            if ui.button("+ Add Item")
+                .on_hover_text("Add an item to your shopping list")
+                .clicked() {
                 self.shopping_items.push(ShoppingItemQuery {
                     name: String::new(),
                     quantity: 1,
@@ -46,7 +48,7 @@ impl ShowableWidget for ShoppingListData {
             }
 
             if ui.button("Load CSV")
-                .on_hover_text("Pick CSV file")
+                .on_hover_text("Load in your own shopping list CSV file")
                 .clicked() {
                 self.load_csv();
             }
@@ -86,7 +88,7 @@ impl ShowableWidget for ShoppingListData {
                         .weak(),
                 );
                 if ui.button("Undo")
-                    .on_hover_text("Return your cleared items back to your shoppinglist")
+                    .on_hover_text("Return your cleared items back to your shopping list")
                     .clicked()
                     && let Some(items) = self.cleared_items.take()
                 {

@@ -85,7 +85,7 @@ impl AppData {
 
             if !can_search {
                 log::debug!("cant search if");
-                let reason = match (has_items, location_ready) {
+                let _reason = match (has_items, location_ready) {
                     (false, false) => "Add an item and set a valid location to search",
                     (false, true) => "Add at least one item to your shopping list",
                     (true, false) => {
@@ -93,9 +93,11 @@ impl AppData {
                     }
                     (true, true) => unreachable!(),
                 };
-                button = button.on_disabled_hover_text(reason);
+                button = button.on_disabled_hover_text("Check if you have added an item to shopping list and entered a location");
             }
-            if button.clicked() {
+            if button
+                .on_hover_text("I am ready to search")
+                .clicked() {
                 log::debug!("button clicked");
                 // Alex
                 // TODO: Fix this up once we have a better format of all the stores and individual location blacklisting
