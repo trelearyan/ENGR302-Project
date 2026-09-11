@@ -18,31 +18,35 @@ impl ShowableWidget for SupermarketsData {
         ui.heading("Supermarkets")
             .on_hover_text("Select the chains you wish to be included in your search");
 
-        ui.checkbox(&mut self.include_paknsave, "Pak'nSave")
-            .on_hover_text("Include Pak'nSave stores in the comparison");
-        if self.include_paknsave {
-            ui.indent("paknsave_options", |ui| {
-                ui.checkbox(&mut self.paknsave_loyalty, "I have a Clubcard")
+        let chains = [
+            (
+                &mut self.include_paknsave,
+                &mut self.paknsave_loyalty,
+                "Pak'nSave",
+                "I have a Clubcard",
+            ),
+            (
+                &mut self.include_newworld,
+                &mut self.newworld_loyalty,
+                "New World",
+                "I have a Clubcard",
+            ),
+            (
+                &mut self.include_woolworths,
+                &mut self.woolworths_loyalty,
+                "Woolworths",
+                "I have an Everyday Rewards Card",
+            ),
+        ];
+        for (included, loyalty, name, loyalty_label) in chains {
+        ui.checkbox(included, name)
+            .on_hover_text(format!("Include {name} stores in the search"));
+        if *included {
+            ui.indent(name, |ui| {
+                ui.checkbox(loyalty, loyalty_label)
                     .on_hover_text("Do you have a Pak'nSave loyalty card");
             });
         }
-
-        ui.checkbox(&mut self.include_newworld, "New World")
-            .on_hover_text("Include New World stores in the comparison");
-        if self.include_newworld {
-            ui.indent("newworld_options", |ui| {
-                ui.checkbox(&mut self.newworld_loyalty, "I have a Clubcard")
-                    .on_hover_text("Do you have a New World loyalty card");
-            });
-        }
-
-        ui.checkbox(&mut self.include_woolworths, "Woolworths")
-            .on_hover_text("Include Woolworths stores in the comparison");
-        if self.include_woolworths {
-            ui.indent("woolworths_options", |ui| {
-                ui.checkbox(&mut self.woolworths_loyalty, "I have an Everyday Rewards Card")
-                    .on_hover_text("Do you have a Woolworths loyalty card");
-            });
         }
     }
 }
