@@ -109,7 +109,7 @@ impl AppData {
                 if !self.supermarkets.include_newworld {
                     banned_stores.insert(StoreBrand::Newworld);
                 }
-                if !self.supermarkets.include_woolies {
+                if !self.supermarkets.include_woolworths {
                     banned_stores.insert(StoreBrand::Woolworths);
                 }
 
