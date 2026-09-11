@@ -1,6 +1,6 @@
 use std::fmt;
 
-use util::search::{match_to_unit, ShoppingItemQuery};
+use util::search::ShoppingItemQuery;
 
 #[derive(Debug)]
 pub enum CsvError {
