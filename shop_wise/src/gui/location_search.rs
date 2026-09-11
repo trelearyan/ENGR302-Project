@@ -68,12 +68,14 @@ impl From<LocationData> for Coordinate {
 impl LocationData {
 
     pub fn show(this: &Rc<RefCell<LocationData>>, ui: &mut Ui) {
-        ui.heading("Location");
-
-        if ui.button("Use Current Location").clicked() {
-            log::info!("Requesting location...");
-            #[cfg(target_arch = "wasm32")]
-            Self::get_current_location(this.clone(), ui.ctx().clone());
+        ui.heading("Location")
+            .on_hover_text("Where do you want your trip to starts from");
+        if ui.button("Use Current Location")
+            .on_hover_text("Use your current location as your start point")
+            .clicked() {
+                log::info!("Requesting location...");
+                #[cfg(target_arch = "wasm32")]
+                Self::get_current_location(this.clone(), ui.ctx().clone());
         }
 
         let now = ui.input(|i| i.time);
@@ -82,7 +84,8 @@ impl LocationData {
         let response = ui.add(
             TextEdit::singleline(&mut state.address)
                 .hint_text("e.g. 12 Example Street, Suburb, City"),
-        );
+                )
+                .on_hover_text("Enter your starting point address here. New Zealand addresses only.");
 
         let enter_pressed = response.lost_focus() && ui.input(|i| i.key_pressed(Key::Enter));
 
@@ -174,7 +177,9 @@ impl LocationData {
             let suggestions = state.suggestions.clone();
             Frame::popup(ui.style()).show(ui, |ui| {
                 for s in &suggestions {
-                    if ui.selectable_label(false, &s.display_name).clicked() {
+                    if ui.selectable_label(false, &s.display_name)
+                        .on_hover_text("Use this address as your starting point")
+                        .clicked() {
                         state.address = s.display_name.clone();
                         state.latitude = Some(s.lat);
                         state.longitude = Some(s.lon);
