@@ -16,7 +16,7 @@ use util::cost::{self, Cost};
 use util::speed::Speed;
 use util::distance::Distance;
 use util::search::SearchUnits::{DOLLAR, EACH, GRAM, KILOGRAM, LITRE, MILLILITRE};
-use util::search::{ShoppingItemQuery, unit_to_str};
+use util::search::{ShoppingItemQuery};
 use util::store::StoreBrand;
 
 use crate::output::OutputPanel;

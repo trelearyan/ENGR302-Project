@@ -15,38 +15,48 @@ pub enum SearchUnits {
     DOLLAR,
 }
 
-pub fn measurement_type(unit: SearchUnits) -> &'static str {
-    match unit {
-        EACH => "count",
-        GRAM => "mass",
-        KILOGRAM => "mass",
-        MILLILITRE => "volume",
-        LITRE => "volume",
-        DOLLAR => "cost",
+impl SearchUnits {
+    /// Gives the physical quantity that the unit is measuring (e.g. count, mass, volume, cost)
+    pub fn measurement_type(&self) -> &'static str {
+        match self {
+            EACH => "count",
+            GRAM => "mass",
+            KILOGRAM => "mass",
+            MILLILITRE => "volume",
+            LITRE => "volume",
+            DOLLAR => "cost",
+        }
     }
-}
 
-pub fn unit_to_str(unit: SearchUnits) -> &'static str {
-    match unit {
-        EACH => "ea",
-        GRAM => "g",
-        KILOGRAM => "kg",
-        MILLILITRE => "mL",
-        LITRE => "L",
-        DOLLAR => "$",
+    /// Gives a string representation of the unit
+    pub fn to_str(&self) -> &'static str {
+        match self {
+            EACH => "ea",
+            GRAM => "g",
+            KILOGRAM => "kg",
+            MILLILITRE => "mL",
+            LITRE => "L",
+            DOLLAR => "$",
+        }
     }
-}
 
-pub fn match_to_unit(name: &str) -> Option<SearchUnits> {
-    match name {
-        "ea" => Some(EACH),
-        "g" => Some(GRAM),
-        "kg" => Some(KILOGRAM),
-        "mL" => Some(MILLILITRE),
-        "L" => Some(LITRE),
-        "$" => Some(DOLLAR),
-        _ => None,
+    pub fn match_to_unit(name: &str) -> Option<SearchUnits> {
+        match name {
+            "ea" => Some(EACH),
+            "g" => Some(GRAM),
+            "kg" => Some(KILOGRAM),
+            "mL" => Some(MILLILITRE),
+            "L" => Some(LITRE),
+            "$" => Some(DOLLAR),
+            _ => None,
+        }
     }
+
+    // pub fn scale_to_match(&self, search_quantity u32, base_unit: SearchUnits, base_quantity: u32) -> u32 {
+    //     match self {
+    //         EACH =>
+    //     }
+    // }
 }
 
 pub fn match_sid_to_brand(sid: u32) -> Option<StoreBrand> {

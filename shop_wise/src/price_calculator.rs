@@ -5,7 +5,7 @@ use util::distance::Distance;
 use util::{cost::Cost, store::{Store, StoreBrand}};
 use bigdecimal::{BigDecimal, ToPrimitive};
 use eframe::egui::accesskit::ScrollUnit::Item;
-use util::{search::{ShoppingItem, ShoppingItemQuery, unit_to_str}};
+use util::{search::{ShoppingItem, ShoppingItemQuery}};
 
 use crate::{input_gui::MileageOptions, price_calculator::item_resolver::resolve, route_planner::{RoutePath, all_possible_routes, all_stores, filters::{StoreFilters, filter_stores}}};
 
