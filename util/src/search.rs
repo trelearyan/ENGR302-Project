@@ -77,7 +77,7 @@ impl SearchUnits {
             EACH => {
                 return match base_unit {
                     EACH => Some((search_quantity + base_quantity - 1) / base_quantity),
-                    _ => None,
+                    _ => Some(search_quantity),
                 };
             },
             GRAM => {
