@@ -45,7 +45,9 @@ impl ShowableWidget for ShoppingListData {
                 self.cleared_items = None;
             }
 
-            if ui.button("Load CSV").clicked() {
+            if ui.button("Load CSV")
+                .on_hover_text("Pick CSV file")
+                .clicked() {
                 self.load_csv();
             }
 
@@ -56,6 +58,8 @@ impl ShowableWidget for ShoppingListData {
 
             if ui
                 .add_enabled(can_save, egui::Button::new("Save CSV"))
+                .on_hover_text("Save your shopping list as a CSV file")
+                .on_disabled_hover_text("Add items to your Shopping List to save")
                 .clicked()
             {
                 self.save_csv();
@@ -64,7 +68,8 @@ impl ShowableWidget for ShoppingListData {
             let has_items = !self.shopping_items.is_empty();
             if ui
                 .add_enabled(has_items, egui::Button::new("Clear"))
-                .on_hover_text("Remove all items")
+                .on_hover_text("Remove all items from your Shopping List")
+                .on_disabled_hover_text("Add items to your Shopping List use clear button")
                 .clicked()
             {
                 self.cleared_items = Some(std::mem::take(&mut self.shopping_items));
@@ -80,7 +85,9 @@ impl ShowableWidget for ShoppingListData {
                         .small()
                         .weak(),
                 );
-                if ui.button("Undo").clicked()
+                if ui.button("Undo")
+                    .on_hover_text("Return your cleared items back to your shoppinglist")
+                    .clicked()
                     && let Some(items) = self.cleared_items.take()
                 {
                     self.shopping_items = items;
@@ -95,11 +102,14 @@ impl ShowableWidget for ShoppingListData {
 
         for (i, item) in self.shopping_items.iter_mut().enumerate() {
             ui.horizontal(|ui| {
-                ui.text_edit_singleline(&mut item.name);
-                ui.add(egui::DragValue::new(&mut item.quantity));
+                ui.text_edit_singleline(&mut item.name)
+                    .on_hover_text("Enter product name, e.g. Anchor Blue Milk 2L");
+                ui.add(egui::DragValue::new(&mut item.quantity))
+                    .on_hover_text("Select what quantity of this item you would like");
 
                 egui::ComboBox::from_id_salt(i)
                     .selected_text(&item.unit)
+                    //.on_hover_text("Select the appropriate unit for this item")
                     .show_ui(ui, |ui| {
                         ui.selectable_value(
                             &mut item.unit,
@@ -131,11 +141,13 @@ impl ShowableWidget for ShoppingListData {
                             unit_to_str(DOLLAR).to_string(),
                             unit_to_str(DOLLAR),
                         );
-                    });
+                    })
+                    .response
+                    .on_hover_text("Select the appropriate unit for this item");
 
                 if ui
                     .add(egui::Button::new("X").fill(egui::Color32::RED))
-                    .on_hover_text("Remove item")
+                    .on_hover_text("Remove this item from your shopping list")
                     .clicked()
                 {
                     remove_index = Some(i);
