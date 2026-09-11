@@ -69,6 +69,8 @@ impl ShowableWidget for AppData<'_> {
             ui.separator();
 
             CentralPanel::default().show(ui, |ui| {
+                LocationData::show(&self.location_search, ui);
+                ui.separator();
                 self.search_button(ui);
                 self.output_routes.show(ui);
             });
