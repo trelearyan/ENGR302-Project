@@ -1,5 +1,4 @@
 use itertools::Itertools;
-#[cfg(feature = "include_routing")]
 use routx::AStarError;
 use routx::{Graph, osm::Options};
 use std::{borrow::Borrow, fmt::Debug, iter, rc::Rc, time::Duration};
