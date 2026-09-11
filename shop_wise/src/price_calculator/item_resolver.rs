@@ -53,7 +53,7 @@ pub fn search(item_query: &ShoppingItemQuery, num_options: u32) -> Option<Vec<Sa
         .flat_map(|store_map: (&u32, &Vec<SearchResult>)|->
             VecIter<'_, SearchResult> {store_map.1.iter()})
         .map(|search_result: &SearchResult|->
-            (&SearchResult, i32) {(search_result, score_item(&terms, &search_result))})
+            (&SearchResult, i32) {(search_result, score_item(&terms, &search_result, search_result.price))})
         .collect::<Vec<_>>();
     // Sort descending
     list.sort_by(|a , b|->Ordering {b.1.cmp(&a.1)});
@@ -87,6 +87,7 @@ pub fn resolve(item_query: &ShoppingItemQuery) -> Option<HashMap<u32, ShoppingIt
     let terms: Vec<&str> = item_query.name.split(' ').collect();
     let mut result: HashMap<u32, ShoppingItem> = HashMap::new();
     let mut search: HashMap<usize, HashMap<u32, Vec<SearchResult>>> = demo_db(&terms).unwrap();
+    let search_unit = SearchUnits::match_to_unit(&item_query.unit).unwrap();
     // For each store (future narrow to allowed)
     for i in 1..=3 {
         // stores not available at the moment, only brands
@@ -109,28 +110,36 @@ pub fn resolve(item_query: &ShoppingItemQuery) -> Option<HashMap<u32, ShoppingIt
         // minimal other content. This should reward "Brand Free Range Chicken Breast"
         // over "Brand Pasta Single Snack Chicken Curry Pasta & Sauce" and
         // "Brand Wet Cat Food Chicken Breast and Herb"
-        let mut best_key: i32 = i32::MIN;
+        let mut best_key: Option<i32> = None;
         let mut best_score = i32::MIN;
+        let mut best_mul: Option<u32> = None;
         for key in itemlist.keys() {
             let item: &&SearchResult = &itemlist.get(key).unwrap();
-            let mut score: i32 = score_item(&terms, item);
+            let mul: Option<u32> = search_unit
+                .scale_to_match(item_query.quantity, &item.unit, item.quantity, item.price);
+            if (mul.is_none()) {
+                continue;
+            }
+            let price: u32 = item.price * mul.unwrap();
+            let mut score: i32 = score_item(&terms, item, price);
             // Return best match per store
             if score > best_score {
-                best_key = *key as i32;
+                best_key = Some(*key as i32);
                 best_score = score;
+                best_mul = mul;
             }
         }
-        if best_key < 0  {
+        if (best_key.is_none()) {
             continue;
         }
-        let best = itemlist.get(&(best_key as u32)).unwrap();
+        let best = itemlist.get(&(best_key.unwrap() as u32)).unwrap();
         result.insert(
             i,
             ShoppingItem {
                 name: best.name.clone(),
-                quantity: item_query.quantity,
+                quantity: best.quantity * best_mul.unwrap(),
                 unit: SearchUnits::EACH,
-                price: Cost::from_cents(best.price*item_query.quantity),
+                price: Cost::from_cents(best.price * best_mul.unwrap()),
                 store: Store {
                     brand: best.store,
                     location: Coordinate::from_lat_long_f32(i as f32, i as f32),
@@ -162,7 +171,7 @@ pub fn resolve(item_query: &ShoppingItemQuery) -> Option<HashMap<u32, ShoppingIt
     // vs "Vanilla Coke Zero Sugar"
 }
 
-fn score_item(terms: &[&str], item: &&SearchResult) -> i32 {
+fn score_item(terms: &[&str], item: &&SearchResult, price: u32) -> i32 {
 
     let mut score: i32 = 1;
     // Score name based on search term matches and minimalism (might punish certain items - future)
@@ -182,7 +191,7 @@ fn score_item(terms: &[&str], item: &&SearchResult) -> i32 {
     // Score based on most popular category of high scoring items (narrow top results - need good already)
     // category not available at the moment
     // Grade on price & quantity matching
-    score - (item.price as i32) - (item.name.len() as i32)
+    score - (price as i32) - (item.name.len() as i32)
 }
 
 const DB: &[u8] =
@@ -335,7 +344,7 @@ mod tests {
         resolve(&ShoppingItemQuery {
             name: String::from("Eggs"),
             quantity: 1,
-            unit: String::from("ea"),
+            unit: SearchUnits::EACH.to_str().to_owned(),
         });
     }
 
@@ -345,7 +354,7 @@ mod tests {
             let res = resolve(&ShoppingItemQuery {
                 name: String::from("Weetbix"),
                 quantity: 1,
-                unit: String::from("ea"),
+                unit: SearchUnits::GRAM.to_str().to_owned(),
             })
             .unwrap();
             assert_eq!(true, res.contains_key(&2));
@@ -356,7 +365,7 @@ mod tests {
             let res = resolve(&ShoppingItemQuery {
                 name: String::from("Weet-Bix"),
                 quantity: 1,
-                unit: String::from("ea"),
+                unit: SearchUnits::GRAM.to_str().to_owned(),
             })
             .unwrap();
             assert_eq!(false, res.contains_key(&2));
@@ -370,17 +379,17 @@ mod tests {
         let res = resolve(&ShoppingItemQuery {
             name: String::from("Onion Soup"),
             quantity: 1,
-            unit: String::from("ea"),
+            unit: SearchUnits::GRAM.to_str().to_owned(),
         })
         .unwrap(); //Maggi Onion Soup
         assert_eq!("Maggi Onion Soup", res.get(&1).unwrap().name);
         let res = resolve(&ShoppingItemQuery {
             name: String::from("Reduced Cream"),
             quantity: 1,
-            unit: String::from("ea"),
+            unit: SearchUnits::MILLILITRE.to_str().to_owned(),
         })
         .unwrap();
-        assert_eq!("Pams Reduced Cream", res.get(&1).unwrap().name);
+        assert_eq!("Nestle Reduced Cream", res.get(&1).unwrap().name);
         assert_eq!("countdown reduced cream ", res.get(&2).unwrap().name);
     }
 
@@ -389,7 +398,7 @@ mod tests {
         assert_eq!(10, search(&ShoppingItemQuery {
             name: String::from("Milk"),
             quantity: 1,
-            unit: String::from("ea"),
+            unit: SearchUnits::EACH.to_str().to_owned(),
         }, 10).unwrap().len());
     }
 

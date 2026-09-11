@@ -76,7 +76,7 @@ impl SearchUnits {
     /// stays under your limit
     /// 
     /// If no conversion can be found, None will be returned
-    pub fn scale_to_match(&self, search_quantity: u32, base_unit: SearchUnits, base_quantity: u32, cost_cents: u32) -> Option<u32> {
+    pub fn scale_to_match(&self, search_quantity: u32, base_unit: &SearchUnits, base_quantity: u32, cost_cents: u32) -> Option<u32> {
         match self {
             EACH => {
                 return match base_unit {
@@ -186,62 +186,62 @@ mod test {
     fn test_scaling() {
         // Test EACH scaling
         assert_eq!(
-            SearchUnits::EACH.scale_to_match(6, SearchUnits::EACH, 8, 100),
+            SearchUnits::EACH.scale_to_match(6, &SearchUnits::EACH, 8, 100),
             Some(1)
         );
         // Test Physical scaling
         assert_eq!(
-            SearchUnits::LITRE.scale_to_match(3, SearchUnits::MILLILITRE, 2500, 100),
+            SearchUnits::LITRE.scale_to_match(3, &SearchUnits::MILLILITRE, 2500, 100),
             Some(2)
         );
         assert_eq!(
-            SearchUnits::MILLILITRE.scale_to_match(3000, SearchUnits::LITRE, 2, 100),
+            SearchUnits::MILLILITRE.scale_to_match(3000, &SearchUnits::LITRE, 2, 100),
             Some(2)
         );
         assert_eq!(
-            SearchUnits::LITRE.scale_to_match(4, SearchUnits::LITRE, 2, 100),
+            SearchUnits::LITRE.scale_to_match(4, &SearchUnits::LITRE, 2, 100),
             Some(2)
         );
         assert_eq!(
-            SearchUnits::LITRE.scale_to_match(5, SearchUnits::LITRE, 2, 100),
+            SearchUnits::LITRE.scale_to_match(5, &SearchUnits::LITRE, 2, 100),
             Some(3)
         );
         assert_eq!(
-            SearchUnits::KILOGRAM.scale_to_match(3, SearchUnits::GRAM, 2500, 100),
+            SearchUnits::KILOGRAM.scale_to_match(3, &SearchUnits::GRAM, 2500, 100),
             Some(2)
         );
         assert_eq!(
-            SearchUnits::GRAM.scale_to_match(3000, SearchUnits::KILOGRAM, 2, 100),
+            SearchUnits::GRAM.scale_to_match(3000, &SearchUnits::KILOGRAM, 2, 100),
             Some(2)
         );
         assert_eq!(
-            SearchUnits::KILOGRAM.scale_to_match(4, SearchUnits::KILOGRAM, 2, 100),
+            SearchUnits::KILOGRAM.scale_to_match(4, &SearchUnits::KILOGRAM, 2, 100),
             Some(2)
         );
         assert_eq!(
-            SearchUnits::KILOGRAM.scale_to_match(5, SearchUnits::KILOGRAM, 2, 100),
+            SearchUnits::KILOGRAM.scale_to_match(5, &SearchUnits::KILOGRAM, 2, 100),
             Some(3)
         );
         // Test Dollar scaling
         assert_eq!(
-            SearchUnits::DOLLAR.scale_to_match(3, SearchUnits::MILLILITRE, 2500, 100),
+            SearchUnits::DOLLAR.scale_to_match(3, &SearchUnits::MILLILITRE, 2500, 100),
             Some(3)
         );
         assert_eq!(
-            SearchUnits::DOLLAR.scale_to_match(8, SearchUnits::EACH, 1, 780),
+            SearchUnits::DOLLAR.scale_to_match(8, &SearchUnits::EACH, 1, 780),
             Some(1)
         );
         assert_eq!(
-            SearchUnits::DOLLAR.scale_to_match(20, SearchUnits::EACH, 1, 780),
+            SearchUnits::DOLLAR.scale_to_match(20, &SearchUnits::EACH, 1, 780),
             Some(2)
         );
         assert_eq!(
-            SearchUnits::DOLLAR.scale_to_match(8, SearchUnits::EACH, 1, 860),
+            SearchUnits::DOLLAR.scale_to_match(8, &SearchUnits::EACH, 1, 860),
             None
         );
         // Test invalid scaling
         assert_eq!(
-            SearchUnits::LITRE.scale_to_match(3, SearchUnits::EACH, 2500, 100),
+            SearchUnits::LITRE.scale_to_match(3, &SearchUnits::EACH, 2500, 100),
             None
         );
     }
