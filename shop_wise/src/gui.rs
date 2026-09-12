@@ -1,10 +1,8 @@
 use eframe::egui::{self, CentralPanel, Panel, ScrollArea, Ui};
 use std::cell::RefCell;
-use std::collections::HashSet;
-use std::ops::Deref;
 use std::rc::Rc;
 use util::coordinate::Coordinate;
-use util::store::StoreBrand;
+
 
 use crate::gui::location_search::{LocationData, LocationStatus};
 use crate::gui::output_routes::OutputRoutesData;
@@ -114,19 +112,7 @@ impl AppData {
                 log::debug!("button clicked");
                 // Alex
                 // TODO: Fix this up once we have a better format of all the stores and individual location blacklisting
-                //let banned_stores = self.supermarkets.banned_stores();
-
-                let banned_stores = HashSet::<StoreBrand>::new();
-
-                //if !self.supermarkets.include_paknsave {
-                //    banned_stores.insert(StoreBrand::Paknsave);
-                //}
-                //if !self.supermarkets.include_newworld {
-                  //  banned_stores.insert(StoreBrand::Newworld);
-                //}
-                //if !self.supermarkets.include_woolworths {
-                  //  banned_stores.insert(StoreBrand::Woolworths);
-                //}
+                let banned_stores = self.supermarkets.banned_stores();
 
                 let filters_builder = StoreFilters::builder()
                     .location(Coordinate::from_lat_long_f64(
@@ -135,7 +121,7 @@ impl AppData {
                     ))
                     .range(self.preferences.max_range.clone())
                     .max_store_visits(self.preferences.max_stores)
-                    .disallow_brands(banned_stores.iter().copied().collect::<Vec<_>>().deref());
+                    .disallow_brands(&banned_stores);
                 let filters = filters_builder.build();
 
                 let _origin_label = self.location_search.borrow().address.clone();
