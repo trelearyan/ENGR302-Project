@@ -114,17 +114,19 @@ impl AppData {
                 log::debug!("button clicked");
                 // Alex
                 // TODO: Fix this up once we have a better format of all the stores and individual location blacklisting
-                let mut banned_stores = HashSet::<StoreBrand>::new();
+                //let banned_stores = self.supermarkets.banned_stores();
 
-                if !self.supermarkets.include_paknsave {
-                    banned_stores.insert(StoreBrand::Paknsave);
-                }
-                if !self.supermarkets.include_newworld {
-                    banned_stores.insert(StoreBrand::Newworld);
-                }
-                if !self.supermarkets.include_woolworths {
-                    banned_stores.insert(StoreBrand::Woolworths);
-                }
+                let banned_stores = HashSet::<StoreBrand>::new();
+
+                //if !self.supermarkets.include_paknsave {
+                //    banned_stores.insert(StoreBrand::Paknsave);
+                //}
+                //if !self.supermarkets.include_newworld {
+                  //  banned_stores.insert(StoreBrand::Newworld);
+                //}
+                //if !self.supermarkets.include_woolworths {
+                  //  banned_stores.insert(StoreBrand::Woolworths);
+                //}
 
                 let filters_builder = StoreFilters::builder()
                     .location(Coordinate::from_lat_long_f64(
