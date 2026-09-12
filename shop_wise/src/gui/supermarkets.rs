@@ -46,11 +46,30 @@ pub struct SupermarketsData {
 
 impl SupermarketsData {
     #[must_use]
+    pub fn banned_stores(&self) -> Vec<StoreBrand> {
+        self.chains
+            .iter()
+            .filter(|chain| !chain.checked)
+            .map(|chain| chain.brand)
+            .collect()
+    }
+
+    #[must_use]
     pub fn has_loyalty_card(&self, brand: StoreBrand) -> bool {
         self.chains
             .iter()
             .find(|chain| chain.brand == brand)
             .is_some_and(|chain| chain.has_loyalty_card)
+    }
+
+    #[must_use]
+    pub fn banned_store_ids(&self) -> Vec<u32> {
+        self.chains
+            .iter()
+            .flat_map(|chain| chain.locations.iter())
+            .filter(|store| !store.checked)
+            .map(|store| store.store_id)
+            .collect()
     }
 }
 
@@ -72,7 +91,7 @@ impl ShowableWidget for SupermarketsData {
 
             ui.indent(name, |ui| {
                 ui.checkbox(&mut chain.has_loyalty_card, card)
-                    .on_hover_text(format!("Do you have {name} loyalty card"));
+                    .on_hover_text(format!("Do you have {name}'s loyalty card?"));
 
                 egui::CollapsingHeader::new("Choose locations")
                     .id_salt(name)
