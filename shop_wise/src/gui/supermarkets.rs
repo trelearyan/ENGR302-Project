@@ -78,6 +78,8 @@ impl ShowableWidget for SupermarketsData {
         ui.heading("Supermarkets")
             .on_hover_text("Select the Supermarket chains you want to be included in your search");
 
+        let mut clubcard: Option<bool>= None;
+
         for chain in &mut self.chains {
             let name = brand_label(chain.brand);
             let card = loyalty_label(chain.brand);
@@ -90,8 +92,12 @@ impl ShowableWidget for SupermarketsData {
             }
 
             ui.indent(name, |ui| {
-                ui.checkbox(&mut chain.has_loyalty_card, card)
-                    .on_hover_text(format!("Do you have {name}'s loyalty card?"));
+                if ui.checkbox(&mut chain.has_loyalty_card, card)
+                    .on_hover_text(format!("Do you have {name}'s loyalty card?"))
+                    .changed() && matches!(chain.brand, StoreBrand::Paknsave | StoreBrand::Newworld)
+                {
+                    clubcard = Some(chain.has_loyalty_card);
+                }
 
                 egui::CollapsingHeader::new("Choose locations")
                     .id_salt(name)
@@ -111,6 +117,13 @@ impl ShowableWidget for SupermarketsData {
                         }
                     });
             });
+        }
+        if let Some(value) = clubcard {
+            for chain in &mut self.chains {
+                if matches!(chain.brand, StoreBrand::Paknsave | StoreBrand::Newworld) {
+                    chain.has_loyalty_card = value;
+                }
+            }
         }
     }
 }
