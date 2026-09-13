@@ -27,7 +27,15 @@ impl ChainPreference {
             brand,
             checked: true,
             has_loyalty_card: false,
-            locations: Vec::new(),
+            locations: vec![],
+            //locations: crate::gui::demo_welly_stores::demo_stores_for(brand)
+              //  .into_iter()
+                //.map(|store|StorePreference {
+                  //  store_id: store.id,
+                    //name: store.name,
+                    //checked: true,
+                //})
+                //.collect(),
         }
     }
 }
