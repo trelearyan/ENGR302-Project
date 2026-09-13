@@ -20,6 +20,8 @@ pub mod preferences;
 pub mod shopping_list;
 pub mod supermarkets;
 pub mod transit;
+//placeholder
+pub mod demo_welly_stores;
 
 #[derive(Default, Clone, Debug)]
 pub struct AppData {
