@@ -1,0 +1,29 @@
+[
+  { "id": 101, "name": "Pak'nSave Kilbirnie",        "brand": "Paknsave",   "latitude": -41.3181, "longitude": 174.7962 },
+  { "id": 102, "name": "Pak'nSave Petone",           "brand": "Paknsave",   "latitude": -41.2247, "longitude": 174.8749 },
+  { "id": 103, "name": "Pak'nSave Porirua",          "brand": "Paknsave",   "latitude": -41.1345, "longitude": 174.8395 },
+  { "id": 104, "name": "Pak'nSave Upper Hutt",       "brand": "Paknsave",   "latitude": -41.1256, "longitude": 175.0708 },
+  { "id": 105, "name": "Pak'nSave Lower Hutt",       "brand": "Paknsave",   "latitude": -41.2098, "longitude": 174.9086 },
+
+  { "id": 201, "name": "New World Thorndon",         "brand": "Newworld",   "latitude": -41.2743, "longitude": 174.7815 },
+  { "id": 202, "name": "New World Wellington City",  "brand": "Newworld",   "latitude": -41.2924, "longitude": 174.7823 },
+  { "id": 203, "name": "New World Newtown",          "brand": "Newworld",   "latitude": -41.3110, "longitude": 174.7799 },
+  { "id": 204, "name": "New World Island Bay",       "brand": "Newworld",   "latitude": -41.3339, "longitude": 174.7745 },
+  { "id": 205, "name": "New World Karori",           "brand": "Newworld",   "latitude": -41.2846, "longitude": 174.7420 },
+  { "id": 206, "name": "New World Miramar",          "brand": "Newworld",   "latitude": -41.3178, "longitude": 174.8152 },
+  { "id": 207, "name": "New World Khandallah",       "brand": "Newworld",   "latitude": -41.2453, "longitude": 174.7936 },
+  { "id": 208, "name": "New World Metro Willis St",  "brand": "Newworld",   "latitude": -41.2886, "longitude": 174.7752 },
+  { "id": 209, "name": "New World Chaffers",         "brand": "Newworld",   "latitude": -41.2925, "longitude": 174.7846 },
+
+  { "id": 301, "name": "Woolworths Chaffers",        "brand": "Woolworths", "latitude": -41.2930, "longitude": 174.7855 },
+  { "id": 302, "name": "Woolworths Metro Willis St", "brand": "Woolworths", "latitude": -41.2891, "longitude": 174.7748 },
+  { "id": 303, "name": "Woolworths Newtown",         "brand": "Woolworths", "latitude": -41.3089, "longitude": 174.7803 },
+  { "id": 304, "name": "Woolworths Karori",          "brand": "Woolworths", "latitude": -41.2838, "longitude": 174.7437 },
+  { "id": 305, "name": "Woolworths Johnsonville",    "brand": "Woolworths", "latitude": -41.2246, "longitude": 174.8047 },
+  { "id": 306, "name": "Woolworths Kilbirnie",       "brand": "Woolworths", "latitude": -41.3167, "longitude": 174.7940 },
+  { "id": 307, "name": "Woolworths Crofton Downs",   "brand": "Woolworths", "latitude": -41.2620, "longitude": 174.7614 },
+  { "id": 308, "name": "Woolworths Cable Car Lane",  "brand": "Woolworths", "latitude": -41.2864, "longitude": 174.7760 },
+  { "id": 309, "name": "Woolworths Petone",          "brand": "Woolworths", "latitude": -41.2265, "longitude": 174.8785 },
+  { "id": 310, "name": "Woolworths Lower Hutt",      "brand": "Woolworths", "latitude": -41.2110, "longitude": 174.9060 },
+  { "id": 311, "name": "Woolworths Porirua",         "brand": "Woolworths", "latitude": -41.1372, "longitude": 174.8412 }
+]
