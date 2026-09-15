@@ -62,12 +62,11 @@ impl ShowableWidget for ShoppingListData {
             if ui.button("+ Add Item")
                 .on_hover_text("Add an item to your shopping list")
                 .clicked() {
-                self.shopping_items.push(ShoppingItemQuery {
-                    name: String::new(),
-                    quantity: 1,
-                    unit: EACH.to_str().to_string(),
-                });
-                self.cleared_items = None;
+                {
+                    self.add_item_modal = Some(Rc::new(RefCell::new(AddItemState::default())));
+                    self.cleared_items = None;
+                }
+                
             }
 
             if ui.button("Load CSV")
