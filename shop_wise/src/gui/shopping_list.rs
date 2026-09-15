@@ -277,6 +277,7 @@ impl ShoppingListData {
             if state.status == AddItemStatus::Suggesting {
                 let suggestions = state.suggestions.clone();
                 egui::Frame::popup(ui.style()).show(ui, |ui| {
+                    // .max_height(300.0) 300px fits roughly 14 text only suggestion items before scrolling. Once product images are added this value will likely need to be changed.
                     egui::ScrollArea::vertical().max_height(300.0).show(ui, |ui|{
                         for s in &suggestions {
                             let label = format!("{}  ·  {} {}", s.name, s.quantity, s.unit);
