@@ -101,6 +101,8 @@ impl ShowableWidget for ShoppingListData {
             }
         });
 
+        self.show_add_item_search(ui);
+
         if let Some(cleared) = &self.cleared_items {
             let count = cleared.len();
             ui.horizontal(|ui| {
@@ -227,11 +229,121 @@ impl ShoppingListData {
         }
     }
 
+    fn show_add_item_search(&mut self, ui: &mut Ui) {
+        let Some(state_rc) = self.add_item_modal.clone() else {
+            return;
+        };
+        let now = ui.input(|i| i.time);
+        let mut close = false;
+        let mut picked: Option<ShoppingItemQuery> = None;
+ 
+        {
+            let mut state = state_rc.borrow_mut();
+ 
+            ui.horizontal(|ui| {
+                let response = ui.add(
+                    egui::TextEdit::singleline(&mut state.query)
+                        .hint_text("Enter Your Item Name (e.g. milk)"),
+                );
+ 
+                if response.changed() {
+                    state.status = AddItemStatus::Idle;
+                    state.suggestions.clear();
+                    state.last_edit_time = Some(now);
+                    ui.ctx().request_repaint_after(std::time::Duration::from_secs_f64(
+                        DEBOUNCE_SECONDS,
+                    ));
+                }
+ 
+                if ui.button("Finish!").clicked() {
+                    close = true;
+                }
+            });
+ 
+            let should_fire = matches!(
+                state.last_edit_time,
+                Some(last_edit) if now - last_edit >= DEBOUNCE_SECONDS
+            );
+ 
+            if should_fire {
+                let query = state.query.trim().to_string();
+                state.last_edit_time = None;
+ 
+                if query.len() < MIN_QUERY_LEN {
+                    state.status = AddItemStatus::Idle;
+                } else {
+                    state.status = AddItemStatus::Searching;
+                    state.request_id += 1;
+ 
+                    #[cfg(target_arch = "wasm32")]
+                    {
+                        use wasm_bindgen_futures::spawn_local;
+ 
+                        let this_request = state.request_id;
+                        let state_clone = state_rc.clone();
+                        let ctx_clone = ui.ctx().clone();
+ 
+                        spawn_local(async move {
+                            let result = ShoppingListData::mock_search_products(&query).await;
+                            let mut state = state_clone.borrow_mut();
+                            if state.request_id == this_request {
+                                match result {
+                                    Ok(results) if !results.is_empty() => {
+                                        state.suggestions = results;
+                                        state.status = AddItemStatus::Suggesting;
+                                    }
+                                    _ => state.status = AddItemStatus::NotFound,
+                                }
+                            }
+                            ctx_clone.request_repaint();
+                        });
+                    }
+                }
+            }
+ 
+            match state.status {
+                AddItemStatus::Searching => {
+                    ui.label("Searching…");
+                }
+                AddItemStatus::NotFound => {
+                    ui.colored_label(
+                        egui::Color32::from_rgb(200, 60, 60),
+                        "No matching products found.",
+                    );
+                }
+                AddItemStatus::Idle | AddItemStatus::Suggesting => {}
+            }
+ 
+            if state.status == AddItemStatus::Suggesting {
+                let suggestions = state.suggestions.clone();
+                egui::Frame::popup(ui.style()).show(ui, |ui| {
+                    for s in &suggestions {
+                        let label = format!("{}  ·  {} {}", s.name, s.quantity, s.unit);
+                        if ui.selectable_label(false, label).clicked() {
+                            picked = Some(s.clone());
+                        }
+                    }
+                });
+            }
+        } // `state` (the RefMut borrow) drops here, before touching self.* below
+ 
+        if let Some(s) = picked {
+            self.shopping_items.push(s);
+            self.cleared_items = None;
+            let mut state = state_rc.borrow_mut();
+            state.query.clear();
+            state.suggestions.clear();
+            state.status = AddItemStatus::Idle;
+        }
+ 
+        if close {
+            self.add_item_modal = None;
+        }
+    }
+
     #[cfg(target_arch = "wasm32")]
     async fn mock_search_products(query: &str) -> Result<Vec<ShoppingItemQuery>, String> {
-        // MOCK ONLY — stands in for the real backend search until it's ready.
-        // Same signature/Result shape as the eventual real call, so swapping it
-        // out later is a one-line change in show_add_item_search.
+        // MOCK ONLY
         let base = query.trim();
         if base.is_empty() {
             return Ok(Vec::new());
