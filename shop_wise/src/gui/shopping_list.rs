@@ -9,6 +9,27 @@ use util::search::{ShoppingItemQuery};
 use crate::filehandling::file_dialog::FileChannel;
 use crate::gui::ShowableWidget;
 
+const DEBOUNCE_SECONDS: f64 = 0.4;
+const MIN_QUERY_LEN: usize = 3;
+ 
+#[derive(Debug, Default, Clone, Copy, PartialEq)]
+enum AddItemStatus {
+    #[default]
+    Idle,
+    Searching,
+    Suggesting,
+    NotFound,
+}
+ 
+#[derive(Debug, Default, Clone)]
+struct AddItemState {
+    query: String,
+    status: AddItemStatus,
+    suggestions: Vec<ShoppingItemQuery>,
+    request_id: u64,
+    last_edit_time: Option<f64>,
+}
+
 #[derive(Clone, Debug, Default)]
 pub struct ShoppingListData {
     pub shopping_items: Vec<ShoppingItemQuery>,
