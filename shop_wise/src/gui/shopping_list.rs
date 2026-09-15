@@ -254,6 +254,11 @@ impl ShoppingListData {
                             ctx_clone.request_repaint();
                         });
                     }
+                    #[cfg(not(target_arch = "wasm32"))]
+                    {
+                        // Native search isn't implemented, surface as not found rather than leaving status stuck on Searching (prevent CI ensure no warnings)
+                        state.status = AddItemStatus::NotFound;
+                    }
                 }
             }
  
