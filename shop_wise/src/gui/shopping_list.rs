@@ -277,12 +277,14 @@ impl ShoppingListData {
             if state.status == AddItemStatus::Suggesting {
                 let suggestions = state.suggestions.clone();
                 egui::Frame::popup(ui.style()).show(ui, |ui| {
-                    for s in &suggestions {
-                        let label = format!("{}  ·  {} {}", s.name, s.quantity, s.unit);
-                        if ui.selectable_label(false, label).clicked() {
-                            picked = Some(s.clone());
+                    egui::ScrollArea::vertical().max_height(300.0).show(ui, |ui|{
+                        for s in &suggestions {
+                            let label = format!("{}  ·  {} {}", s.name, s.quantity, s.unit);
+                            if ui.selectable_label(false, label).clicked() {
+                                picked = Some(s.clone());
+                            }
                         }
-                    }
+                    });
                 });
             }
         } // `state` (the RefMut borrow) drops here, before touching self.* below
@@ -311,13 +313,9 @@ impl ShoppingListData {
  
         let units = ["each", "L", "kg", "g"];
  
-        let suggestions = (0..10u8)
+        let suggestions = (0..30u8)
             .map(|i| {
-                let suffix: String = if i == 0 {
-                    String::new()
-                } else {
-                    (b'b'..=b'b' + i - 1).map(|c| c as char).collect()
-                };
+                let suffix: String = "b".repeat(i as usize);
                 ShoppingItemQuery {
                     name: format!("{base}{suffix}"),
                     quantity: 1,
