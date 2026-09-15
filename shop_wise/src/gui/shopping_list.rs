@@ -314,7 +314,11 @@ impl ShoppingListData {
  
         let suggestions = (0..10u8)
             .map(|i| {
-                let suffix: String = (b'b'..=b'b' + i).map(|c| c as char).collect();
+                let suffix: String = if i == 0 {
+                    String::new()
+                } else {
+                    (b'b'..=b'b' + i - 1).map(|c| c as char).collect()
+                };
                 ShoppingItemQuery {
                     name: format!("{base}{suffix}"),
                     quantity: 1,
