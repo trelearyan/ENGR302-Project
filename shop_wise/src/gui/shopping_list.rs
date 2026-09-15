@@ -61,11 +61,8 @@ impl ShowableWidget for ShoppingListData {
             if ui.button("+ Add Item")
                 .on_hover_text("Add an item to your shopping list")
                 .clicked() {
-                {
-                    self.add_item_modal = Some(Rc::new(RefCell::new(AddItemState::default())));
-                    self.cleared_items = None;
-                }
-                
+                self.add_item_modal = Some(Rc::new(RefCell::new(AddItemState::default())));
+                self.cleared_items = None;
             }
 
             if ui.button("Load CSV")
@@ -124,11 +121,11 @@ impl ShowableWidget for ShoppingListData {
             ui.label(egui::RichText::new(status).small().weak());
         }
         let mut remove_index: Option<usize> = None;
+        // Items are now resolved+locked; no more free-text editing here.
         for (i, item) in self.shopping_items.iter().enumerate() {
             ui.horizontal(|ui| {
                 ui.label(&item.name);
                 ui.label(format!("{} {}", item.quantity, item.unit));
-        
 
                 if ui
                     .add(egui::Button::new("X").fill(egui::Color32::RED))
