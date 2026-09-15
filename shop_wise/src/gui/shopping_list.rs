@@ -124,9 +124,6 @@ impl ShowableWidget for ShoppingListData {
         // Items are now resolved+locked; no more free-text editing here.
         for (i, item) in self.shopping_items.iter().enumerate() {
             ui.horizontal(|ui| {
-                ui.label(&item.name);
-                ui.label(format!("{} {}", item.quantity, item.unit));
-
                 if ui
                     .add(egui::Button::new("X").fill(egui::Color32::RED))
                     .on_hover_text("Remove this item from your shopping list")
@@ -134,6 +131,8 @@ impl ShowableWidget for ShoppingListData {
                 {
                     remove_index = Some(i);
                 }
+                ui.label(&item.name);
+                ui.label(format!("{} {}", item.quantity, item.unit));
             });
         }
 
