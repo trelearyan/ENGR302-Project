@@ -1,3 +1,4 @@
+use std::cell::RefCell;
 use std::rc::Rc;
 
 use eframe::egui::{self, Ui};
@@ -36,6 +37,7 @@ pub struct ShoppingListData {
     pub files: Rc<FileChannel>,
     pub csv_status: Option<String>,
     pub cleared_items: Option<Vec<ShoppingItemQuery>>,
+    add_item_modal: Option<Rc<RefCell<AddItemState>>>,
 }
 
 impl Serialize for ShoppingListData {
