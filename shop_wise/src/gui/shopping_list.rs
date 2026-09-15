@@ -226,5 +226,31 @@ impl ShoppingListData {
             });
         }
     }
+
+    #[cfg(target_arch = "wasm32")]
+    async fn mock_search_products(query: &str) -> Result<Vec<ShoppingItemQuery>, String> {
+        // MOCK ONLY — stands in for the real backend search until it's ready.
+        // Same signature/Result shape as the eventual real call, so swapping it
+        // out later is a one-line change in show_add_item_search.
+        let base = query.trim();
+        if base.is_empty() {
+            return Ok(Vec::new());
+        }
+ 
+        let units = ["each", "L", "kg", "g"];
+ 
+        let suggestions = (0..10u8)
+            .map(|i| {
+                let suffix: String = (b'b'..=b'b' + i).map(|c| c as char).collect();
+                ShoppingItemQuery {
+                    name: format!("{base}{suffix}"),
+                    quantity: 1,
+                    unit: units[i as usize % units.len()].to_string(),
+                }
+            })
+            .collect();
+ 
+        Ok(suggestions)
+    }
 }
 
