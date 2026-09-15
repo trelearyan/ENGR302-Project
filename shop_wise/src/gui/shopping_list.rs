@@ -4,8 +4,7 @@ use std::rc::Rc;
 use eframe::egui::{self, Ui};
 use serde::Serialize;
 use serde::ser::SerializeStruct;
-use util::search::SearchUnits::{DOLLAR, EACH, GRAM, KILOGRAM, LITRE, MILLILITRE};
-use util::search::{ShoppingItemQuery};
+use util::search::ShoppingItemQuery;
 
 use crate::filehandling::file_dialog::FileChannel;
 use crate::gui::ShowableWidget;
@@ -125,51 +124,11 @@ impl ShowableWidget for ShoppingListData {
             ui.label(egui::RichText::new(status).small().weak());
         }
         let mut remove_index: Option<usize> = None;
-
-        for (i, item) in self.shopping_items.iter_mut().enumerate() {
+        for (i, item) in self.shopping_items.iter().enumerate() {
             ui.horizontal(|ui| {
-                ui.text_edit_singleline(&mut item.name)
-                    .on_hover_text("Enter product name, e.g. Anchor Blue Milk 2L");
-                ui.add(egui::DragValue::new(&mut item.quantity))
-                    .on_hover_text("Select what quantity of this item you would like");
-
-                egui::ComboBox::from_id_salt(i)
-                    .selected_text(&item.unit)
-                    //.on_hover_text("Select the appropriate unit for this item")
-                    .show_ui(ui, |ui| {
-                        ui.selectable_value(
-                            &mut item.unit,
-                            EACH.to_str().to_string(),
-                            EACH.to_str(),
-                        );
-                        ui.selectable_value(
-                            &mut item.unit,
-                            GRAM.to_str().to_string(),
-                            GRAM.to_str(),
-                        );
-                        ui.selectable_value(
-                            &mut item.unit,
-                            KILOGRAM.to_str().to_string(),
-                            KILOGRAM.to_str(),
-                        );
-                        ui.selectable_value(
-                            &mut item.unit,
-                            MILLILITRE.to_str().to_string(),
-                            MILLILITRE.to_str(),
-                        );
-                        ui.selectable_value(
-                            &mut item.unit,
-                            LITRE.to_str().to_string(),
-                            LITRE.to_str(),
-                        );
-                        ui.selectable_value(
-                            &mut item.unit,
-                            DOLLAR.to_str().to_string(),
-                            DOLLAR.to_str(),
-                        );
-                    })
-                    .response
-                    .on_hover_text("Select the appropriate unit for this item");
+                ui.label(&item.name);
+                ui.label(format!("{} {}", item.quantity, item.unit));
+        
 
                 if ui
                     .add(egui::Button::new("X").fill(egui::Color32::RED))
