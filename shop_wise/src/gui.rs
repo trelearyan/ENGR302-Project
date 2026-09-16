@@ -43,6 +43,7 @@ impl ShowableWidget for AppData {
             Panel::left("left_panel").show_inside(ui, |ui| {
                 let list_height = ui.available_height().min(300.0);
                 ScrollArea::vertical()
+                    .id_salt("shopping_list_scroll")
                     .max_height(list_height)
                     .auto_shrink([false, true])
                     .show(ui, |ui| {
@@ -51,7 +52,13 @@ impl ShowableWidget for AppData {
                 ui.separator();
                 self.preferences.show(ui);
                 ui.separator();
-                self.supermarkets.show(ui);
+                ScrollArea::vertical()
+                    .id_salt("supermarkets_scroll")
+                    .max_height(list_height)
+                    .auto_shrink([false, true])
+                    .show(ui, |ui| {
+                        self.supermarkets.show(ui);
+                    });
                 ui.separator();
                 self.transit.show(ui);
                 ui.separator();
