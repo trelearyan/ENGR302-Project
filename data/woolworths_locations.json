@@ -1,0 +1,142 @@
+{
+  "store_count": 17,
+  "stores": [
+    {
+      "address": "280 - 284 LAMBTON QUAY, Wellington, WGN, 6011, New Zealand",
+      "id": "9066",
+      "latitude": -41.2843215,
+      "longitude": 174.7752344,
+      "name": "Cable Car Lane Woolworths",
+      "supermarket": "Woolworths"
+    },
+    {
+      "address": "Cnr Parumoana St & Lyttleton Avenue, Porirua, WGN, 5022, New Zealand",
+      "id": "9154",
+      "latitude": -41.1354217,
+      "longitude": 174.8397824,
+      "name": "Porirua Woolworths",
+      "supermarket": "Woolworths"
+    },
+    {
+      "address": "3A Whitford Brown Ave, Papakowhai, Porirua, WGN, 5024, New Zealand",
+      "id": "9546",
+      "latitude": -41.120711,
+      "longitude": 174.8670767,
+      "name": "Aotea Woolworths",
+      "supermarket": "Woolworths"
+    },
+    {
+      "address": "261 High Street, Lower Hutt, WGN, 5010, New Zealand",
+      "id": "9156",
+      "latitude": -41.2099453,
+      "longitude": 174.9018531,
+      "name": "Lower Hutt Woolworths",
+      "supermarket": "Woolworths"
+    },
+    {
+      "address": "13-19 Queen Street, Upper Hutt, WGN, 5372, New Zealand",
+      "id": "9157",
+      "latitude": -41.1228662,
+      "longitude": 175.073713,
+      "name": "Upper Hutt Woolworths",
+      "supermarket": "Woolworths"
+    },
+    {
+      "address": "Queensgate Shopping Centre, 35 Bloomfield Terrace, Lower Hutt, WGN, 5010, New Zealand",
+      "id": "9489",
+      "latitude": -41.2125751,
+      "longitude": 174.9057626,
+      "name": "Queensgate Woolworths",
+      "supermarket": "Woolworths"
+    },
+    {
+      "address": "9 Te Ara Raukura, Upper Hutt, 5014, Lower Hutt, WGN, 5014, New Zealand",
+      "id": "9065",
+      "latitude": -41.2125751,
+      "longitude": 174.9057626,
+      "name": "Wainuiomata Woolworths",
+      "supermarket": "Woolworths"
+    },
+    {
+      "address": "Moorefield Road, Johnsonville, WGN, 6037, New Zealand",
+      "id": "9158",
+      "latitude": -41.224,
+      "longitude": 174.8039456,
+      "name": "Johnsonville Mall Woolworths",
+      "supermarket": "Woolworths"
+    },
+    {
+      "address": "71 Johnsonville Road, Johnsonville, WGN, 6037, New Zealand",
+      "id": "9547",
+      "latitude": -41.2160861,
+      "longitude": 174.8099164,
+      "name": "Johnsonville Woolworths",
+      "supermarket": "Woolworths"
+    },
+    {
+      "address": "5 William Earp Place, Tawa, WGN, 5028, New Zealand",
+      "id": "9475",
+      "latitude": -41.1866752,
+      "longitude": 174.8300166,
+      "name": "Tawa Woolworths",
+      "supermarket": "Woolworths"
+    },
+    {
+      "address": "45 Jackson Street, Petone, WGN, 5012, New Zealand",
+      "id": "9535",
+      "latitude": -41.223276,
+      "longitude": 174.8719853,
+      "name": "Petone Woolworths",
+      "supermarket": "Woolworths"
+    },
+    {
+      "address": "Karori Shopping Centre, Karori Road, Karori, WGN, 6012, New Zealand",
+      "id": "9530",
+      "latitude": -41.2845495,
+      "longitude": 174.7387671,
+      "name": "Karori Woolworths",
+      "supermarket": "Woolworths"
+    },
+    {
+      "address": "124 Churchill Drive, Crofton Downs, WGN, 6035, New Zealand",
+      "id": "9031",
+      "latitude": -41.2572287,
+      "longitude": 174.7657811,
+      "name": "Crofton Downs Woolworths",
+      "supermarket": "Woolworths"
+    },
+    {
+      "address": "47 Bay Road, Kilbirnie, WGN, 6022, New Zealand",
+      "id": "9474",
+      "latitude": -41.3194927,
+      "longitude": 174.7946949,
+      "name": "Kilbirnie Woolworths",
+      "supermarket": "Woolworths"
+    },
+    {
+      "address": "3 John Street, Mount Cook, WGN, 6021, New Zealand",
+      "id": "9508",
+      "latitude": -41.3075167,
+      "longitude": 174.7773064,
+      "name": "Newtown Woolworths",
+      "supermarket": "Woolworths"
+    },
+    {
+      "address": "Coastlands Shopping Centre, Paraparaumu, WGN, 5032, New Zealand",
+      "id": "9460",
+      "latitude": -40.9144636,
+      "longitude": 175.0061963,
+      "name": "Paraparaumu Woolworths",
+      "supermarket": "Woolworths"
+    },
+    {
+      "address": "Ngaio Road, Waikanae, WGN, 5391, New Zealand",
+      "id": "9522",
+      "latitude": -40.8761994,
+      "longitude": 175.0659208,
+      "name": "Waikanae Woolworths",
+      "supermarket": "Woolworths"
+    }
+  ],
+  "supermarket": "Woolworths"
+}
