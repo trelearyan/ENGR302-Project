@@ -7,8 +7,13 @@ use crate::coordinate::Coordinate;
     Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy, EnumIter, Serialize, Deserialize,
 )]
 pub enum StoreBrand {
+    #[serde(rename = "Pak'nSave")]
     Paknsave,
+
+    #[serde(rename = "New World")]
     Newworld,
+
+    #[serde(rename = "Woolworths")]
     Woolworths,
 }
 
