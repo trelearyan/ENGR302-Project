@@ -241,16 +241,6 @@ fn demo_db(search_terms: &[&str]) -> Result<HashMap<usize, HashMap<u32, Vec<Sear
     Ok(result)
 }
 
-fn simple_query(sql_query: &str) -> Vec<String> {
-    let conn = open_database().unwrap();
-    let mut stm = conn.prepare(sql_query).unwrap();
-    stm.query_map([], |row: &rusqlite::Row<'_>| -> Result<String, Error>{
-            Ok(row.get(0)?)
-        }).unwrap()
-        .map(|f|->String{f.unwrap_or("empty".to_owned())})
-        .collect::<Vec<String>>()
-}
-
 const DEFAULT_UNIT: (u32, SearchUnits) = (1, SearchUnits::EACH);
 
 /// Translate the volume sizes given by the datase into the most
@@ -397,6 +387,16 @@ mod tests {
             quantity: 1,
             unit: SearchUnits::EACH.to_str().to_owned(),
         }, 10).unwrap().len());
+    }
+
+    fn simple_query(sql_query: &str) -> Vec<String> {
+        let conn = open_database().unwrap();
+        let mut stm = conn.prepare(sql_query).unwrap();
+        stm.query_map([], |row: &rusqlite::Row<'_>| -> Result<String, Error>{
+                Ok(row.get(0)?)
+            }).unwrap()
+            .map(|f|->String{f.unwrap_or("empty".to_owned())})
+            .collect::<Vec<String>>()
     }
 
     #[test]
