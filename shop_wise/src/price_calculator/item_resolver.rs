@@ -386,7 +386,7 @@ mod tests {
             unit: SearchUnits::MILLILITRE.to_str().to_owned(),
         })
         .unwrap();
-        assert_eq!("Nestle Reduced Cream", res.get(&1).unwrap().name);
+        assert_eq!("Pams Reduced Cream", res.get(&1).unwrap().name);
         assert_eq!("countdown reduced cream ", res.get(&2).unwrap().name);
     }
 
