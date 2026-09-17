@@ -175,7 +175,7 @@ fn score_item(terms: &[&str], item: &&SearchResult, price: u32) -> i32 {
     for j in 0..terms.len() {
         let mut tscore = 1;
         let term: &str = *terms.get(j).unwrap();
-        &item.name.split(' ').for_each(|x: &str| {
+        let _ = &item.name.split(' ').for_each(|x: &str| {
             tscore += if x.to_lowercase().contains(&term.to_lowercase()) {
                 10
             } else {
@@ -338,7 +338,7 @@ mod tests {
 
     #[test]
     fn test_result() {
-        resolve(&ShoppingItemQuery {
+        let _ = resolve(&ShoppingItemQuery {
             name: String::from("Eggs"),
             quantity: 1,
             unit: SearchUnits::EACH.to_str().to_owned(),
