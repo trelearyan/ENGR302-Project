@@ -5,17 +5,21 @@ use crate::gui::ShowableWidget;
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct SupermarketsData {
-    include_paknsave: bool,
-    include_newworld: bool,
-    include_woolies: bool,
+    pub include_paknsave: bool,
+    pub include_newworld: bool,
+    pub include_woolies: bool,
 }
 
 impl ShowableWidget for SupermarketsData {
     fn show(&mut self, ui: &mut Ui) {
-        ui.heading("Supermarkets");
-        ui.checkbox(&mut self.include_paknsave, "Pak'nSave");
-        ui.checkbox(&mut self.include_newworld, "New World");
-        ui.checkbox(&mut self.include_woolies, "Woolworths");
+        ui.heading("Supermarkets")
+            .on_hover_text("Select the chains you wish to be included in your search");
+        ui.checkbox(&mut self.include_paknsave, "Pak'nSave")
+            .on_hover_text("Include Pak'nSave stores in the comparison");
+        ui.checkbox(&mut self.include_newworld, "New World")
+            .on_hover_text("Include New World stores in the comparison");
+        ui.checkbox(&mut self.include_woolies, "Woolworths")
+            .on_hover_text("Include Woolworths stores in the comparison");
     }
 }
 

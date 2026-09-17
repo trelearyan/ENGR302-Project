@@ -11,7 +11,9 @@ use crate::{
 };
 
 impl ShowableWidget for OutputRoutesData {
-    fn show(&mut self, _ui: &mut egui::Ui) {}
+    fn show(&mut self, ui: &mut egui::Ui) {
+        self.showold(ui);
+    }
 }
 
 const STACK_BELOW_WIDTH: f32 = 760.0;
@@ -26,8 +28,9 @@ pub enum PanelLayout {
 
 #[derive(Clone, Debug)]
 pub struct OutputRoutesData {
-    selected: ScenarioKind,
-    layout: PanelLayout,
+    pub selected: ScenarioKind,
+    pub layout: PanelLayout,
+    pub results: ResultsState,
 }
 
 impl Default for OutputRoutesData {
@@ -35,6 +38,7 @@ impl Default for OutputRoutesData {
         Self {
             selected: ScenarioKind::Best,
             layout: PanelLayout::Cards,
+            results: ResultsState::Idle,
         }
     }
 }
@@ -65,7 +69,7 @@ impl OutputRoutesData {
         self
     }
 
-    pub fn showold(&mut self, ui: &mut egui::Ui, state: &ResultsState) {
+    pub fn showold(&mut self, ui: &mut egui::Ui) {
         let weak_colour = ui.visuals().weak_text_color();
         let error_colour = ui.visuals().error_fg_color;
 

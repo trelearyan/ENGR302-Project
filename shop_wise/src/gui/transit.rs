@@ -12,13 +12,14 @@ use crate::gui::ShowableWidget;
 
 #[derive(Default, Clone, Serialize, Deserialize, Debug)]
 pub struct TransitData {
-    mileage_option: MileageOptions,
-    mileage_scratch: String,
+    pub mileage_option: MileageOptions,
+    pub mileage_scratch: String,
 }
 
 impl ShowableWidget for TransitData {
     fn show(&mut self, ui: &mut Ui) {
-        ui.heading("Transit");
+        ui.heading("Transit")
+            .on_hover_text("What will be your travel costs for your shop");
         ui.horizontal(|ui| {
             ui.label("$");
             ui.add_enabled_ui(self.mileage_option.is_custom(), |ui| {
@@ -41,7 +42,8 @@ impl ShowableWidget for TransitData {
                     self.mileage_scratch = Cost::from(self.mileage_option.clone()).to_string();
                 }
             });
-            ui.label("/km");
+            ui.label("/km")
+                .on_hover_text("Cost per kilometre travelled");
             egui::ComboBox::from_id_salt("the combobox to select mileage option")
                 .width(80.0)
                 .truncate()
@@ -54,7 +56,9 @@ impl ShowableWidget for TransitData {
                             option.to_string().as_str(),
                         );
                     }
-                });
+                })
+                .response
+                .on_hover_text("Select your vehicle type or create a custom rate.");
         });
     }
 }
