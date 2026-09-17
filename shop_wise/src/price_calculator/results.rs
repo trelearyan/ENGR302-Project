@@ -156,7 +156,7 @@ impl Scenario {
         //store_ids.sort();
 
         let stops = store_plans
-            .iter()
+            .into_iter()
             .filter_map(|infos| {
                 // TODO: shopping_plan store name
                 // TODO: fix match_sid_to_brand and calculate mapping

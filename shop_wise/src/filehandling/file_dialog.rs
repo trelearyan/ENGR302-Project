@@ -1,6 +1,5 @@
 use std::sync::mpsc::{Receiver, Sender, channel};
 
-
 #[derive(Debug)]
 pub enum FileOutcome {
     Opened { text: String, name: String },
