@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::time::Duration;
 use util::distance::Distance;
 use util::{cost::Cost, store::{Store, StoreBrand}};
-use bigdecimal::{BigDecimal, ToPrimitive};
+use bigdecimal::ToPrimitive;
 use util::{search::{ShoppingItem, ShoppingItemQuery}};
 
 use crate::{
