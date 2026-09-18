@@ -1,22 +1,20 @@
-use eframe::egui::{
-    self, pos2, vec2, Color32, Sense, Shape, Stroke, Ui, Vec2,
-};
-
-use crate::AppData;
+use std::sync::OnceLock;
+use eframe::egui::{self, Color32, Stroke, Ui};
+use super::AppData;
 
 const INK: Color32 = Color32::from_rgb(0x0F, 0x3B, 0x45);
 const FILL: Color32 = Color32::from_rgb(0xF5, 0xF1, 0xE8);
-const LINE: Color32 = Color32::from_rgb(0xDE, 0xD8, 0xCB);
+const LINE: Color32 = Color32::BLACK;
+
+const BAR_HEIGHT: f32 = 60.0;
+const LOGO_SIZE: f32 = 60.0;
 
 impl AppData {
     pub(crate) fn masthead(&mut self, ui: &mut Ui) {
-        let logo_texture = self
-            .logo_texture
-            .get_or_insert_with(|| load_logo(ui.ctx()))
-            .clone();
+        let logo = logo_texture(ui.ctx());
 
-        egui::Panel::top("masthead")
-            .exact_size(60.0)
+        egui::TopBottomPanel::top("masthead")
+            .exact_height(BAR_HEIGHT)
             .frame(
                 egui::Frame::default()
                     .fill(FILL)
@@ -24,51 +22,48 @@ impl AppData {
             )
             .show_inside(ui, |ui| {
                 ui.horizontal_centered(|ui| {
-                    // Grocery basket logo
-                    ui.add(
-                        egui::Image::new(&logo_texture)
-                            .fit_to_exact_size(egui::vec2(60.0, 60.0)),
-                    );
+                    if let Some(logo) = &logo {
+                        ui.add(
+                            egui::Image::new(logo)
+                                .fit_to_exact_size(egui::Vec2::splat(LOGO_SIZE)),
+                        );
+                    }
 
                     ui.label(
                         egui::RichText::new("ShopWise")
-                            .size(30.0)
+                            .size(24.0)
                             .color(INK)
                             .strong(),
                     );
                 });
 
-                // Subtle divider along the bottom
                 let rect = ui.max_rect();
-                ui.painter().hline(
-                    rect.x_range(),
-                    rect.bottom(),
-                    Stroke::new(1.0, LINE),
-                );
+                ui.painter()
+                    .hline(rect.x_range(), rect.bottom(), Stroke::new(1.0, LINE));
             });
     }
 }
 
-fn load_logo(ctx: &egui::Context) -> egui::TextureHandle {
-    let bytes = include_bytes!("../../assets/logo.png");
+fn logo_texture(ctx: &egui::Context) -> Option<egui::TextureHandle> {
+    static CACHED: OnceLock<Option<egui::TextureHandle>> = OnceLock::new();
 
-    let image = image::load_from_memory(bytes)
-        .expect("Failed to load ShopWise logo")
-        .to_rgba8();
+    CACHED
+        .get_or_init(|| {
+            let bytes = include_bytes!("../../assets/logo.png");
 
-    let size = [
-        image.width() as usize,
-        image.height() as usize,
-    ];
+            let decoded = match image::load_from_memory(bytes) {
+                Ok(image) => image.to_rgba8(),
+                Err(error) => {
+                    log::error!("could not decode the ShopWise logo: {error}");
+                    return None;
+                }
+            };
 
-    let color_image = egui::ColorImage::from_rgba_unmultiplied(
-        size,
-        image.as_raw(),
-    );
+            let size = [decoded.width() as usize, decoded.height() as usize];
+            let colour_image =
+                egui::ColorImage::from_rgba_unmultiplied(size, decoded.as_raw());
 
-    ctx.load_texture(
-        "logo",
-        color_image,
-        egui::TextureOptions::LINEAR,
-    )
+            Some(ctx.load_texture("shopwise-logo", colour_image, egui::TextureOptions::LINEAR))
+        })
+        .clone()
 }
