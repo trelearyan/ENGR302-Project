@@ -5,13 +5,39 @@ use super::AppData;
 const INK: Color32 = Color32::from_rgb(0x0F, 0x3B, 0x45);
 const FILL: Color32 = Color32::from_rgb(0xF5, 0xF1, 0xE8);
 const LINE: Color32 = Color32::BLACK;
-
 const BAR_HEIGHT: f32 = 60.0;
-const LOGO_SIZE: f32 = 60.0;
+const LOGO_SIZE: f32 = 44.0;
+const LOGO_GAP: f32 = 12.0;
+const WORDMARK_SIZE: f32 = 24.0;
+const GITLAB_ICON_SIZE: f32 = 50.0;
+const ICON_REST_ALPHA: u8 = 200;
+const ICON_PRESSED_ALPHA: u8 = 150;
+const LOGO_NUDGE_Y: f32 = 0.0;
+const REPO_URL: &str = "https://gitlab.ecs.vuw.ac.nz/course-work/engr301/2026/project1/team5/shopwise";
+const FULL_UV: egui::Rect = egui::Rect::from_min_max(egui::pos2(0.0, 0.0), egui::pos2(1.0, 1.0));
+
+macro_rules! cached_texture {
+    ($ctx:expr, $name:literal, $bytes:expr) => {{
+        static CACHED: OnceLock<Option<egui::TextureHandle>> = OnceLock::new();
+
+        CACHED
+            .get_or_init(|| decode_texture($ctx, $name, $bytes))
+            .clone()
+    }};
+}
 
 impl AppData {
     pub(crate) fn masthead(&mut self, ui: &mut Ui) {
-        let logo = logo_texture(ui.ctx());
+        let logo = cached_texture!(
+            ui.ctx(),
+            "shopwise-logo",
+            include_bytes!("../../assets/logo.png")
+        );
+        let account_icon = cached_texture!(
+            ui.ctx(),
+            "shopwise-repo",
+            include_bytes!("../../assets/gitlab-logo.png")
+        );
 
         egui::Panel::top("masthead")
             .exact_size(BAR_HEIGHT)
@@ -21,52 +47,120 @@ impl AppData {
                     .inner_margin(egui::Margin::symmetric(24, 0)),
             )
             .show_inside(ui, |ui| {
-                ui.vertical_centered(|ui| {
-                    ui.add_space((BAR_HEIGHT - LOGO_SIZE)/2.0);
-                    ui.horizontal_centered(|ui| {
-                        ui.spacing_mut().item_spacing.x = 0.0;
-                        if let Some(logo) = &logo {
-                            ui.add(
-                                egui::Image::new(logo)
-                                    .fit_to_exact_size(egui::Vec2::splat(LOGO_SIZE)),
-                            );
-                        }
-                        ui.label(
-                            egui::RichText::new("ShopWise")
-                                .size(24.0)
-                                .color(INK)
-                                .strong(),
-                        );
-                });
-                });
-
                 let rect = ui.max_rect();
+                let centre_y = rect.center().y;
+
+                let button_size = egui::vec2(44.0, 40.0);
+                let side_margin = 16.0;
+
+                // Left menu button
+                let menu_rect = egui::Rect::from_center_size(
+                    egui::pos2(rect.left() + side_margin + button_size.x / 2.0, centre_y),
+                    button_size,
+                );
+
+                if ui.put(menu_rect, egui::Button::new("☰")).clicked() {
+                    // TODO: collapse left panel
+                }
+
+                // Right button: opens the repository.
+                let account_rect = egui::Rect::from_center_size(
+                    egui::pos2(
+                        rect.right() - side_margin - button_size.x / 2.0,
+                        centre_y,
+                    ),
+                    button_size,
+                );
+
+                let account = ui
+                    .interact(
+                        account_rect,
+                        ui.id().with("masthead-account"),
+                        egui::Sense::click(),
+                    )
+                    .on_hover_cursor(egui::CursorIcon::PointingHand)
+                    .on_hover_text("Open the GitLab repository");
+
+                if let Some(icon) = &account_icon {
+                    let alpha = if account.is_pointer_button_down_on() {
+                        ICON_PRESSED_ALPHA
+                    } else if account.hovered() {
+                        u8::MAX
+                    } else {
+                        ICON_REST_ALPHA
+                    };
+
+                    let icon_rect = egui::Rect::from_center_size(
+                        account_rect.center(),
+                        egui::Vec2::splat(GITLAB_ICON_SIZE),
+                    );
+
+                    ui.painter().image(
+                        icon.id(),
+                        icon_rect,
+                        FULL_UV,
+                        Color32::from_white_alpha(alpha),
+                    );
+                }
+
+                if account.clicked() {
+                    ui.ctx().open_url(egui::OpenUrl::new_tab(REPO_URL));
+                }
+
+                let galley = ui.painter().layout_no_wrap(
+                    "ShopWise".to_owned(),
+                    egui::FontId::proportional(WORDMARK_SIZE),
+                    INK,
+                );
+
+                let logo_advance = if logo.is_some() {
+                    LOGO_SIZE + LOGO_GAP
+                } else {
+                    0.0
+                };
+
+                let group_width = logo_advance + galley.size().x;
+                let group_left = rect.center().x - group_width / 2.0;
+                let group_centre_y = centre_y + LOGO_NUDGE_Y;
+
+                if let Some(logo) = &logo {
+                    let logo_rect = egui::Rect::from_min_size(
+                        egui::pos2(group_left, group_centre_y - LOGO_SIZE / 2.0),
+                        egui::Vec2::splat(LOGO_SIZE),
+                    );
+
+                    ui.painter()
+                        .image(logo.id(), logo_rect, FULL_UV, Color32::WHITE);
+                }
+
+                let text_pos = egui::pos2(
+                    group_left + logo_advance,
+                    group_centre_y - galley.size().y / 2.0,
+                );
+
+                ui.painter().galley(text_pos, galley, INK);
+
                 ui.painter()
                     .hline(rect.x_range(), rect.bottom(), Stroke::new(1.0_f32, LINE));
             });
     }
 }
 
-fn logo_texture(ctx: &egui::Context) -> Option<egui::TextureHandle> {
-    static CACHED: OnceLock<Option<egui::TextureHandle>> = OnceLock::new();
+fn decode_texture(
+    ctx: &egui::Context,
+    name: &str,
+    bytes: &[u8],
+) -> Option<egui::TextureHandle> {
+    let decoded = match image::load_from_memory(bytes) {
+        Ok(image) => image.to_rgba8(),
+        Err(error) => {
+            log::error!("could not decode {name}: {error}");
+            return None;
+        }
+    };
 
-    CACHED
-        .get_or_init(|| {
-            let bytes = include_bytes!("../../assets/logo.png");
+    let size = [decoded.width() as usize, decoded.height() as usize];
+    let colour_image = egui::ColorImage::from_rgba_unmultiplied(size, decoded.as_raw());
 
-            let decoded = match image::load_from_memory(bytes) {
-                Ok(image) => image.to_rgba8(),
-                Err(error) => {
-                    log::error!("could not decode the ShopWise logo: {error}");
-                    return None;
-                }
-            };
-
-            let size = [decoded.width() as usize, decoded.height() as usize];
-            let colour_image =
-                egui::ColorImage::from_rgba_unmultiplied(size, decoded.as_raw());
-
-            Some(ctx.load_texture("shopwise-logo", colour_image, egui::TextureOptions::LINEAR))
-        })
-        .clone()
+    Some(ctx.load_texture(name, colour_image, egui::TextureOptions::LINEAR))
 }
