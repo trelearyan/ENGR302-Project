@@ -21,25 +21,28 @@ impl AppData {
                     .inner_margin(egui::Margin::symmetric(24, 0)),
             )
             .show_inside(ui, |ui| {
-                ui.horizontal_centered(|ui| {
-                    if let Some(logo) = &logo {
-                        ui.add(
-                            egui::Image::new(logo)
-                                .fit_to_exact_size(egui::Vec2::splat(LOGO_SIZE)),
+                ui.vertical_centered(|ui| {
+                    ui.add_space((BAR_HEIGHT - LOGO_SIZE)/2.0);
+                    ui.horizontal_centered(|ui| {
+                        ui.spacing_mut().item_spacing.x = 0.0;
+                        if let Some(logo) = &logo {
+                            ui.add(
+                                egui::Image::new(logo)
+                                    .fit_to_exact_size(egui::Vec2::splat(LOGO_SIZE)),
+                            );
+                        }
+                        ui.label(
+                            egui::RichText::new("ShopWise")
+                                .size(24.0)
+                                .color(INK)
+                                .strong(),
                         );
-                    }
-
-                    ui.label(
-                        egui::RichText::new("ShopWise")
-                            .size(24.0)
-                            .color(INK)
-                            .strong(),
-                    );
+                });
                 });
 
                 let rect = ui.max_rect();
                 ui.painter()
-                    .hline(rect.x_range(), rect.bottom(), Stroke::new(1.0, LINE));
+                    .hline(rect.x_range(), rect.bottom(), Stroke::new(1.0_f32, LINE));
             });
     }
 }
