@@ -4,7 +4,7 @@ use eframe::egui::{self, Ui};
 use serde::Serialize;
 use serde::ser::SerializeStruct;
 use util::search::SearchUnits::{DOLLAR, EACH, GRAM, KILOGRAM, LITRE, MILLILITRE};
-use util::search::{ShoppingItemQuery, unit_to_str};
+use util::search::{ShoppingItemQuery};
 
 use crate::filehandling::file_dialog::FileChannel;
 use crate::gui::ShowableWidget;
@@ -42,7 +42,7 @@ impl ShowableWidget for ShoppingListData {
                 self.shopping_items.push(ShoppingItemQuery {
                     name: String::new(),
                     quantity: 1,
-                    unit: unit_to_str(EACH).to_string(),
+                    unit: EACH.to_str().to_string(),
                 });
                 self.cleared_items = None;
             }
@@ -115,33 +115,33 @@ impl ShowableWidget for ShoppingListData {
                     .show_ui(ui, |ui| {
                         ui.selectable_value(
                             &mut item.unit,
-                            unit_to_str(EACH).to_string(),
-                            unit_to_str(EACH),
+                            EACH.to_str().to_string(),
+                            EACH.to_str(),
                         );
                         ui.selectable_value(
                             &mut item.unit,
-                            unit_to_str(GRAM).to_string(),
-                            unit_to_str(GRAM),
+                            GRAM.to_str().to_string(),
+                            GRAM.to_str(),
                         );
                         ui.selectable_value(
                             &mut item.unit,
-                            unit_to_str(KILOGRAM).to_string(),
-                            unit_to_str(KILOGRAM),
+                            KILOGRAM.to_str().to_string(),
+                            KILOGRAM.to_str(),
                         );
                         ui.selectable_value(
                             &mut item.unit,
-                            unit_to_str(MILLILITRE).to_string(),
-                            unit_to_str(MILLILITRE),
+                            MILLILITRE.to_str().to_string(),
+                            MILLILITRE.to_str(),
                         );
                         ui.selectable_value(
                             &mut item.unit,
-                            unit_to_str(LITRE).to_string(),
-                            unit_to_str(LITRE),
+                            LITRE.to_str().to_string(),
+                            LITRE.to_str(),
                         );
                         ui.selectable_value(
                             &mut item.unit,
-                            unit_to_str(DOLLAR).to_string(),
-                            unit_to_str(DOLLAR),
+                            DOLLAR.to_str().to_string(),
+                            DOLLAR.to_str(),
                         );
                     })
                     .response

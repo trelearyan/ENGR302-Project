@@ -401,8 +401,3 @@ impl LocationData {
             .collect())
     }
 }
-
-
-
-
-

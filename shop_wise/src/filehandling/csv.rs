@@ -1,6 +1,6 @@
 use std::fmt;
 
-use util::search::{match_to_unit, ShoppingItemQuery};
+use util::search::{SearchUnits, ShoppingItemQuery};
 
 #[derive(Debug)]
 pub enum CsvError {
@@ -62,7 +62,7 @@ pub fn read_csv(text: &str) -> Result<Vec<ShoppingItemQuery>, CsvError> {
         }
 
         let unit_text = record.get(2).unwrap_or("");
-        if match_to_unit(unit_text).is_none() {
+        if SearchUnits::match_to_unit(unit_text).is_none() {
             return Err(CsvError::Row {
                 line,
                 reason: format!("\"{unit_text}\" is not recognised"),

@@ -1,12 +1,9 @@
-use bigdecimal::ToPrimitive;
 use std::collections::HashMap;
 use std::time::Duration;
 use util::distance::Distance;
-use util::search::{ShoppingItem, ShoppingItemQuery};
-use util::{
-    cost::Cost,
-    store::{Store, StoreBrand},
-};
+use util::{cost::Cost, store::{Store, StoreBrand}};
+use bigdecimal::ToPrimitive;
+use util::{search::{ShoppingItem, ShoppingItemQuery}};
 
 use crate::{
     gui::transit::MileageOptions,
@@ -310,7 +307,6 @@ mod tests {
     fn test_cheapest_demo() {
         assert_eq!(3, 1 + 2);
         let items = [0, 1, 2];
-        let supermarkets = vec![0, 1];
         let mut routes: Vec<LocalRoute> = Vec::new();
         routes.push(LocalRoute {
             shops: [0].to_vec(),
