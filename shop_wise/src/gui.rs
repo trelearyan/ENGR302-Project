@@ -39,13 +39,26 @@ pub trait ShowableWidget {
 
 impl ShowableWidget for AppData {
     fn show(&mut self, ui: &mut Ui) {
-        ScrollArea::both().show(ui, |ui| {
+        //ScrollArea::both().show(ui, |ui| {
             Panel::left("left_panel").show_inside(ui, |ui| {
-                self.shopping_list.show(ui);
+                let list_height = ui.available_height().min(300.0);
+                ScrollArea::vertical()
+                    .id_salt("shopping_list_scroll")
+                    .max_height(list_height)
+                    .auto_shrink([false, true])
+                    .show(ui, |ui| {
+                        self.shopping_list.show(ui);
+                    });
                 ui.separator();
                 self.preferences.show(ui);
                 ui.separator();
-                self.supermarkets.show(ui);
+                ScrollArea::vertical()
+                    .id_salt("supermarkets_scroll")
+                    .max_height(list_height)
+                    .auto_shrink([false, true])
+                    .show(ui, |ui| {
+                        self.supermarkets.show(ui);
+                    });
                 ui.separator();
                 self.transit.show(ui);
                 ui.separator();
@@ -57,7 +70,7 @@ impl ShowableWidget for AppData {
                 self.search_button(ui);
                 self.output_routes.show(ui);
             });
-        });
+        //});
     }
 }
 
