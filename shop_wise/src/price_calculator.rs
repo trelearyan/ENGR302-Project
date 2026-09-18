@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::time::Duration;
+use itertools::Itertools;
 use util::distance::Distance;
 use util::{cost::Cost, store::{Store, StoreBrand}};
 use bigdecimal::ToPrimitive;
@@ -41,6 +42,7 @@ pub enum CalculationErrorType {
     InternalError,
     CouldNotResolveItem,
     NoPlanFound,
+    CommonItemFailure,
 }
 
 #[derive(Debug, PartialEq)]
@@ -55,7 +57,8 @@ impl CalculationError {
         match self.err_type {
             CalculationErrorType::InternalError => "Unknown Error",
             CalculationErrorType::CouldNotResolveItem => "Item Resolution Error: ",
-            CalculationErrorType::NoPlanFound => "Plan Calculation Error: ",
+            CalculationErrorType::NoPlanFound => "No Complete Shopping Route Found: ",
+            CalculationErrorType::CommonItemFailure => "No Shopping Route Found - Common Item cause of Failure: ",
         }.to_owned() + ": " + &self.err_msg
     }
 }
@@ -210,6 +213,7 @@ pub fn calculate(
             &local_routes,
             &short_database,
             |a: &u32, b: &LocalRoute| -> u32 { a + b.route_travel_cost },
+            &shop_list
         )?,
         &item_lookup,
         &stores,
@@ -222,6 +226,7 @@ pub fn calculate(
             &local_routes,
             &short_database,
             |_a: &u32, b: &LocalRoute| -> u32 { b.route_time as u32 },
+            &shop_list
         )?,
         &item_lookup,
         &stores,
@@ -237,6 +242,7 @@ pub fn calculate(
                 // Assume people would drive an hour to save 30 dollars for now (5/6 cents per second)
                 a + b.route_travel_cost + ((5 * b.route_time) / 6) as u32
             },
+            &shop_list
         )?,
         &item_lookup,
         &stores,
@@ -251,7 +257,7 @@ pub fn calculate(
 }
 
 fn delocalise(
-    plan: BestPlan,
+    plan: (BestPlan, Vec<Message>),
     item_lookup: &Vec<HashMap<StoreId, ShoppingItem>>,
     stores: &Vec<Store>,
     routes: &Box<[RoutePath]>,
@@ -262,7 +268,7 @@ fn delocalise(
         let mut items: Vec<ShoppingItem> = Vec::new();
         for item_id in 0..item_lookup.len() {
             // If this item was brought at the cuurent store
-            if *plan.best_shop_plan.get(item_id).unwrap() == shop_id {
+            if *plan.0.best_shop_plan.get(item_id).unwrap() == shop_id {
                 let item: &ShoppingItem =
                     item_lookup.get(item_id).unwrap().get(&(shop_id)).unwrap();
                 items.push(ShoppingItem {
@@ -281,15 +287,15 @@ fn delocalise(
             });
         }
     }
-    let rp: &RoutePath = routes.get(plan.route_id).unwrap();
+    let rp: &RoutePath = routes.get(plan.0.route_id).unwrap();
     Calculation {
-        total_shop_cost: Cost::from_cents(plan.total_shop_cost),
-        total_item_cost: Cost::from_cents(plan.total_item_cost),
-        total_travel_cost: Cost::from_cents(plan.total_travel_cost),
-        total_time: Duration::from_secs(plan.total_time),
+        total_shop_cost: Cost::from_cents(plan.0.total_shop_cost),
+        total_item_cost: Cost::from_cents(plan.0.total_item_cost),
+        total_travel_cost: Cost::from_cents(plan.0.total_travel_cost),
+        total_time: Duration::from_secs(plan.0.total_time),
         total_dist: rp.travel_distance.clone(),
         shopping_plan,
-        msg_log: Vec::new(),
+        msg_log: plan.1,
         //route: rp,
     }
 }
@@ -299,19 +305,21 @@ fn calculate_minimised(
     routes: &[LocalRoute],
     short_database: &[Vec<Option<u32>>],
     cost_fn: fn(ic: &u32, lr: &LocalRoute) -> u32,
-) -> Result<BestPlan, CalculationError> {
+    list_context: &[ShoppingItemQuery]
+) -> Result<(BestPlan, Vec<Message>), CalculationError> {
     let mut current_shop_plan: ShoppingPlan;
-    let mut best_plan: Result<BestPlan, CalculationError> = Err(CalculationError {
-        err_type: CalculationErrorType::NoPlanFound,
-        err_msg: "No routes could fulfill this list of items".to_owned(),
-    });
+    let mut best_plan: Option<BestPlan> = None;
+    // Keeps track of which items were missed at ALL failing routes
+    let mut all_missed_items: Option<Vec<ItemId>> = None;
+    let mut or_missed_items: Option<Vec<ItemId>> = None;
 
     // Run through every possible route
-    'outer: for route in routes {
+    for route in routes { //'outer: - see below
         // Clear current plan
         current_shop_plan = Vec::new();
         // For each item pick the best store on the route
         let mut total_item: u32 = 0;
+        let mut missed_items: Vec<ItemId> = Vec::new();
         for item in 0..list {
             let mut best_place: Option<StoreId> = None;
             let mut best_cost: u32 = u32::MAX;
@@ -324,17 +332,46 @@ fn calculate_minimised(
             }
             // If no store sells this item - abandon route and skip to next
             if best_place.is_none() {
-                // Add log
-                
-                continue 'outer;
+                // For logging purposes
+                missed_items.push(item);
+                continue; // Could be 'outer - except for detailed error purposes
             }
             total_item += best_cost;
             current_shop_plan.push(best_place.unwrap());
         }
+        // If an item was missed
+        if !&missed_items.is_empty() {
+            // AND it with the missed items list, to keep track of failing items
+            if all_missed_items.is_none() {
+                all_missed_items = Some(missed_items.clone());
+            } else {
+                let mut removed: usize = 0;
+                for item_i in 0..all_missed_items.as_ref().unwrap().len() {
+                    let value = all_missed_items.as_ref().unwrap().get(item_i).unwrap();
+                    if !AsRef::<Vec<ItemId>>::as_ref(&missed_items).contains(&value) {
+                        all_missed_items.as_mut().unwrap().remove(item_i-removed);
+                        removed += 1;
+                    }
+                }
+            }
+            // OR it with the missed items list, to keep track of failing items
+            if or_missed_items.is_none() {
+                or_missed_items = Some(missed_items);
+            } else {
+                for item_i in 0..missed_items.len() {
+                    let value = missed_items.get(item_i).unwrap();
+                    if or_missed_items.as_ref().unwrap().contains(&value) {
+                        or_missed_items.as_mut().unwrap().push(*value);
+                    }
+                }
+            }
+            // Abandon this route and move to the next
+            continue;
+        }
         // Calculate cost and update best
         let new: u32 = cost_fn(&total_item, route);
-        if best_plan.is_err() || new < best_plan.as_ref().unwrap().best_cost {
-            best_plan = Ok(BestPlan {
+        if best_plan.is_none() || new < best_plan.as_ref().unwrap().best_cost {
+            best_plan = Some(BestPlan {
                 best_shop_plan: current_shop_plan,
                 best_cost: new,
                 total_item_cost: total_item,
@@ -345,7 +382,42 @@ fn calculate_minimised(
             });
         }
     }
-    best_plan
+    if best_plan.is_none() {
+        return if all_missed_items.as_ref().is_none() {
+            Err(CalculationError {
+                err_type: CalculationErrorType::InternalError,
+                err_msg: "An internal error cause the plan search to fail".to_owned(),
+            })
+        } else {
+            let all_missed = all_missed_items.unwrap();
+            if all_missed.is_empty() {
+                let info = or_missed_items.unwrap().iter()
+                    .map(|i: &ItemId|->String{ return list_context.get(*i).unwrap().name.clone();})
+                    .join(", ");
+                Err(CalculationError {
+                    err_type: CalculationErrorType::NoPlanFound,
+                    err_msg: " Reason too complex to state. NOTE: Items ".to_owned() + &info +
+                    &" were absent from one or more stores in the search.",
+                })
+            } else {
+                let err_msg_content: String  = all_missed.iter()
+                    .map(|i: &ItemId|->String{ return list_context.get(*i).unwrap().name.clone(); })
+                    .join(", ");
+                Err(CalculationError {
+                    err_type: CalculationErrorType::CommonItemFailure,
+                    err_msg: "No route was able to fulfill the following items ".to_owned() + &err_msg_content,
+                })
+        }}
+    }
+    let log_msg_content: Vec<Message> = or_missed_items.unwrap().iter()
+        .map(|i: &ItemId|->Message{ return Message {
+            msg_type: MessageType::NOTICE,
+            msg: "Item ".to_owned() +
+                &list_context.get(*i).unwrap().name +
+                &" was absent from one or more stores in the search.",
+        };})
+        .collect::<Vec<Message>>();
+    Ok((best_plan.unwrap(), log_msg_content))
 }
 
 #[cfg(test)]
@@ -393,8 +465,9 @@ mod tests {
             |a: &u32, b: &LocalRoute| -> u32 {
                 return a + b.route_travel_cost;
             },
+            &Vec::new(),
         );
-        let correct_result= Ok(BestPlan {
+        let correct_result= BestPlan {
             best_shop_plan: vec![0, 0, 1],
             best_cost: 2913,
             total_item_cost: 2618,
@@ -402,7 +475,8 @@ mod tests {
             total_shop_cost: 2913,
             total_time: 0,
             route_id: 2,
-        });
-        assert_eq!(correct_result, result);
+        };
+        assert!(result.is_ok());
+        assert_eq!(correct_result, result.unwrap().0);
     }
 }
