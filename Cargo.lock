@@ -3590,6 +3590,7 @@ dependencies = [
  "database",
  "derive_more",
  "eframe",
+ "image",
  "itertools",
  "log",
  "map",
