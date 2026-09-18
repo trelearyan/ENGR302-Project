@@ -14,6 +14,7 @@ use regex::Regex;
 #[derive(Debug, PartialEq)]
 pub struct SantizedSearchResult {
     name: String,
+    quantity: u32,
     unit: SearchUnits,
     image_url: String,
 }
@@ -40,8 +41,8 @@ struct SearchResult {
 /// Listed in descending *calculated* relevancy as index increases
 /// <br>
 /// None if the string could not be resolved
-pub fn search(item_query: &ShoppingItemQuery, num_options: u32) -> Option<Vec<SantizedSearchResult>> {
-    let terms: Vec<&str> = item_query.name.split(' ').collect();
+pub fn search(item_query: &str, num_options: u32) -> Option<Vec<SantizedSearchResult>> {
+    let terms: Vec<&str> = item_query.split(' ').collect();
     let res = demo_db(&terms).unwrap();
     // Flatten and collect returned items with their scores
     let mut list = res.iter()
@@ -61,6 +62,7 @@ pub fn search(item_query: &ShoppingItemQuery, num_options: u32) -> Option<Vec<Sa
                 SantizedSearchResult {
                     name: f.0.name.clone(),
                     unit: f.0.unit.clone(),
+                    quantity: f.0.quantity,
                     image_url: f.0.image_url.clone(),
                 }})
             .collect::<Vec<SantizedSearchResult>>()
@@ -382,11 +384,7 @@ mod tests {
 
     #[test]
     fn test_search() {
-        assert_eq!(10, search(&ShoppingItemQuery {
-            name: String::from("Milk"),
-            quantity: 1,
-            unit: SearchUnits::EACH.to_str().to_owned(),
-        }, 10).unwrap().len());
+        assert_eq!(10, search("Milk", 10).unwrap().len());
     }
 
     fn simple_query(sql_query: &str) -> Vec<String> {

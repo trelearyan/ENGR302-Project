@@ -49,6 +49,17 @@ pub struct CalculationError {
     pub err_msg: String,
 }
 
+impl CalculationError {
+    #[must_use]
+    pub fn pretty(&self) -> String {
+        match self.err_type {
+            CalculationErrorType::InternalError => "Unknown Error",
+            CalculationErrorType::CouldNotResolveItem => "Item Resolution Error: ",
+            CalculationErrorType::NoPlanFound => "Plan Calculation Error: ",
+        }.to_owned() + ": " + &self.err_msg
+    }
+}
+
 #[derive(Debug)]
 pub struct Calculation {
     pub total_shop_cost: Cost,
@@ -70,7 +81,6 @@ pub struct CalculationTotal {
 // Private types
 
 type StoreId = usize;
-type GlobalStoreId = u32;
 type ItemId = usize;
 type RouteId = usize;
 type ShoppingPlan = Vec<StoreId>;

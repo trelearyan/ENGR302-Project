@@ -135,11 +135,11 @@ impl AppData {
 
                 let origin_label = self.location_search.borrow().address.clone();
                 self.output_routes.results = match res {
-                    Some(calc) => ResultsState::Ready(Box::new(
+                    Ok(calc) => ResultsState::Ready(Box::new(
                         price_calculator::results::Results::from_calculation(&calc, origin_label),
                     )),
-                    None => ResultsState::Failed(
-                        "No combination of stores in range can supply this list".to_owned(),
+                    _ => ResultsState::Failed(
+                        res.unwrap_err().pretty(),
                     ),
                 };
             }
