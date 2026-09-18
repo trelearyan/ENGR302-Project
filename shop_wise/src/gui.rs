@@ -20,8 +20,9 @@ pub mod preferences;
 pub mod shopping_list;
 pub mod supermarkets;
 pub mod transit;
+pub mod masthead;
 
-#[derive(Default, Clone, Debug)]
+#[derive(Default, Clone)]
 pub struct AppData {
     shopping_list: ShoppingListData,
     preferences: PreferencesData,
@@ -29,6 +30,7 @@ pub struct AppData {
     transit: TransitData,
     location_search: Rc<RefCell<LocationData>>,
     output_routes: OutputRoutesData,
+    logo_texture: Option<egui::TextureHandle>,
 }
 
 pub trait ShowableWidget {
@@ -37,7 +39,7 @@ pub trait ShowableWidget {
 
 impl ShowableWidget for AppData {
     fn show(&mut self, ui: &mut Ui) {
-        //ScrollArea::both().show(ui, |ui| {
+        self.masthead(ui);
             Panel::left("left_panel").show_inside(ui, |ui| {
                 let list_height = ui.available_height().min(300.0);
                 ScrollArea::vertical()
@@ -68,7 +70,6 @@ impl ShowableWidget for AppData {
                 self.search_button(ui);
                 self.output_routes.show(ui);
             });
-        //});
     }
 }
 
