@@ -356,11 +356,11 @@ fn calculate_minimised(
             }
             // OR it with the missed items list, to keep track of failing items
             if or_missed_items.is_none() {
-                or_missed_items = Some(missed_items);
+                or_missed_items = Some(missed_items.clone());
             } else {
                 for item_i in 0..missed_items.len() {
                     let value = missed_items.get(item_i).unwrap();
-                    if or_missed_items.as_ref().unwrap().contains(&value) {
+                    if !or_missed_items.as_ref().unwrap().contains(&value) {
                         or_missed_items.as_mut().unwrap().push(*value);
                     }
                 }
@@ -409,7 +409,7 @@ fn calculate_minimised(
                 })
         }}
     }
-    let log_msg_content: Vec<Message> = or_missed_items.unwrap_or(Vec::new()).iter()
+    let log_msg_content: Vec<Message> = or_missed_items.clone().unwrap_or(Vec::new()).iter()
         .map(|i: &ItemId|->Message{ return Message {
             msg_type: MessageType::NOTICE,
             msg: "Item ".to_owned() +
@@ -417,6 +417,8 @@ fn calculate_minimised(
                 &" was absent from one or more stores in the search.",
         };})
         .collect::<Vec<Message>>();
+    log::info!("{:?}", or_missed_items);
+    log::info!("{:?}", all_missed_items);
     log::info!("{:?}", log_msg_content);
     Ok((best_plan.unwrap(), log_msg_content))
 }
