@@ -1,0 +1,528 @@
+{
+  "store_count": 58,
+  "stores": [
+    {
+      "address": "1 Bellingham Road, Flat Bush, Auckland, 2019",
+      "id": "5f167936-79ae-4f6a-b9d2-74afe1bb096b",
+      "latitude": -36.965078,
+      "longitude": 174.914819,
+      "name": "PAK'nSAVE Ormiston",
+      "physical_store_code": "0000105047",
+      "supermarket": "Pak'nSave"
+    },
+    {
+      "address": "111 North Road, Kaitaia, 0410",
+      "id": "3c5e3145-0767-4066-9349-6c0a1313acc5",
+      "latitude": -35.09945,
+      "longitude": 173.258322,
+      "name": "PAK'nSAVE Kaitaia",
+      "physical_store_code": "0000105187",
+      "supermarket": "Pak'nSave"
+    },
+    {
+      "address": "105-131 Ruapehu Street, Taupo, 3330",
+      "id": "b92cc33f-b5a8-4b57-9b82-412946800020",
+      "latitude": -38.685532,
+      "longitude": 176.073247,
+      "name": "PAK'nSAVE Taupo",
+      "physical_store_code": "0000103283",
+      "supermarket": "Pak'nSave"
+    },
+    {
+      "address": "45 King Street, Whakatane, 3120",
+      "id": "50b1216b-d066-4457-b88b-9bccf97bf6d3",
+      "latitude": -37.961198,
+      "longitude": 176.98257,
+      "name": "PAK'nSAVE Whakatane",
+      "physical_store_code": "0000103290",
+      "supermarket": "Pak'nSave"
+    },
+    {
+      "address": "6 Cavendish Drive, Manukau City, Auckland, 2104",
+      "id": "9cd8eb60-3222-4efc-bd7c-50e03e6a81a4",
+      "latitude": -36.987929,
+      "longitude": 174.880604,
+      "name": "PAK'nSAVE Manukau",
+      "physical_store_code": "0000106661",
+      "supermarket": "Pak'nSave"
+    },
+    {
+      "address": "Don McKinnon Drive, Albany, Auckland, 0632",
+      "id": "65defcf2-bc15-490e-a84f-1f13b769cd22",
+      "latitude": -36.729975,
+      "longitude": 174.706725,
+      "name": "PAK'nSAVE Albany",
+      "physical_store_code": "0000106678",
+      "supermarket": "Pak'nSave"
+    },
+    {
+      "address": "17-19 Fred Taylor Drive, Massey, Auckland, 0814",
+      "id": "33d8d6fc-861a-45ff-9937-5ccdb55eaede",
+      "latitude": -36.820257,
+      "longitude": 174.608696,
+      "name": "PAK'nSAVE Westgate",
+      "physical_store_code": "0000106728",
+      "supermarket": "Pak'nSave"
+    },
+    {
+      "address": "476 Cameron Road, Tauranga, 3110",
+      "id": "714431ab-6e39-4df6-ac77-cfc5c1e25bc8",
+      "latitude": -37.696716,
+      "longitude": 176.161533,
+      "name": "PAK'nSAVE Cameron Road",
+      "physical_store_code": "0000103282",
+      "supermarket": "Pak'nSave"
+    },
+    {
+      "address": "670 Cambridge Road, Te Awamutu, 3800",
+      "id": "3bb30799-82ce-4648-8c02-5113228963ed",
+      "latitude": -38.008101,
+      "longitude": 175.340102,
+      "name": "PAK'nSAVE Te Awamutu",
+      "physical_store_code": "0000103330",
+      "supermarket": "Pak'nSave"
+    },
+    {
+      "address": "42 Domain Road, Papamoa Beach, Papamoa, 3118",
+      "id": "3bfe040b-f0c9-45e0-949b-b9ad5a591d55",
+      "latitude": -37.70191,
+      "longitude": 176.283687,
+      "name": "PAK'nSAVE Papamoa",
+      "physical_store_code": "0000103335",
+      "supermarket": "Pak'nSave"
+    },
+    {
+      "address": "76 Rongotai Road, Kilbirnie, Wellington, 6003",
+      "id": "21ecaaed-0749-4492-985e-4bb7ba43d59c",
+      "latitude": -41.319324,
+      "longitude": 174.79672,
+      "name": "Pak'n Save Kilbirnie",
+      "physical_store_code": "0000108053",
+      "supermarket": "Pak'nSave"
+    },
+    {
+      "address": "104 Walton Street, Whangarei, 0110",
+      "id": "529d66cc-60e3-432e-b8d1-efc9f2ec4919",
+      "latitude": -35.725958,
+      "longitude": 174.32475,
+      "name": "PAK'nSAVE Whangarei",
+      "physical_store_code": "0000105145",
+      "supermarket": "Pak'nSave"
+    },
+    {
+      "address": "174 Wainoni Road, Avondale, Christchurch, 8061",
+      "id": "dbca5e00-f7f9-43ae-91de-031ad16f8a92",
+      "latitude": -43.5125,
+      "longitude": 172.6933,
+      "name": "PAK'nSAVE Wainoni",
+      "physical_store_code": "0000009001",
+      "supermarket": "Pak'nSave"
+    },
+    {
+      "address": "95 Tay Street, Invercargill, Invercargill, 9810",
+      "id": "d8032da3-c1b9-456e-b626-41ce21f8c67b",
+      "latitude": -46.4143,
+      "longitude": 168.353,
+      "name": "PAK'nSAVE Invercargill",
+      "physical_store_code": "0000009018",
+      "supermarket": "Pak'nSave"
+    },
+    {
+      "address": "100 Mary Street, Thames, 3500",
+      "id": "6e6809dd-01bc-45c9-aab1-f01ccd8338b0",
+      "latitude": -37.138597,
+      "longitude": 175.538994,
+      "name": "PAK'nSAVE Thames",
+      "physical_store_code": "0000106183",
+      "supermarket": "Pak'nSave"
+    },
+    {
+      "address": "8-18 Alderman Drive, Henderson, Auckland, 0612",
+      "id": "6c73764e-b8e6-4e55-ad37-f6a9d207da1f",
+      "latitude": -36.87743,
+      "longitude": 174.63292,
+      "name": "PAK'nSAVE Alderman Dr Henderson",
+      "physical_store_code": "0000106474",
+      "supermarket": "Pak'nSave"
+    },
+    {
+      "address": "691 Manukau Road, Royal Oak, Auckland, 1023",
+      "id": "e1925ea7-01bc-4358-ae7c-c6502da5ab12",
+      "latitude": -36.91014,
+      "longitude": 174.77342,
+      "name": "PAK'nSAVE Royal Oak",
+      "physical_store_code": "0000106496",
+      "supermarket": "Pak'nSave"
+    },
+    {
+      "address": "331-345 Great South Road, Takanini, Auckland, 2110",
+      "id": "a7d09522-bee2-41e4-8fe0-0b82b7f342f5",
+      "latitude": -37.053393,
+      "longitude": 174.93096,
+      "name": "PAK'nSAVE Papakura",
+      "physical_store_code": "0000106617",
+      "supermarket": "Pak'nSave"
+    },
+    {
+      "address": "1167-1177 New North Road, Auckland, 1025",
+      "id": "b2e98a14-c8ca-401e-99ed-edf74570c6f6",
+      "latitude": -36.89305,
+      "longitude": 174.70624,
+      "name": "PAK'nSAVE Mt Albert",
+      "physical_store_code": "0000106567",
+      "supermarket": "Pak'nSave"
+    },
+    {
+      "address": "16 Robert Ross Place, Clendon Park, Auckland, 2103",
+      "id": "3e82142c-78dc-46f3-82ec-28e65fcf84c9",
+      "latitude": -37.03242,
+      "longitude": 174.867278,
+      "name": "PAK'nSAVE Clendon",
+      "physical_store_code": "0000108177",
+      "supermarket": "Pak'nSave"
+    },
+    {
+      "address": "20 Hibiscus Coast Highway, Silverdale, Auckland, 0932",
+      "id": "64eab5b1-8d79-45f4-94f1-02b8cf8b6202",
+      "latitude": -36.620413,
+      "longitude": 174.672975,
+      "name": "PAK'nSAVE Silverdale",
+      "physical_store_code": "0000106618",
+      "supermarket": "Pak'nSave"
+    },
+    {
+      "address": "17 Mill Street, Whitiora, Hamilton, 3200",
+      "id": "076e8177-943b-41fc-a885-ba3d28297acf",
+      "latitude": -37.7799,
+      "longitude": 175.27281,
+      "name": "PAK'nSAVE Mill Street",
+      "physical_store_code": "0000106658",
+      "supermarket": "Pak'nSave"
+    },
+    {
+      "address": "501 Ti Rakau Drive, Northpark, Auckland, 2013",
+      "id": "60561e46-ece7-43a7-b142-9b14812586e4",
+      "latitude": -36.930652,
+      "longitude": 174.913004,
+      "name": "PAK'nSAVE Botany",
+      "physical_store_code": "0000106673",
+      "supermarket": "Pak'nSave"
+    },
+    {
+      "address": "182 Apirana Avenue, Glen Innes, Auckland, 1072",
+      "id": "3404c253-577f-45ca-b301-c98312e46efb",
+      "latitude": -36.875918,
+      "longitude": 174.855148,
+      "name": "PAK'nSAVE Glen Innes",
+      "physical_store_code": "0000106656",
+      "supermarket": "Pak'nSave"
+    },
+    {
+      "address": "30 Wairau Road, Wairau Valley, Auckland, 0627",
+      "id": "002b83de-b79d-4228-a787-bd0765b6cb56",
+      "latitude": -36.778705,
+      "longitude": 174.744295,
+      "name": "PAKnSAVE Wairau Road",
+      "physical_store_code": "0000106698",
+      "supermarket": "Pak'nSave"
+    },
+    {
+      "address": "99 Queen Street, Pukekohe, 2120",
+      "id": "c2204dae-579e-4b6b-9d42-2e13ceaa6031",
+      "latitude": -37.205157,
+      "longitude": 174.899612,
+      "name": "PAK'nSAVE Pukekohe",
+      "physical_store_code": "0000106686",
+      "supermarket": "Pak'nSave"
+    },
+    {
+      "address": "85 Clarence Street, Hamilton Lake, Hamilton, 3204",
+      "id": "d6d39eea-889d-4e20-923c-55cab225cf7f",
+      "latitude": -37.795653,
+      "longitude": 175.282839,
+      "name": "PAK'nSAVE Clarence Street",
+      "physical_store_code": "0000106669",
+      "supermarket": "Pak'nSave"
+    },
+    {
+      "address": "202 Lincoln Road, Henderson, Auckland, 0610",
+      "id": "92086ded-a55d-4241-a364-7d7ea91531b4",
+      "latitude": -36.857794,
+      "longitude": 174.627968,
+      "name": "PAK'nSAVE Lincoln Road",
+      "physical_store_code": "0000106697",
+      "supermarket": "Pak'nSave"
+    },
+    {
+      "address": "286 Mt Wellington Highway, Mt Wellington, Auckland, 1060",
+      "id": "c0f80e87-16be-4488-9553-da437e8c6c2a",
+      "latitude": -36.913347,
+      "longitude": 174.84009,
+      "name": "PAK'nSAVE Sylvia Park",
+      "physical_store_code": "0000106704",
+      "supermarket": "Pak'nSave"
+    },
+    {
+      "address": "44 Orly Avenue, Mangere, Auckland, 2022",
+      "id": "94ef1985-cab1-4b39-a2f3-230120f03c16",
+      "latitude": -36.968516,
+      "longitude": 174.796863,
+      "name": "PAK'nSAVE Mangere",
+      "physical_store_code": "0000106715",
+      "supermarket": "Pak'nSave"
+    },
+    {
+      "address": "602 Heretaunga Street West, West End Shopping Centre, Hastings, 4120",
+      "id": "b39562a4-2b72-43fe-b9ba-eda1d651ad0b",
+      "latitude": -39.636804,
+      "longitude": 176.836635,
+      "name": "PAK'nSAVE Hastings",
+      "physical_store_code": "0000108050",
+      "supermarket": "Pak'nSave"
+    },
+    {
+      "address": "25 Munroe Street, Napier South, Napier South NAPIER, 4110",
+      "id": "49037947-e450-49bf-ba1f-a94551c79a72",
+      "latitude": -39.494788,
+      "longitude": 176.913562,
+      "name": "PAK'nSAVE Napier City",
+      "physical_store_code": "0000108056",
+      "supermarket": "Pak'nSave"
+    },
+    {
+      "address": "12 Parumoana Street, Porirua City Centre, Porirua, 5022",
+      "id": "af385423-d0f1-41f0-9482-ffd10b745143",
+      "latitude": -41.131559,
+      "longitude": 174.841818,
+      "name": "PAK'nSAVE Porirua",
+      "physical_store_code": "0000108060",
+      "supermarket": "Pak'nSave"
+    },
+    {
+      "address": "54 Princes Street, Hawera, 4610",
+      "id": "15e6f441-5c1c-4d25-b4ec-1adf918c49c7",
+      "latitude": -39.590947,
+      "longitude": 174.283801,
+      "name": "PAK'nSAVE Hawera",
+      "physical_store_code": "0000108051",
+      "supermarket": "Pak'nSave"
+    },
+    {
+      "address": "76 Rimu Road, Paraparaumu, 5032",
+      "id": "c180a72d-5dbe-4403-b7c7-91655e505492",
+      "latitude": -40.9180863,
+      "longitude": 175.0017611,
+      "name": "PAK'nSAVE Kapiti",
+      "physical_store_code": "0000108052",
+      "supermarket": "Pak'nSave"
+    },
+    {
+      "address": "20 Brunswick Street, Hutt Central, Lower Hutt, 5010",
+      "id": "b83029b6-5dd5-449e-8056-26f3943a4e18",
+      "latitude": -41.205578,
+      "longitude": 174.913149,
+      "name": "PAK'nSAVE Lower Hutt",
+      "physical_store_code": "0000108054",
+      "supermarket": "Pak'nSave"
+    },
+    {
+      "address": "327 Ferguson Street, Palmerston North, 4410",
+      "id": "48dd98cc-a757-4102-b15d-ea82b4b10571",
+      "latitude": -40.359198,
+      "longitude": 175.611537,
+      "name": "PAK'nSAVE Palmerston North",
+      "physical_store_code": "0000108058",
+      "supermarket": "Pak'nSave"
+    },
+    {
+      "address": "114-124 Jackson Street, Petone, Wellington, 5012",
+      "id": "98ec3885-ac93-4fcb-807b-59c9055c52c4",
+      "latitude": -41.224456,
+      "longitude": 174.872537,
+      "name": "PAK'nSAVE Petone",
+      "physical_store_code": "0000108059",
+      "supermarket": "Pak'nSave"
+    },
+    {
+      "address": "Leicester Avenue, Tamatea, Napier, 4112",
+      "id": "6cda96e1-7d29-44a6-956b-3fcfdecc8184",
+      "latitude": -39.509905,
+      "longitude": 176.869414,
+      "name": "PAK'nSAVE Tamatea",
+      "physical_store_code": "0000108175",
+      "supermarket": "Pak'nSave"
+    },
+    {
+      "address": "Gibbons Street, Upper Hutt, 5018",
+      "id": "4fcc1c8e-cc5e-4675-ba25-5e56b579cf69",
+      "latitude": -41.123787,
+      "longitude": 175.066601,
+      "name": "PAK'nSAVE Upper Hutt",
+      "physical_store_code": "0000108062",
+      "supermarket": "Pak'nSave"
+    },
+    {
+      "address": "167 Glasgow Street, Whanganui, 4500",
+      "id": "01a114de-149c-4f5f-80a1-90cc63f69c6e",
+      "latitude": -39.92638,
+      "longitude": 175.038901,
+      "name": "PAK'nSAVE Whanganui",
+      "physical_store_code": "0000108063",
+      "supermarket": "Pak'nSave"
+    },
+    {
+      "address": "86 Hillside Road, South Dunedin, Dunedin, 9012",
+      "id": "90082979-fb9f-4305-9c72-83274fc438cc",
+      "latitude": -45.8927,
+      "longitude": 170.4992,
+      "name": "PAK'nSAVE Dunedin",
+      "physical_store_code": "0000009029",
+      "supermarket": "Pak'nSave"
+    },
+    {
+      "address": "424 Queen Street, Kuripuni, Masterton, 5810",
+      "id": "d1cd1fdd-8767-46a6-a8d3-c3e0632c2dc8",
+      "latitude": -40.957214,
+      "longitude": 175.649687,
+      "name": "PAK'nSAVE Masterton",
+      "physical_store_code": "0000108055",
+      "supermarket": "Pak'nSave"
+    },
+    {
+      "address": "53 Leach Street, New Plymouth, 4310",
+      "id": "53989945-1a28-481d-a61c-d6f75f760ada",
+      "latitude": -39.05712,
+      "longitude": 174.08127,
+      "name": "PAK'nSAVE New Plymouth",
+      "physical_store_code": "0000108057",
+      "supermarket": "Pak'nSave"
+    },
+    {
+      "address": "171 Main North Road, Redwood, Christchurch, 8051",
+      "id": "8cd700ae-d96f-4761-bd7a-805d6b93536d",
+      "latitude": -43.48557,
+      "longitude": 172.61472,
+      "name": "PAK'nSAVE Papanui",
+      "physical_store_code": "0000009014",
+      "supermarket": "Pak'nSave"
+    },
+    {
+      "address": "2 Taurikura Drive, Tauriko, Tauranga, 3110",
+      "id": "1c388d5e-29ac-4956-b476-cb3431353d2e",
+      "latitude": -37.738653,
+      "longitude": 176.103745,
+      "name": "PAK'nSAVE Tauriko",
+      "physical_store_code": "0000108167",
+      "supermarket": "Pak'nSave"
+    },
+    {
+      "address": "Croucher and Talbot Streeet, Richmond, Nelson, 7020",
+      "id": "5cf0392f-c187-4fc4-a463-eb269d2e8f45",
+      "latitude": -41.3386,
+      "longitude": 173.1866,
+      "name": "PAK'nSAVE Richmond",
+      "physical_store_code": "0000009028",
+      "supermarket": "Pak'nSave"
+    },
+    {
+      "address": "297 Moorhouse Avenue, Sydenham, Christchurch, 8011",
+      "id": "61dd754e-8525-4b9e-9e08-173389eea8a8",
+      "latitude": -43.5392,
+      "longitude": 172.6383,
+      "name": "PAK'nSAVE Moorhouse",
+      "physical_store_code": "0000009015",
+      "supermarket": "Pak'nSave"
+    },
+    {
+      "address": "2 Southbrook Road, Waimakariri, Rangiora, 7400",
+      "id": "715f0e22-95e0-45ce-af3a-07057209976e",
+      "latitude": -43.3248,
+      "longitude": 172.5999,
+      "name": "PAK'nSAVE Rangiora",
+      "physical_store_code": "0000009012",
+      "supermarket": "Pak'nSave"
+    },
+    {
+      "address": "Cnr Fenton and Amohau Streets, Rotorua, 3010",
+      "id": "7d48a781-4f68-4c91-a908-8659e1b22f95",
+      "latitude": -38.140495,
+      "longitude": 176.25459,
+      "name": "PAK'nSAVE Rotorua",
+      "physical_store_code": "0000103092",
+      "supermarket": "Pak'nSave"
+    },
+    {
+      "address": "Evans Street, Waimataitai, Timaru, 7910",
+      "id": "b29a98bd-749c-489c-9eef-6aa38e66a29b",
+      "latitude": -44.383,
+      "longitude": 171.2366,
+      "name": "PAK'nSAVE Timaru",
+      "physical_store_code": "0000009016",
+      "supermarket": "Pak'nSave"
+    },
+    {
+      "address": "302 Hawthorne Drive, Frankton, Queenstown, 9300",
+      "id": "2ed73be8-936d-4f35-9398-75a707f40a7b",
+      "latitude": -45.0108,
+      "longitude": 168.7492,
+      "name": "PAK'nSAVE Queenstown",
+      "physical_store_code": "0000009013",
+      "supermarket": "Pak'nSave"
+    },
+    {
+      "address": "1 Westwood Avenue, Springlands, Blenheim, 7271",
+      "id": "c3f9e1a3-fc34-452d-af2e-95349e666ba4",
+      "latitude": -41.5087,
+      "longitude": 173.9234,
+      "name": "PAK'nSAVE Blenheim",
+      "physical_store_code": "0000009011",
+      "supermarket": "Pak'nSave"
+    },
+    {
+      "address": "418 Main South Road, Hornby, Christchurch, 8042",
+      "id": "be4c4780-218e-425a-a90f-63e21773572b",
+      "latitude": -43.543,
+      "longitude": 172.5232,
+      "name": "PAK'nSAVE Hornby",
+      "physical_store_code": "0000009006",
+      "supermarket": "Pak'nSave"
+    },
+    {
+      "address": "129 Riccarton Road, Riccarton, Christchurch, 8041",
+      "id": "4a279605-eaa8-470d-bcd4-0a9e3c9ab43b",
+      "latitude": -43.5312,
+      "longitude": 172.5963,
+      "name": "PAK'nSAVE Riccarton",
+      "physical_store_code": "0000009031",
+      "supermarket": "Pak'nSave"
+    },
+    {
+      "address": "12 Hudson Road, Warkworth, 0910",
+      "id": "8f0d70be-5cb7-464b-99cb-8b0130671895",
+      "latitude": -36.392108,
+      "longitude": 174.649519,
+      "name": "PAK'nSAVE Warkworth",
+      "physical_store_code": "0000108283",
+      "supermarket": "Pak'nSave"
+    },
+    {
+      "address": "503 - 505 Pakuranga Road, Highland Park, 2010",
+      "id": "2a1b331a-fc4a-496a-b072-e97cc8f70cae",
+      "latitude": -36.8988953,
+      "longitude": 174.9047405,
+      "name": "PAK'nSAVE Highland Park",
+      "physical_store_code": "0000108343",
+      "supermarket": "Pak'nSave"
+    },
+    {
+      "address": "157 Levi Road, Rolleston, Rolleston, 7614",
+      "id": "bdc5ef4a-c6a7-4f8a-b8cb-28109e6d61c3",
+      "latitude": -43.59731231,
+      "longitude": 172.39645748,
+      "name": "PAK'nSAVE Rolleston",
+      "physical_store_code": "0000009030",
+      "supermarket": "Pak'nSave"
+    }
+  ],
+  "supermarket": "Pak'nSave"
+}
