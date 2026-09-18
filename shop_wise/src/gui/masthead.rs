@@ -13,8 +13,8 @@ impl AppData {
     pub(crate) fn masthead(&mut self, ui: &mut Ui) {
         let logo = logo_texture(ui.ctx());
 
-        egui::TopBottomPanel::top("masthead")
-            .exact_height(BAR_HEIGHT)
+        egui::Panel::top("masthead")
+            .exact_size(BAR_HEIGHT)
             .frame(
                 egui::Frame::default()
                     .fill(FILL)
