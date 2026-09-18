@@ -30,7 +30,6 @@ pub struct AppData {
     transit: TransitData,
     location_search: Rc<RefCell<LocationData>>,
     output_routes: OutputRoutesData,
-    logo_texture: Option<egui::TextureHandle>,
 }
 
 pub trait ShowableWidget {
