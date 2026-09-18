@@ -16,6 +16,7 @@ pub struct SantizedSearchResult {
     name: String,
     quantity: u32,
     unit: SearchUnits,
+    quantity: u32,
     image_url: String,
 }
 
