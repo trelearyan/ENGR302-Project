@@ -417,6 +417,7 @@ fn calculate_minimised(
                 &" was absent from one or more stores in the search.",
         };})
         .collect::<Vec<Message>>();
+    log::info!("{:?}", log_msg_content);
     Ok((best_plan.unwrap(), log_msg_content))
 }
 
