@@ -409,7 +409,7 @@ fn calculate_minimised(
                 })
         }}
     }
-    let log_msg_content: Vec<Message> = or_missed_items.unwrap().iter()
+    let log_msg_content: Vec<Message> = or_missed_items.unwrap_or(Vec::new()).iter()
         .map(|i: &ItemId|->Message{ return Message {
             msg_type: MessageType::NOTICE,
             msg: "Item ".to_owned() +
