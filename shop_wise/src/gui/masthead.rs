@@ -126,7 +126,7 @@ impl AppData {
                 }
 
                 if menu.clicked() {
-                    // TODO: collapse left panel
+                    self.filters_collapsed = !self.filters_collapsed;
                 }
 
                 // Right button: opens the repository.
