@@ -5,12 +5,14 @@ use super::AppData;
 const INK: Color32 = Color32::from_rgb(0x0F, 0x3B, 0x45);
 const FILL: Color32 = Color32::from_rgb(0xF5, 0xF1, 0xE8);
 const LINE: Color32 = Color32::BLACK;
-const BAR_HEIGHT: f32 = 60.0;
+const MASTHEAD_HEIGHT: f32 = 60.0;
 const LOGO_SIZE: f32 = 44.0;
-const LOGO_GAP: f32 = 12.0;
-const WORDMARK_SIZE: f32 = 24.0;
+const LOGO_GAP: f32 = 2.0;
+const TEXT_SIZE: f32 = 24.0;
 const GITLAB_ICON_SIZE: f32 = 50.0;
+const MENU_ICON_SIZE: f32 = 22.0;
 const ICON_REST_ALPHA: u8 = 200;
+const ICON_HOVER_ALPHA: u8 = 255;
 const ICON_PRESSED_ALPHA: u8 = 150;
 const LOGO_NUDGE_Y: f32 = 0.0;
 const REPO_URL: &str = "https://gitlab.ecs.vuw.ac.nz/course-work/engr301/2026/project1/team5/shopwise";
@@ -26,6 +28,16 @@ macro_rules! cached_texture {
     }};
 }
 
+fn interact_alpha(response: &egui::Response) -> u8 {
+    if response.is_pointer_button_down_on() {
+        ICON_PRESSED_ALPHA
+    } else if response.hovered() {
+        ICON_HOVER_ALPHA
+    } else {
+        ICON_REST_ALPHA
+    }
+}
+
 impl AppData {
     pub(crate) fn masthead(&mut self, ui: &mut Ui) {
         let logo = cached_texture!(
@@ -33,14 +45,14 @@ impl AppData {
             "shopwise-logo",
             include_bytes!("../../assets/logo.png")
         );
-        let account_icon = cached_texture!(
+        let git_icon = cached_texture!(
             ui.ctx(),
             "shopwise-repo",
             include_bytes!("../../assets/gitlab-logo.png")
         );
 
         egui::Panel::top("masthead")
-            .exact_size(BAR_HEIGHT)
+            .exact_size(MASTHEAD_HEIGHT)
             .frame(
                 egui::Frame::default()
                     .fill(FILL)
@@ -51,7 +63,7 @@ impl AppData {
                 let centre_y = rect.center().y;
 
                 let button_size = egui::vec2(44.0, 40.0);
-                let side_margin = 16.0;
+                let side_margin = 2.0;
 
                 // Left menu button
                 let menu_rect = egui::Rect::from_center_size(
@@ -59,12 +71,34 @@ impl AppData {
                     button_size,
                 );
 
-                if ui.put(menu_rect, egui::Button::new("☰")).clicked() {
+                let menu = ui
+                    .interact(
+                        menu_rect,
+                        ui.id().with("filters-menu"),
+                        egui::Sense::click(),
+                    )
+                    .on_hover_cursor(egui::CursorIcon::PointingHand)
+                    .on_hover_text("Toggle filters panel");
+
+                let menu_alpha = interact_alpha(&menu);
+                let menu_galley = ui.painter().layout_no_wrap(
+                    "☰".to_owned(),
+                    egui::FontId::proportional(MENU_ICON_SIZE),
+                    Color32::from_rgba_unmultiplied(INK.r(), INK.g(), INK.b(), menu_alpha),
+                );
+                let menu_text_pos = menu_rect.center() - menu_galley.size() / 2.0;
+                ui.painter().galley(
+                    menu_text_pos,
+                    menu_galley,
+                    Color32::from_rgba_unmultiplied(INK.r(), INK.g(), INK.b(), menu_alpha),
+                );
+
+                if menu.clicked() {
                     // TODO: collapse left panel
                 }
 
                 // Right button: opens the repository.
-                let account_rect = egui::Rect::from_center_size(
+                let gitlab_rect = egui::Rect::from_center_size(
                     egui::pos2(
                         rect.right() - side_margin - button_size.x / 2.0,
                         centre_y,
@@ -72,26 +106,26 @@ impl AppData {
                     button_size,
                 );
 
-                let account = ui
+                let git_repo = ui
                     .interact(
-                        account_rect,
-                        ui.id().with("masthead-account"),
+                        gitlab_rect,
+                        ui.id().with("git-account"),
                         egui::Sense::click(),
                     )
                     .on_hover_cursor(egui::CursorIcon::PointingHand)
                     .on_hover_text("Open the GitLab repository");
 
-                if let Some(icon) = &account_icon {
-                    let alpha = if account.is_pointer_button_down_on() {
+                if let Some(icon) = &git_icon {
+                    let alpha = if git_repo.is_pointer_button_down_on() {
                         ICON_PRESSED_ALPHA
-                    } else if account.hovered() {
+                    } else if git_repo.hovered() {
                         u8::MAX
                     } else {
                         ICON_REST_ALPHA
                     };
 
                     let icon_rect = egui::Rect::from_center_size(
-                        account_rect.center(),
+                        gitlab_rect.center(),
                         egui::Vec2::splat(GITLAB_ICON_SIZE),
                     );
 
@@ -103,13 +137,13 @@ impl AppData {
                     );
                 }
 
-                if account.clicked() {
+                if git_repo.clicked() {
                     ui.ctx().open_url(egui::OpenUrl::new_tab(REPO_URL));
                 }
 
                 let galley = ui.painter().layout_no_wrap(
                     "ShopWise".to_owned(),
-                    egui::FontId::proportional(WORDMARK_SIZE),
+                    egui::FontId::proportional(TEXT_SIZE),
                     INK,
                 );
 
