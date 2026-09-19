@@ -64,8 +64,8 @@ impl AppData {
         );
 
         egui::Panel::top("masthead")
-            .min_height(MASTHEAD_HEIGHT)
-            .max_height(MASTHEAD_HEIGHT)
+            .min_size(MASTHEAD_HEIGHT)
+            .max_size(MASTHEAD_HEIGHT)
             .resizable(false)
             //.exact_size(MASTHEAD_HEIGHT)
             .frame(
