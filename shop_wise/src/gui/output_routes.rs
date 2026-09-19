@@ -72,10 +72,7 @@ impl OutputRoutesData {
         let weak_colour = ui.visuals().weak_text_color();
         let error_colour = ui.visuals().error_fg_color;
 
-        egui::ScrollArea::vertical()
-            .id_salt("output panel")
-            .auto_shrink([false; 2])
-            .show(ui,|ui| match self.results.clone() {
+        match self.results.clone() {
                 ResultsState::Idle => Self::message(
                     ui,
                     "Nothing to show yet",
@@ -90,7 +87,7 @@ impl OutputRoutesData {
                     error_colour,
                 ),
                 ResultsState::Ready(results) => self.ready(ui, results.deref()),
-            });
+        }
     }
 
     fn ready(&mut self, ui: &mut egui::Ui, results: &Results) {
