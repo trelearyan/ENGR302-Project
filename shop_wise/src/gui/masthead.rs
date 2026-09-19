@@ -75,7 +75,6 @@ impl AppData {
                 let centre_y = rect.center().y;
 
                 let button_size = egui::vec2(44.0, 40.0);
-                let side_margin = 16.0;
 
                 // Left menu button
                 let menu_rect = egui::Rect::from_center_size(
