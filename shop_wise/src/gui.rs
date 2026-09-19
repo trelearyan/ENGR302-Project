@@ -82,6 +82,7 @@ impl ShowableWidget for AppData {
                         ui.separator();
                         self.search_button(ui);
                         self.output_routes.show(ui);
+                        ui.add_space(20000.0);
                     })
             });
     }
