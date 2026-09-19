@@ -72,22 +72,25 @@ impl OutputRoutesData {
         let weak_colour = ui.visuals().weak_text_color();
         let error_colour = ui.visuals().error_fg_color;
 
-        match self.results.clone() {
-            ResultsState::Idle => Self::message(
-                ui,
-                "Nothing to show yet",
-                "Add at least one item to your shopping list, set your location, then run a search.",
-                weak_colour,
-            ),
-            ResultsState::Loading => Self::loading(ui),
-            ResultsState::Failed(reason) => Self::message(
-                ui,
-                "That search could not be completed",
-                reason.as_str(),
-                error_colour,
-            ),
-            ResultsState::Ready(results) => self.ready(ui, results.deref()),
-        }
+        egui::ScrollArea::vertical()
+            .id_salt("output panel")
+            .auto_shrink([false; 2])
+            .show(ui,|ui| match self.results.clone() {
+                ResultsState::Idle => Self::message(
+                    ui,
+                    "Nothing to show yet",
+                    "Add at least one item to your shopping list, set your location, then run a search.",
+                    weak_colour,
+                ),
+                ResultsState::Loading => Self::loading(ui),
+                ResultsState::Failed(reason) => Self::message(
+                    ui,
+                    "That search could not be completed",
+                    reason.as_str(),
+                    error_colour,
+                ),
+                ResultsState::Ready(results) => self.ready(ui, results.deref()),
+            });
     }
 
     fn ready(&mut self, ui: &mut egui::Ui, results: &Results) {
@@ -309,16 +312,12 @@ impl OutputRoutesData {
             return;
         }
 
-        egui::ScrollArea::vertical()
-            .auto_shrink([false, false])
-            .show(ui, |ui| {
-                for (index, stop) in scenario.stops.iter().enumerate() {
-                    ui.push_id(index, |ui| {
-                        Self::store_card(ui, index + 1, stop);
-                    });
-                    ui.add_space(8.0);
-                }
+        for (index, stop) in scenario.stops.iter().enumerate() {
+            ui.push_id(index, |ui| {
+                Self::store_card(ui, index + 1, stop);
             });
+            ui.add_space(8.0);
+        }
     }
 
     fn store_card(ui: &mut egui::Ui, stop_number: usize, stop: &StoreStop) {
