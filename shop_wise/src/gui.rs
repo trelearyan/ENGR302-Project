@@ -30,6 +30,7 @@ pub struct AppData {
     transit: TransitData,
     location_search: Rc<RefCell<LocationData>>,
     output_routes: OutputRoutesData,
+    pub(crate) filters_collapsed: bool,
 }
 
 pub trait ShowableWidget {

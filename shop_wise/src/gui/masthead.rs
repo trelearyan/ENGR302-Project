@@ -11,6 +11,8 @@ const LOGO_GAP: f32 = 2.0;
 const TEXT_SIZE: f32 = 24.0;
 const GITLAB_ICON_SIZE: f32 = 50.0;
 const MENU_ICON_SIZE: f32 = 22.0;
+const LEFT_EDGE_MARGIN: f32 = -25.0;
+const RIGHT_EDGE_MARGIN: f32 = 16.0;
 const ICON_REST_ALPHA: u8 = 200;
 const ICON_HOVER_ALPHA: u8 = 255;
 const ICON_PRESSED_ALPHA: u8 = 150;
@@ -50,6 +52,16 @@ impl AppData {
             "shopwise-repo",
             include_bytes!("../../assets/gitlab-logo.png")
         );
+        let menu_collapse_icon = cached_texture!(
+            ui.ctx(),
+            "filters-colllapse ",
+            include_bytes!("../../assets/arrow-left.png")
+        );
+        let menu_expand_icon = cached_texture!(
+            ui.ctx(),
+            "filters-expand",
+            include_bytes!("../../assets/arrow-right.png")
+        );
 
         egui::Panel::top("masthead")
             .exact_size(MASTHEAD_HEIGHT)
@@ -63,13 +75,19 @@ impl AppData {
                 let centre_y = rect.center().y;
 
                 let button_size = egui::vec2(44.0, 40.0);
-                let side_margin = 2.0;
+                let side_margin = 16.0;
 
                 // Left menu button
                 let menu_rect = egui::Rect::from_center_size(
-                    egui::pos2(rect.left() + side_margin + button_size.x / 2.0, centre_y),
+                    egui::pos2(rect.left() + LEFT_EDGE_MARGIN + button_size.x / 2.0, centre_y),
                     button_size,
                 );
+
+                let menu_hover_text = if self.filters_collapsed {
+                    "Show filters panel"
+                    }else {
+                    "Hide filters panel"
+                };
 
                 let menu = ui
                     .interact(
@@ -78,20 +96,35 @@ impl AppData {
                         egui::Sense::click(),
                     )
                     .on_hover_cursor(egui::CursorIcon::PointingHand)
-                    .on_hover_text("Toggle filters panel");
+                    .on_hover_text(menu_hover_text);
 
                 let menu_alpha = interact_alpha(&menu);
-                let menu_galley = ui.painter().layout_no_wrap(
-                    "☰".to_owned(),
-                    egui::FontId::proportional(MENU_ICON_SIZE),
-                    Color32::from_rgba_unmultiplied(INK.r(), INK.g(), INK.b(), menu_alpha),
-                );
-                let menu_text_pos = menu_rect.center() - menu_galley.size() / 2.0;
-                ui.painter().galley(
-                    menu_text_pos,
-                    menu_galley,
-                    Color32::from_rgba_unmultiplied(INK.r(), INK.g(), INK.b(), menu_alpha),
-                );
+                let menu_icon = if self.filters_collapsed {
+                    &menu_expand_icon
+                } else {
+                    &menu_collapse_icon
+                };
+
+                match menu_icon {
+                    Some(icon) => {
+                        let icon_rect = egui::Rect::from_center_size(
+                            menu_rect.center(),
+                            egui::Vec2::splat(MENU_ICON_SIZE),
+                        );
+
+                        ui.painter().image(
+                            icon.id(),
+                            icon_rect,
+                            FULL_UV,
+                            Color32::from_white_alpha(menu_alpha),
+                        );
+                    },
+                    &None => todo!()
+                    // Falls back to a text glyph if either PNG failed to
+                    // decode, so a bad asset degrades instead of leaving a
+                    // dead, invisible button.
+
+                }
 
                 if menu.clicked() {
                     // TODO: collapse left panel
@@ -100,7 +133,7 @@ impl AppData {
                 // Right button: opens the repository.
                 let gitlab_rect = egui::Rect::from_center_size(
                     egui::pos2(
-                        rect.right() - side_margin - button_size.x / 2.0,
+                        rect.right() - RIGHT_EDGE_MARGIN - button_size.x / 2.0,
                         centre_y,
                     ),
                     button_size,
