@@ -312,12 +312,16 @@ impl OutputRoutesData {
             return;
         }
 
-        for (index, stop) in scenario.stops.iter().enumerate() {
-            ui.push_id(index, |ui| {
-                Self::store_card(ui, index + 1, stop);
+        egui::ScrollArea::vertical()
+            .auto_shrink([false, false])
+            .show(ui, |ui| {
+                for (index, stop) in scenario.stops.iter().enumerate() {
+                    ui.push_id(index, |ui| {
+                        Self::store_card(ui, index + 1, stop);
+                    });
+                    ui.add_space(8.0);
+                }
             });
-            ui.add_space(8.0);
-        }
     }
 
     fn store_card(ui: &mut egui::Ui, stop_number: usize, stop: &StoreStop) {
