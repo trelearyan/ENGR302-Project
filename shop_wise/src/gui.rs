@@ -59,7 +59,20 @@ impl ShowableWidget for AppData {
                     .max_height(list_height)
                     .auto_shrink([false, true])
                     .show(ui, |ui| {
-                        self.supermarkets.show(ui);
+                        let origin = {
+                            let loc = self.location_search.borrow();
+                            match (loc.latitude, loc.longitude) {
+                                (Some(lat), Some(lon)) => {
+                                    Some(Coordinate::from_lat_long_f64(lat, lon))
+                                }
+                                _ => None,
+                            }
+                        };
+                        self.supermarkets.show_in_range(
+                            ui,
+                            origin.as_ref(),
+                            &self.preferences.max_range,
+                        );
                     });
                 ui.separator();
                 self.transit.show(ui);
