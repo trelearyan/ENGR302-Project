@@ -8,6 +8,7 @@ use util::search::ShoppingItemQuery;
 
 use crate::filehandling::file_dialog::FileChannel;
 use crate::gui::ShowableWidget;
+use crate::price_calculator::item_resolver::SantizedSearchResult;
 
 const DEBOUNCE_SECONDS: f64 = 0.4;
 const MIN_QUERY_LEN: usize = 3;
@@ -25,8 +26,7 @@ enum AddItemStatus {
 struct AddItemState {
     query: String,
     status: AddItemStatus,
-    suggestions: Vec<ShoppingItemQuery>,
-    request_id: u64,
+    suggestions: Vec<SantizedSearchResult>,
     last_edit_time: Option<f64>,
 }
 
@@ -190,7 +190,7 @@ impl ShoppingListData {
         };
         let now = ui.input(|i| i.time);
         let mut close = false;
-        let mut picked: Option<ShoppingItemQuery> = None;
+        let mut picked: Option<SantizedSearchResult> = None;
  
         {
             let mut state = state_rc.borrow_mut();
@@ -228,35 +228,12 @@ impl ShoppingListData {
                     state.status = AddItemStatus::Idle;
                 } else {
                     state.status = AddItemStatus::Searching;
-                    state.request_id += 1;
- 
-                    #[cfg(target_arch = "wasm32")]
-                    {
-                        use wasm_bindgen_futures::spawn_local;
- 
-                        let this_request = state.request_id;
-                        let state_clone = state_rc.clone();
-                        let ctx_clone = ui.ctx().clone();
- 
-                        spawn_local(async move {
-                            let result = ShoppingListData::mock_search_products(&query).await;
-                            let mut state = state_clone.borrow_mut();
-                            if state.request_id == this_request {
-                                match result {
-                                    Ok(results) if !results.is_empty() => {
-                                        state.suggestions = results;
-                                        state.status = AddItemStatus::Suggesting;
-                                    }
-                                    _ => state.status = AddItemStatus::NotFound,
-                                }
-                            }
-                            ctx_clone.request_repaint();
-                        });
-                    }
-                    #[cfg(not(target_arch = "wasm32"))]
-                    {
-                        // Native search isn't implemented, surface as not found rather than leaving status stuck on Searching (prevent CI ensure no warnings)
-                        state.status = AddItemStatus::NotFound;
+                    match crate::price_calculator::item_resolver::search(&query, 100) {
+                        Some(results) if !results.is_empty() => {
+                            state.suggestions = results;
+                            state.status = AddItemStatus::Suggesting;
+                        }
+                        _ => state.status = AddItemStatus::NotFound,
                     }
                 }
             }
@@ -280,7 +257,7 @@ impl ShoppingListData {
                     // .max_height(300.0) 300px fits roughly 14 text only suggestion items before scrolling. Once product images are added this value will likely need to be changed.
                     egui::ScrollArea::vertical().max_height(300.0).show(ui, |ui|{
                         for s in &suggestions {
-                            let label = format!("{}  ·  {} {}", s.name, s.quantity, s.unit);
+                            let label = format!("{}  ·  {} {}", s.name, s.quantity, s.unit.to_str());
                             if ui.selectable_label(false, label).clicked() {
                                 picked = Some(s.clone());
                             }
@@ -291,7 +268,11 @@ impl ShoppingListData {
         } // `state` (the RefMut borrow) drops here, before touching self.* below
  
         if let Some(s) = picked {
-            self.shopping_items.push(s);
+            self.shopping_items.push(ShoppingItemQuery {
+                name: s.name.clone(),
+                quantity: s.quantity,
+                unit: s.unit.to_str().to_string(),
+            });
             self.cleared_items = None;
             let mut state = state_rc.borrow_mut();
             state.query.clear();
@@ -304,28 +285,5 @@ impl ShoppingListData {
         }
     }
 
-    #[cfg(target_arch = "wasm32")]
-    async fn mock_search_products(query: &str) -> Result<Vec<ShoppingItemQuery>, String> {
-        // MOCK ONLY
-        let base = query.trim();
-        if base.is_empty() {
-            return Ok(Vec::new());
-        }
- 
-        let units = ["each", "L", "kg", "g"];
- 
-        let suggestions = (0..30u8)
-            .map(|i| {
-                let suffix: String = "b".repeat(i as usize);
-                ShoppingItemQuery {
-                    name: format!("{base}{suffix}"),
-                    quantity: 1,
-                    unit: units[i as usize % units.len()].to_string(),
-                }
-            })
-            .collect();
- 
-        Ok(suggestions)
-    }
 }
 
