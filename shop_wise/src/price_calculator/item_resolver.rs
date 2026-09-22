@@ -11,12 +11,12 @@ use rusqlite::{Connection, Error, Result};
 use regex::Regex;
 
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct SantizedSearchResult {
-    name: String,
-    unit: SearchUnits,
-    quantity: u32,
-    image_url: String,
+    pub name: String,
+    pub unit: SearchUnits,
+    pub quantity: u32,
+    pub image_url: String,
 }
 
 #[derive(Debug, PartialEq)]
