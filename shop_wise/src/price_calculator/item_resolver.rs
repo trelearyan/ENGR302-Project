@@ -138,7 +138,7 @@ pub fn resolve(item_query: &ShoppingItemQuery) -> Option<HashMap<u32, ShoppingIt
             ShoppingItem {
                 name: best.name.clone(),
                 quantity: best.quantity * best_mul.unwrap(),
-                unit: SearchUnits::EACH,
+                unit: best.unit.clone(),
                 price: Cost::from_cents(best.price * best_mul.unwrap()),
                 store: Store {
                     brand: best.store,
