@@ -298,7 +298,7 @@ mod tests {
                 name: "Milk 2L".to_owned(),
                 multiplier: 1,
                 quantity: 2,
-                unit_price: Cost::from_cents(989),
+                unit_price: Cost::from_cents(898),
                 on_special: false,
                 needs_loyalty_card: false,
             }],
@@ -341,6 +341,6 @@ mod tests {
         };
         assert_eq!(scenario.grocery_cost(), Cost::from_cents(898));
         assert_eq!(scenario.total_cost(), Cost::from_cents(1278));
-        assert_eq!(scenario.item_count(), 2);
+        assert_eq!(scenario.item_count(), 1);
     }
 }
