@@ -312,7 +312,7 @@ mod tests {
         };
         assert_eq!(scenario.grocery_cost(), Cost::from_cents(898));
         assert_eq!(scenario.total_cost(), Cost::from_cents(1278));
-        assert_eq!(scenario.item_count(), 2);
+        assert_eq!(scenario.item_count(), 1);
     }
 
     
@@ -341,6 +341,6 @@ mod tests {
         };
         assert_eq!(scenario.grocery_cost(), Cost::from_cents(898));
         assert_eq!(scenario.total_cost(), Cost::from_cents(1278));
-        assert_eq!(scenario.item_count(), 1);
+        assert_eq!(scenario.item_count(), 2);
     }
 }
