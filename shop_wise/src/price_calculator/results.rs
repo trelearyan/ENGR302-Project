@@ -168,7 +168,7 @@ impl Scenario {
                     .iter()
                     .map(|info| ItemLine {
                         name: info.name.clone(),
-                        quantity: info.quantity.to_string() + info.unit.to_str(),
+                        quantity: info.multiplier.to_string() + "x " + &info.quantity.to_string() + info.unit.to_str(),
                         unit_price: info.price.clone(),
                         // TODO: loyalty pricing
                         on_special: false,
@@ -297,7 +297,7 @@ mod tests {
             items: vec![ItemLine {
                 name: "Milk 2L".to_owned(),
                 multiplier: 1,
-                quantity: "2L".to_owned(),
+                quantity: "1x 2L".to_owned(),
                 unit_price: Cost::from_cents(898),
                 on_special: false,
                 needs_loyalty_card: false,
@@ -326,7 +326,7 @@ mod tests {
             items: vec![ItemLine {
                 name: "Milk 1L".to_owned(),
                 multiplier: 2,
-                quantity: "1L".to_owned(),
+                quantity: "2x 1L".to_owned(),
                 unit_price: Cost::from_cents(449),
                 on_special: false,
                 needs_loyalty_card: false,
