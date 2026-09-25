@@ -76,6 +76,7 @@ pub fn brand_label(brand: StoreBrand) -> &'static str {
 #[derive(Clone, Debug)]
 pub struct ItemLine {
     pub name: String,
+    pub multiplier: u32,
     pub quantity: u32,
     pub unit_price: Cost,
     pub on_special: bool,
@@ -85,7 +86,7 @@ pub struct ItemLine {
 impl ItemLine {
     #[must_use]
     pub fn line_total(&self) -> Cost {
-        self.unit_price.clone() * BigDecimal::from(self.quantity)
+        self.unit_price.clone() * BigDecimal::from(self.multiplier)
     }
 }
 
@@ -172,6 +173,7 @@ impl Scenario {
                         // TODO: loyalty pricing
                         on_special: false,
                         needs_loyalty_card: false,
+                        multiplier: info.multiplier,
                     })
                     .collect();
 
