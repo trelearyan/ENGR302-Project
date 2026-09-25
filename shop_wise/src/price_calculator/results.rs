@@ -298,6 +298,35 @@ mod tests {
                 name: "Milk 2L".to_owned(),
                 multiplier: 1,
                 quantity: 2,
+                unit_price: Cost::from_cents(989),
+                on_special: false,
+                needs_loyalty_card: false,
+            }],
+        };
+        let scenario = Scenario {
+            kind: ScenarioKind::Cheapest,
+            stops: vec![stop],
+            travel_cost: Some(Cost::from_cents(380)),
+            distance_km: Some(Distance::from_kilometres_f64(8.6)),
+            duration_min: Some(19.0),
+        };
+        assert_eq!(scenario.grocery_cost(), Cost::from_cents(898));
+        assert_eq!(scenario.total_cost(), Cost::from_cents(1278));
+        assert_eq!(scenario.item_count(), 2);
+    }
+
+    
+
+    #[test]
+    fn total_is_groceries_plus_travel2() {
+        let stop = StoreStop {
+            store_name: Some("Test".to_owned()),
+            chain: StoreBrand::Paknsave,
+            address: Some(String::new()),
+            items: vec![ItemLine {
+                name: "Milk 1L".to_owned(),
+                multiplier: 2,
+                quantity: 1,
                 unit_price: Cost::from_cents(449),
                 on_special: false,
                 needs_loyalty_card: false,
