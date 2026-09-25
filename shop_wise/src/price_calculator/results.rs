@@ -77,7 +77,7 @@ pub fn brand_label(brand: StoreBrand) -> &'static str {
 pub struct ItemLine {
     pub name: String,
     pub multiplier: u32,
-    pub quantity: u32,
+    pub quantity: String,
     pub unit_price: Cost,
     pub on_special: bool,
     pub needs_loyalty_card: bool,
@@ -131,7 +131,7 @@ impl Scenario {
         self.stops
             .iter()
             .flat_map(|s| s.items.iter())
-            .map(|i| i.quantity)
+            .map(|i| i.multiplier)
             .sum()
     }
 
@@ -168,7 +168,7 @@ impl Scenario {
                     .iter()
                     .map(|info| ItemLine {
                         name: info.name.clone(),
-                        quantity: info.quantity,
+                        quantity: info.quantity.to_string() + info.unit.to_str(),
                         unit_price: info.price.clone(),
                         // TODO: loyalty pricing
                         on_special: false,
@@ -297,7 +297,7 @@ mod tests {
             items: vec![ItemLine {
                 name: "Milk 2L".to_owned(),
                 multiplier: 1,
-                quantity: 2,
+                quantity: "2L".to_owned(),
                 unit_price: Cost::from_cents(898),
                 on_special: false,
                 needs_loyalty_card: false,
@@ -326,7 +326,7 @@ mod tests {
             items: vec![ItemLine {
                 name: "Milk 1L".to_owned(),
                 multiplier: 2,
-                quantity: 1,
+                quantity: "1L".to_owned(),
                 unit_price: Cost::from_cents(449),
                 on_special: false,
                 needs_loyalty_card: false,
