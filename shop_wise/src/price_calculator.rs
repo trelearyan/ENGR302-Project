@@ -149,7 +149,7 @@ pub fn calculate(
                     .inner()
                     .with_scale(2)
                     .to_u32()
-                    .unwrap();
+                    .unwrap()*item.multiplier;
                 // Add item to item lookup table
                 item_lookup.get_mut(item_key)?.insert(store_id, item);
                 // Add price to short database
@@ -224,6 +224,7 @@ fn delocalise(
                     item_lookup.get(item_id).unwrap().get(&(shop_id)).unwrap();
                 items.push(ShoppingItem {
                     name: item.name.clone(),
+                    multiplier: item.multiplier,
                     quantity: item.quantity,
                     unit: item.unit.clone(),
                     price: item.price.clone(),
