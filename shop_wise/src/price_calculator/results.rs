@@ -296,6 +296,7 @@ mod tests {
             address: Some(String::new()),
             items: vec![ItemLine {
                 name: "Milk 2L".to_owned(),
+                multiplier: 1,
                 quantity: 2,
                 unit_price: Cost::from_cents(449),
                 on_special: false,
