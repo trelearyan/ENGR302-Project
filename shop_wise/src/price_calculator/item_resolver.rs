@@ -83,7 +83,7 @@ pub fn search(item_query: &str, num_options: u32) -> Option<Vec<SantizedSearchRe
 #[must_use]
 pub fn resolve(item_query: &ShoppingItemQuery) -> Option<HashMap<u32, ShoppingItem>> {
     // Split item_query into search terms
-    let terms: Vec<&str> = item_query.name.split(' ').collect();
+    let terms: Vec<&str> = item_query.name.split(' ').filter(|f|->bool{f.len()>=1}).collect();
     let mut result: HashMap<u32, ShoppingItem> = HashMap::new();
     let mut search: HashMap<usize, HashMap<u32, Vec<SearchResult>>> = demo_db(&terms).unwrap();
     let search_unit = SearchUnits::match_to_unit(&item_query.unit).unwrap();
@@ -203,8 +203,9 @@ fn open_database() -> Result<Connection> {
     Ok(conn)
 }
 
-/// Mock the sqlite database by using a python version and some jank commands
 fn demo_db(search_terms: &[&str]) -> Result<HashMap<usize, HashMap<u32, Vec<SearchResult>>>> {
+    // Check cache first
+
     let conn = open_database()?;
     // Check Database is loaded correctly
 
