@@ -1,0 +1,1347 @@
+{
+  "store_count": 149,
+  "stores": [
+    {
+      "address": "575 Te Atatū Road, Te Atatū Peninsula, Auckland, 0610",
+      "id": "2d939bb7-ae26-4cc7-b930-d10e6a4de8a3",
+      "latitude": -36.842741,
+      "longitude": 174.6518703,
+      "name": "New World Te Atatu",
+      "physical_store_code": "0000108602",
+      "supermarket": "New World"
+    },
+    {
+      "address": "89 Bellevue Road, Otumoetai, Tauranga, 3110",
+      "id": "edc986dd-a28c-4fbe-899d-5680d51f584d",
+      "latitude": -37.688946,
+      "longitude": 176.1347,
+      "name": "New World Brookfield",
+      "physical_store_code": "0000103244",
+      "supermarket": "New World"
+    },
+    {
+      "address": "12 Jocelyn Street, Te Puke, 3119",
+      "id": "f95243ac-bfc9-483a-b10a-b681f4fc4ba2",
+      "latitude": -37.783124,
+      "longitude": 176.328028,
+      "name": "New World Te Puke",
+      "physical_store_code": "0000103231",
+      "supermarket": "New World"
+    },
+    {
+      "address": "Cnr Thomas & Horsham Downs Rds, Hamilton, 3210",
+      "id": "07828d6b-4c90-430e-8ea9-37c671d375e9",
+      "latitude": -37.728271,
+      "longitude": 175.273985,
+      "name": "New World Rototuna",
+      "physical_store_code": "0000103313",
+      "supermarket": "New World"
+    },
+    {
+      "address": "Cnr Tweed St & Maunganui Rd, Mount Maunganui, 3116",
+      "id": "de5595ab-1d28-46c6-9e9a-b1c3db1af827",
+      "latitude": -37.653862,
+      "longitude": 176.198938,
+      "name": "New World Mount Maunganui",
+      "physical_store_code": "0000103317",
+      "supermarket": "New World"
+    },
+    {
+      "address": "25-49 Bowen Street, Waiuku, 2123",
+      "id": "0d045690-bd75-42d8-a7bc-ee44aa57fc61",
+      "latitude": -37.249975,
+      "longitude": 174.727925,
+      "name": "New World Waiuku",
+      "physical_store_code": "0000106172",
+      "supermarket": "New World"
+    },
+    {
+      "address": "35 Bartley Terrace, Devonport, Auckland, 0624",
+      "id": "513fc849-3dbe-4333-a148-4edee5baef67",
+      "latitude": -36.82951,
+      "longitude": 174.796193,
+      "name": "New World Devonport",
+      "physical_store_code": "0000106284",
+      "supermarket": "New World"
+    },
+    {
+      "address": "7 Galileo Street, Ngaruawahia, 3720",
+      "id": "b42476bd-bded-4c80-827e-e1d587096f54",
+      "latitude": -37.667256,
+      "longitude": 175.150107,
+      "name": "New World Ngaruawahia",
+      "physical_store_code": "0000106516",
+      "supermarket": "New World"
+    },
+    {
+      "address": "Unit 1/220 Ohaupo Road, Glenview, Hamilton, 3206",
+      "id": "64c24e04-516d-40b3-958c-96b15797684a",
+      "latitude": -37.822527,
+      "longitude": 175.287416,
+      "name": "New World Glenview",
+      "physical_store_code": "0000103221",
+      "supermarket": "New World"
+    },
+    {
+      "address": "948 Cameron Road, Gate Pa, Tauranga, 3112",
+      "id": "3e66e1a7-bf5c-4f39-9638-c3f57e5c3889",
+      "latitude": -37.713787,
+      "longitude": 176.142697,
+      "name": "New World Gate Pa",
+      "physical_store_code": "0000103315",
+      "supermarket": "New World"
+    },
+    {
+      "address": "588 Chapel Road, East Tamaki, Auckland, 2013",
+      "id": "c387ac97-5e0a-43ed-9c93-f1edccda298d",
+      "latitude": -36.933874,
+      "longitude": 174.911485,
+      "name": "New World Botany",
+      "physical_store_code": "0000106687",
+      "supermarket": "New World"
+    },
+    {
+      "address": "180 Mokoia Road, Chatswood, Auckland, 0626",
+      "id": "63190876-2bd4-4562-ae34-bb5caebab4f9",
+      "latitude": -36.811428,
+      "longitude": 174.711486,
+      "name": "New World Birkenhead",
+      "physical_store_code": "0000106692",
+      "supermarket": "New World"
+    },
+    {
+      "address": "219 Don McKinnon Drive, Albany, Auckland, 0632",
+      "id": "773ad0a0-024e-46c5-a94b-df1cf86d25cc",
+      "latitude": -36.728207,
+      "longitude": 174.710519,
+      "name": "New World Albany",
+      "physical_store_code": "0000106714",
+      "supermarket": "New World"
+    },
+    {
+      "address": "751 Te Rapa Road, Te Rapa, Hamilton, 3200",
+      "id": "36fb31df-6b41-4a10-ac9a-db831f4f5f47",
+      "latitude": -37.753024,
+      "longitude": 175.239998,
+      "name": "New World Te Rapa",
+      "physical_store_code": "0000103311",
+      "supermarket": "New World"
+    },
+    {
+      "address": "194-200 Ruapehu Drive, Summerhill, Palmerston North, 4410",
+      "id": "471d0657-713c-430a-816f-2ca8448e6b35",
+      "latitude": -40.387171,
+      "longitude": 175.639157,
+      "name": "New World Aokautere",
+      "physical_store_code": "0000108001",
+      "supermarket": "New World"
+    },
+    {
+      "address": "69 Lakewood Avenue, Churton Park, Wellington, 6037",
+      "id": "d4f24174-f962-4db1-9024-75495bb2dfbb",
+      "latitude": -41.203041,
+      "longitude": 174.807839,
+      "name": "New World Churton Park",
+      "physical_store_code": "0000108004",
+      "supermarket": "New World"
+    },
+    {
+      "address": "Bloomfield Terrace, Lower Hutt, 5010",
+      "id": "745d0bda-4b4f-4e4c-ab1f-6d77512f92f4",
+      "latitude": -41.209025,
+      "longitude": 174.90804,
+      "name": "New World Hutt City",
+      "physical_store_code": "0000108013",
+      "supermarket": "New World"
+    },
+    {
+      "address": "26 Ganges Road, Khandallah, Wellington, 6035",
+      "id": "420eff4b-5266-4667-8943-a21caf4b1b03",
+      "latitude": -41.247527,
+      "longitude": 174.791469,
+      "name": "New World Khandallah",
+      "physical_store_code": "0000108017",
+      "supermarket": "New World"
+    },
+    {
+      "address": "11 Bruce Street, Masterton, 5810",
+      "id": "1fa53d02-1ed5-4dd5-b0ac-fd280425c19a",
+      "latitude": -40.948688,
+      "longitude": 175.665517,
+      "name": "New World Masterton",
+      "physical_store_code": "0000108020",
+      "supermarket": "New World"
+    },
+    {
+      "address": "68- 70 Willis Street, Wellington Central, Wellington, 6011",
+      "id": "38b074c4-0e5a-4bd5-b743-d30f28d94982",
+      "latitude": -41.287948,
+      "longitude": 174.775268,
+      "name": "New World Metro Willis St",
+      "physical_store_code": "0000108022",
+      "supermarket": "New World"
+    },
+    {
+      "address": "2 Walton Leigh Avenue, Porirua City Centre, Porirua, 5022",
+      "id": "1926eed9-3d44-4339-9f6e-23c96becab07",
+      "latitude": -41.136386,
+      "longitude": 174.841919,
+      "name": "New World Porirua",
+      "physical_store_code": "0000108033",
+      "supermarket": "New World"
+    },
+    {
+      "address": "14 Oates Street, Stokes Valley, Lower Hutt, 5019",
+      "id": "b525d98f-8df5-415f-837e-abb793821e1e",
+      "latitude": -41.174103,
+      "longitude": 174.980844,
+      "name": "New World Stokes Valley",
+      "physical_store_code": "0000108036",
+      "supermarket": "New World"
+    },
+    {
+      "address": "19 Ohuanga Street, Turangi, 3334",
+      "id": "79b03f4b-5e2b-437c-83f8-54d9dace4999",
+      "latitude": -38.991014,
+      "longitude": 175.809118,
+      "name": "New World Turangi",
+      "physical_store_code": "0000103318",
+      "supermarket": "New World"
+    },
+    {
+      "address": "46 Matai Street, Inglewood, 4330",
+      "id": "ad3ea12c-d9c1-4640-908c-feb9d3c79c11",
+      "latitude": -39.158214,
+      "longitude": 174.20708,
+      "name": "New World Inglewood",
+      "physical_store_code": "0000108049",
+      "supermarket": "New World"
+    },
+    {
+      "address": "580 Whangaparaoa Road, Stanmore Bay, Whangaparaoa, 0932",
+      "id": "7508cf88-9fd0-4e71-b2f2-d564b1decf8d",
+      "latitude": -36.628789,
+      "longitude": 174.732596,
+      "name": "New World Whangaparaoa",
+      "physical_store_code": "0000104116",
+      "supermarket": "New World"
+    },
+    {
+      "address": "240 Ormiston Road, Ormiston, Auckland, 2019",
+      "id": "bc0ebd13-e131-4efd-a226-415c40ce8c4e",
+      "latitude": -36.9647262,
+      "longitude": 174.912703,
+      "name": "New World Ormiston",
+      "physical_store_code": "0000108233",
+      "supermarket": "New World"
+    },
+    {
+      "address": "128 Onerahi Road, Whangarei, 0110",
+      "id": "4664daab-1897-4e69-9117-067b4afd41bb",
+      "latitude": -35.755737,
+      "longitude": 174.367937,
+      "name": "New World Onerahi",
+      "physical_store_code": "0000105008",
+      "supermarket": "New World"
+    },
+    {
+      "address": "99 Kerikeri Road, Kerikeri, 0230",
+      "id": "d48eba45-0c1c-4f5d-b836-0ed54b45c99c",
+      "latitude": -35.2267,
+      "longitude": 173.951368,
+      "name": "New World Kerikeri",
+      "physical_store_code": "0000105029",
+      "supermarket": "New World"
+    },
+    {
+      "address": "14 Marino Place, Kaikohe, 0405",
+      "id": "6b9af900-3f25-4fdb-8418-b43a596aee48",
+      "latitude": -35.408951,
+      "longitude": 173.801012,
+      "name": "New World Kaikohe",
+      "physical_store_code": "0000105005",
+      "supermarket": "New World"
+    },
+    {
+      "address": "120 Hobsonville Road, Hobsonville, Auckland, 0618",
+      "id": "403b1c6f-121c-4945-8aa8-fa53a7e59133",
+      "latitude": -36.79915,
+      "longitude": 174.64505,
+      "name": "New World Hobsonville",
+      "physical_store_code": "0000108232",
+      "supermarket": "New World"
+    },
+    {
+      "address": "55B Glenvar Ridge Road, Long Bay, Auckland, 0630",
+      "id": "f0c21eab-1919-4cba-ac00-5b795947cdcb",
+      "latitude": -36.684964,
+      "longitude": 174.73973,
+      "name": "New World Long Bay",
+      "physical_store_code": "0000108226",
+      "supermarket": "New World"
+    },
+    {
+      "address": "7/11 St Johns Street, Woolston, Christchurch, 8062",
+      "id": "fc91d59f-6ab5-4447-8737-125e09e8e50e",
+      "latitude": -43.5492,
+      "longitude": 172.6842,
+      "name": "New World Ferry Road",
+      "physical_store_code": "0000008105",
+      "supermarket": "New World"
+    },
+    {
+      "address": "116 Revell Street, Hokitika, Hokitika, 7810",
+      "id": "2de22d8e-54d4-4575-be10-0d783324ec75",
+      "latitude": -42.7161,
+      "longitude": 170.9638,
+      "name": "New World Hokitika",
+      "physical_store_code": "0000008148",
+      "supermarket": "New World"
+    },
+    {
+      "address": "2 Inverness Road, Browns Bay, Auckland, 0630",
+      "id": "dbdfdd2a-55f7-4870-9b51-979286323647",
+      "latitude": -36.715961,
+      "longitude": 174.747287,
+      "name": "New World Browns Bay",
+      "physical_store_code": "0000106091",
+      "supermarket": "New World"
+    },
+    {
+      "address": "141 Kitchener Road, Milford, Auckland, 0620",
+      "id": "4ff026b8-a60d-4383-8f0c-6c85f5623afa",
+      "latitude": -36.772298,
+      "longitude": 174.764805,
+      "name": "New World Milford",
+      "physical_store_code": "0000106176",
+      "supermarket": "New World"
+    },
+    {
+      "address": "65 St Georges Street, Papatoetoe, Auckland, 2025",
+      "id": "c570bb70-c783-4692-aee1-6a1b235f9476",
+      "latitude": -36.9802,
+      "longitude": 174.853287,
+      "name": "New World Papatoetoe",
+      "physical_store_code": "0000106047",
+      "supermarket": "New World"
+    },
+    {
+      "address": "187 Great South Road, Manurewa, Auckland, 2102",
+      "id": "adcd3dee-0ead-4b84-944a-809b95e0e36b",
+      "latitude": -37.02246,
+      "longitude": 174.89719,
+      "name": "New World Southmall",
+      "physical_store_code": "0000106233",
+      "supermarket": "New World"
+    },
+    {
+      "address": "11 Moana Avenue, Orewa, 0931",
+      "id": "0f82d3fe-acd0-4e98-b3e7-fbabbf8b8ef5",
+      "latitude": -36.586612,
+      "longitude": 174.69366,
+      "name": "New World Orewa",
+      "physical_store_code": "0000106235",
+      "supermarket": "New World"
+    },
+    {
+      "address": "6 Percy Street, Warkworth, 0910",
+      "id": "b012c209-9dfe-48c2-940c-acf73afebed4",
+      "latitude": -36.398709,
+      "longitude": 174.666795,
+      "name": "New World Warkworth",
+      "physical_store_code": "0000106252",
+      "supermarket": "New World"
+    },
+    {
+      "address": "64 Godley Road, Green Bay, Auckland, 0604",
+      "id": "b6d36090-c7f4-4ff3-9343-5b48159f8f6d",
+      "latitude": -36.93074,
+      "longitude": 174.679184,
+      "name": "New World Green Bay",
+      "physical_store_code": "0000106259",
+      "supermarket": "New World"
+    },
+    {
+      "address": "29-31 East Street, Auckland, 2110",
+      "id": "ef977d89-f3d8-4e8b-8a48-b895ded38646",
+      "latitude": -37.064268,
+      "longitude": 174.941101,
+      "name": "New World Papakura",
+      "physical_store_code": "0000108172",
+      "supermarket": "New World"
+    },
+    {
+      "address": "10 Clonbern Road, Remuera, Auckland, 1050",
+      "id": "91e4dddd-aed7-4ccc-ad0b-dfe25805a495",
+      "latitude": -36.88171,
+      "longitude": 174.79751,
+      "name": "New World Remuera",
+      "physical_store_code": "0000106380",
+      "supermarket": "New World"
+    },
+    {
+      "address": "35 Kenny Street, Waihi, 3610",
+      "id": "2fe74bf7-5123-4faa-8fcb-97db954a714d",
+      "latitude": -37.393116,
+      "longitude": 175.839644,
+      "name": "New World Waihi",
+      "physical_store_code": "0000106552",
+      "supermarket": "New World"
+    },
+    {
+      "address": "89 Thames Street, Morrinsville, 3300",
+      "id": "01076456-6c8a-42c3-a647-2e70a94c4e6c",
+      "latitude": -37.659507,
+      "longitude": 175.522299,
+      "name": "New World Morrinsville",
+      "physical_store_code": "0000106527",
+      "supermarket": "New World"
+    },
+    {
+      "address": "10 Hakiaha Street, Taumarunui, 3920",
+      "id": "517424bd-8840-49e7-8206-58f4da24b1d7",
+      "latitude": -38.8829294,
+      "longitude": 175.2579086,
+      "name": "New World Taumarunui",
+      "physical_store_code": "0000106535",
+      "supermarket": "New World"
+    },
+    {
+      "address": "14 Anzac Street, Cambridge, 3434",
+      "id": "4db31fed-1e21-4884-82a5-cfaa178af8ac",
+      "latitude": -37.893425,
+      "longitude": 175.472202,
+      "name": "New World Cambridge",
+      "physical_store_code": "0000103215",
+      "supermarket": "New World"
+    },
+    {
+      "address": "53 May Road, Mt Roskill, Auckland, 1041",
+      "id": "3ca6692b-e2a3-4d51-95b6-d061b9541e6c",
+      "latitude": -36.908622,
+      "longitude": 174.734362,
+      "name": "New World Mt Roskill",
+      "physical_store_code": "0000106585",
+      "supermarket": "New World"
+    },
+    {
+      "address": "2-6 Crown Lynn Place, New Lynn, Auckland, 0600",
+      "id": "c8998066-d39b-401c-aa6b-d6d18f8d122f",
+      "latitude": -36.910865,
+      "longitude": 174.685569,
+      "name": "New World New Lynn",
+      "physical_store_code": "0000106583",
+      "supermarket": "New World"
+    },
+    {
+      "address": "125 Queen Street, Auckland Central, Auckland, 1010",
+      "id": "60928d93-06fa-4d8f-92a6-8c359e7e846d",
+      "latitude": -36.846405,
+      "longitude": 174.765935,
+      "name": "New World Metro Queen St",
+      "physical_store_code": "0000106620",
+      "supermarket": "New World"
+    },
+    {
+      "address": "100 Lunn Avenue, Mt Wellington, Auckland, 1072",
+      "id": "c3a42e9d-ac58-4abf-be43-17920c720540",
+      "latitude": -36.890274,
+      "longitude": 174.831971,
+      "name": "New World Stonefields",
+      "physical_store_code": "0000106614",
+      "supermarket": "New World"
+    },
+    {
+      "address": "209 Kepa Road, Mission Bay, Auckland, 1071",
+      "id": "491d26a4-78fd-4c6e-85e9-5b67fd97e2cc",
+      "latitude": -36.861179,
+      "longitude": 174.82901,
+      "name": "New World Eastridge",
+      "physical_store_code": "0000106675",
+      "supermarket": "New World"
+    },
+    {
+      "address": "Broadway Avenue, Palmerston North, 4414",
+      "id": "8d2ceac4-9520-4b8e-82bb-7867873580da",
+      "latitude": -40.348551,
+      "longitude": 175.623806,
+      "name": "New World Broadway",
+      "physical_store_code": "0000108002",
+      "supermarket": "New World"
+    },
+    {
+      "address": "9 Gloucester Street, Greenmeadows, Napier, 4112",
+      "id": "0870db3b-2e91-43b7-89aa-ce3c031b3856",
+      "latitude": -39.525324,
+      "longitude": 176.862409,
+      "name": "New World Greenmeadows",
+      "physical_store_code": "0000108009",
+      "supermarket": "New World"
+    },
+    {
+      "address": "6 Medway Street, Island Bay, Wellington, 6023",
+      "id": "d4408e0f-5268-42c2-ba76-2bc9732d4316",
+      "latitude": -41.334534,
+      "longitude": 174.772497,
+      "name": "New World Island Bay",
+      "physical_store_code": "0000108014",
+      "supermarket": "New World"
+    },
+    {
+      "address": "1 Joan Gaskell Drive, Whitianga, 3510",
+      "id": "412c5dcf-142c-4133-b766-7bd21c30ae01",
+      "latitude": -36.834308,
+      "longitude": 175.699435,
+      "name": "New World Whitianga",
+      "physical_store_code": "0000106693",
+      "supermarket": "New World"
+    },
+    {
+      "address": "308 Aickin Road, Whangamata, 3620",
+      "id": "c4d78c33-1f9c-4039-8cd5-82ddb43fbe16",
+      "latitude": -37.201793,
+      "longitude": 175.867411,
+      "name": "New World Whangamata",
+      "physical_store_code": "0000106696",
+      "supermarket": "New World"
+    },
+    {
+      "address": "159 Kapiti Road, Paraparaumu, 5032",
+      "id": "f54433e6-5c6c-41b9-a5e2-d7502f454da8",
+      "latitude": -40.905625,
+      "longitude": 174.994131,
+      "name": "New World Kapiti",
+      "physical_store_code": "0000108015",
+      "supermarket": "New World"
+    },
+    {
+      "address": "108-110 Main Road, Kumeu, Auckland, 0810",
+      "id": "686c8e35-aa87-40e9-b46e-8ffbad4713aa",
+      "latitude": -36.774933,
+      "longitude": 174.553672,
+      "name": "New World Kumeu",
+      "physical_store_code": "0000106727",
+      "supermarket": "New World"
+    },
+    {
+      "address": "200 Mangorei Road, Merrilands, New Plymouth, 4312",
+      "id": "04de234b-9f3e-4388-9662-7a4c8d7180c8",
+      "latitude": -39.06659,
+      "longitude": 174.102988,
+      "name": "New World Merrilands",
+      "physical_store_code": "0000108021",
+      "supermarket": "New World"
+    },
+    {
+      "address": "195 Riddiford Street, Wellington, 6021",
+      "id": "ff680fec-3a34-4666-99ed-ab1a9d1c6ba0",
+      "latitude": -41.314466,
+      "longitude": 174.780574,
+      "name": "New World Newtown",
+      "physical_store_code": "0000108026",
+      "supermarket": "New World"
+    },
+    {
+      "address": "12 Goldfinch Street, Ohakune, 4625",
+      "id": "11b389ec-b197-4476-9b7f-2eaeffa2c1c9",
+      "latitude": -39.41772,
+      "longitude": 175.39904,
+      "name": "New World Ohakune",
+      "physical_store_code": "0000108027",
+      "supermarket": "New World"
+    },
+    {
+      "address": "Denmark Street, Dannevirke, 4930",
+      "id": "aed206ae-c0ba-4c81-b7e9-7b420bc3616c",
+      "latitude": -40.210911,
+      "longitude": 176.096788,
+      "name": "New World Dannevirke",
+      "physical_store_code": "0000108005",
+      "supermarket": "New World"
+    },
+    {
+      "address": "Cnr Main and Whyte Streets, FOXTON, 4814",
+      "id": "ebcc2edb-73bd-4d8e-b6f3-528849677b62",
+      "latitude": -40.472517,
+      "longitude": 175.281707,
+      "name": "New World Foxton",
+      "physical_store_code": "0000108008",
+      "supermarket": "New World"
+    },
+    {
+      "address": "400 Heretaunga Street East, Hastings, 4122",
+      "id": "be37802e-1355-466e-9a1b-1ede5a099705",
+      "latitude": -39.644715,
+      "longitude": 176.847154,
+      "name": "New World Hastings",
+      "physical_store_code": "0000108010",
+      "supermarket": "New World"
+    },
+    {
+      "address": "34 Maadi Road, Onekawa, Napier, 4110",
+      "id": "997b5318-0d47-4eac-b4ec-bbbd9feb8ae3",
+      "latitude": -39.508662,
+      "longitude": 176.887458,
+      "name": "New World Onekawa",
+      "physical_store_code": "0000108028",
+      "supermarket": "New World"
+    },
+    {
+      "address": "150 Molesworth Street, Thorndon, Wellington, 6011",
+      "id": "3a5fd4b8-6ea0-4a6c-aeec-5af83e093322",
+      "latitude": -41.274006,
+      "longitude": 174.778067,
+      "name": "New World Thorndon",
+      "physical_store_code": "0000108040",
+      "supermarket": "New World"
+    },
+    {
+      "address": "27 Russell Street, Waipukurau, 4200",
+      "id": "b2f012df-3c55-4bca-98ba-e30c3cd3aa70",
+      "latitude": -39.99467,
+      "longitude": 176.55584,
+      "name": "New World Waipukurau",
+      "physical_store_code": "0000108043",
+      "supermarket": "New World"
+    },
+    {
+      "address": "236 Karori Road, Karori, Wellington, 6012",
+      "id": "7daec5c2-789a-4577-ba1f-39e730acdd27",
+      "latitude": -41.284257,
+      "longitude": 174.738052,
+      "name": "New World Karori",
+      "physical_store_code": "0000108016",
+      "supermarket": "New World"
+    },
+    {
+      "address": "21 Bath Street, Levin, 5510",
+      "id": "c78b7034-7f10-480a-b502-2e5c4066a790",
+      "latitude": -40.623065,
+      "longitude": 175.282791,
+      "name": "New World Levin",
+      "physical_store_code": "0000108018",
+      "supermarket": "New World"
+    },
+    {
+      "address": "37 Oxford Street, Tawa, Wellington, 5028",
+      "id": "bbe5aa58-69dd-4b29-abe6-58670234b3b7",
+      "latitude": -41.169962,
+      "longitude": 174.82611,
+      "name": "New World Tawa",
+      "physical_store_code": "0000108039",
+      "supermarket": "New World"
+    },
+    {
+      "address": "374 Victoria Avenue, Whanganui, 4500",
+      "id": "24be83cd-b9f2-47f0-8895-82867e3d4f08",
+      "latitude": -39.926194,
+      "longitude": 175.041161,
+      "name": "New World Whanganui",
+      "physical_store_code": "0000108046",
+      "supermarket": "New World"
+    },
+    {
+      "address": "Discovery Drive, Whitby Village Centre, Porirua, 5024",
+      "id": "f5da324f-f415-4c8d-a360-ea8d2c74d49b",
+      "latitude": -41.117024,
+      "longitude": 174.893023,
+      "name": "New World Whitby",
+      "physical_store_code": "0000108048",
+      "supermarket": "New World"
+    },
+    {
+      "address": "Cnr Bracken and Newlands Road, Newlands, Wellington, 6037",
+      "id": "1ee51b21-c2c8-42c4-b01e-8ef081738e23",
+      "latitude": -41.223472,
+      "longitude": 174.823202,
+      "name": "New World Newlands",
+      "physical_store_code": "0000108025",
+      "supermarket": "New World"
+    },
+    {
+      "address": "77 Union Road, Howick, Auckland, 2014",
+      "id": "cb3f240a-a157-490c-9e80-f537d202ef49",
+      "latitude": -36.903857,
+      "longitude": 174.925067,
+      "name": "New World Howick",
+      "physical_store_code": "0000106731",
+      "supermarket": "New World"
+    },
+    {
+      "address": "60 High Street South, -, Carterton, 5713",
+      "id": "1257ed9a-1790-4ad0-beae-383397043e35",
+      "latitude": -41.026035,
+      "longitude": 175.526349,
+      "name": "New World Carterton",
+      "physical_store_code": "0000108003",
+      "supermarket": "New World"
+    },
+    {
+      "address": "124 Regan Street, Stratford, 4332",
+      "id": "02874261-edfe-4daa-886c-09429e2d06d7",
+      "latitude": -39.337111,
+      "longitude": 174.286329,
+      "name": "New World Stratford",
+      "physical_store_code": "0000108037",
+      "supermarket": "New World"
+    },
+    {
+      "address": "167 Bank Street, Regent, Whangarei, 0112",
+      "id": "1fc7bc09-1d0c-4a88-a9f4-5f1536d797dd",
+      "latitude": -35.716277,
+      "longitude": 174.321962,
+      "name": "New World Regent",
+      "physical_store_code": "0000109999",
+      "supermarket": "New World"
+    },
+    {
+      "address": "279 Wakefield Street, Wellington, 6011",
+      "id": "89ba1656-0ad7-4af0-8694-08bf335e99b9",
+      "latitude": -41.292409,
+      "longitude": 174.784342,
+      "name": "New World Wellington City",
+      "physical_store_code": "0000108047",
+      "supermarket": "New World"
+    },
+    {
+      "address": "427 Wellington Road, Marton, 4710",
+      "id": "e2852742-1bb5-42a5-8635-4c4e7c7cb758",
+      "latitude": -40.07666,
+      "longitude": 175.379646,
+      "name": "New World Marton",
+      "physical_store_code": "0000108019",
+      "supermarket": "New World"
+    },
+    {
+      "address": "48 Miramar Avenue, Miramar, WELLINGTON, 6022",
+      "id": "5255b27a-b224-4f58-a424-144e81ecf244",
+      "latitude": -41.315835,
+      "longitude": 174.814635,
+      "name": "New World Miramar",
+      "physical_store_code": "0000108023",
+      "supermarket": "New World"
+    },
+    {
+      "address": "78 Courtenay Street, New Plymouth, 4310",
+      "id": "55d4fe03-e82e-44a8-8324-57f3afcf16ba",
+      "latitude": -39.05782,
+      "longitude": 174.07774,
+      "name": "New World New Plymouth",
+      "physical_store_code": "0000108024",
+      "supermarket": "New World"
+    },
+    {
+      "address": "155-163 Main Highway, Otaki, 5512",
+      "id": "5dde0d09-05ca-4b78-ab83-00e47233cf55",
+      "latitude": -40.763486,
+      "longitude": 175.153556,
+      "name": "New World Otaki",
+      "physical_store_code": "0000108029",
+      "supermarket": "New World"
+    },
+    {
+      "address": "101 Main Street, Pahiatua, 4910",
+      "id": "b01a01ac-d6ef-45ef-b9fe-d66036d55b56",
+      "latitude": -40.452412,
+      "longitude": 175.841836,
+      "name": "New World Pahiatua",
+      "physical_store_code": "0000108030",
+      "supermarket": "New World"
+    },
+    {
+      "address": "93-97 Mana Esplanade, Paremata, Porirua, 5026",
+      "id": "6defcd27-e944-45ad-982f-768ab3b4c2ac",
+      "latitude": -41.0944,
+      "longitude": 174.868615,
+      "name": "New World Paremata",
+      "physical_store_code": "0000108031",
+      "supermarket": "New World"
+    },
+    {
+      "address": "179-197 Main Street, Palmerston North, 4412",
+      "id": "59b56cc6-645c-4fa8-836b-c667662d7ec4",
+      "latitude": -40.359638,
+      "longitude": 175.600741,
+      "name": "New World Pioneer",
+      "physical_store_code": "0000108032",
+      "supermarket": "New World"
+    },
+    {
+      "address": "28 Whitemans Road, Silverstream, Upper Hutt, 5019",
+      "id": "692b45a2-2ab9-49de-adc3-e4a0ddd661a5",
+      "latitude": -41.148436,
+      "longitude": 175.012536,
+      "name": "New World Silverstream",
+      "physical_store_code": "0000108035",
+      "supermarket": "New World"
+    },
+    {
+      "address": "112 Hautapu Street, Taihape, 4720",
+      "id": "65201d94-8805-4be8-b1ba-f547d6bf7ecd",
+      "latitude": -39.67708,
+      "longitude": 175.798534,
+      "name": "New World Taihape",
+      "physical_store_code": "0000108038",
+      "supermarket": "New World"
+    },
+    {
+      "address": "5 Parata Street, Waikanae, 5036",
+      "id": "55231137-b7be-48f2-b8a0-6aaed59f4540",
+      "latitude": -40.874943,
+      "longitude": 175.066744,
+      "name": "New World Waikanae",
+      "physical_store_code": "0000108041",
+      "supermarket": "New World"
+    },
+    {
+      "address": "51 Queen Street, Wairoa, 4108",
+      "id": "83f2d5fc-132b-4603-aaaf-323e4a426fa0",
+      "latitude": -39.033806,
+      "longitude": 177.418651,
+      "name": "New World Wairoa",
+      "physical_store_code": "0000108262",
+      "supermarket": "New World"
+    },
+    {
+      "address": "42 Queen Street, Waitara, 4320",
+      "id": "99798e55-18bb-4f16-9f3e-425c555111a7",
+      "latitude": -39.000167,
+      "longitude": 174.236804,
+      "name": "New World Waitara",
+      "physical_store_code": "0000108045",
+      "supermarket": "New World"
+    },
+    {
+      "address": "Cnr Vanguard and Gloucester Street, Nelson South, Nelson, 7010",
+      "id": "91b26327-b240-4778-a3d8-190dfc8c16f3",
+      "latitude": -41.2757,
+      "longitude": 173.2781,
+      "name": "New World Nelson City",
+      "physical_store_code": "0000008134",
+      "supermarket": "New World"
+    },
+    {
+      "address": "2 Mounter Avenue, Northwood, Christchurch, 8051",
+      "id": "0637c08c-ac36-4940-8582-38e44a4812fa",
+      "latitude": -43.4596,
+      "longitude": 172.6225,
+      "name": "New World Northwood",
+      "physical_store_code": "0000008111",
+      "supermarket": "New World"
+    },
+    {
+      "address": "124 Beach Road, Kaikoura, Kaikoura, 7300",
+      "id": "8e5b742c-0957-4b97-b9e2-290d75c02046",
+      "latitude": -42.3877,
+      "longitude": 173.6804,
+      "name": "New World Kaikoura",
+      "physical_store_code": "0000008113",
+      "supermarket": "New World"
+    },
+    {
+      "address": "420 Marshland Road, Marshland, Christchurch, 8083",
+      "id": "5b8f8e3b-e1a0-4a11-b16b-9cfe782c124e",
+      "latitude": -43.4749,
+      "longitude": 172.6621,
+      "name": "New World Prestons",
+      "physical_store_code": "0000008071",
+      "supermarket": "New World"
+    },
+    {
+      "address": "271 High Street, Motueka, Motueka, 7120",
+      "id": "b7fe0c9e-24e9-46f2-a59a-95dce1725b06",
+      "latitude": -41.1146,
+      "longitude": 173.0124,
+      "name": "New World Motueka",
+      "physical_store_code": "0000008098",
+      "supermarket": "New World"
+    },
+    {
+      "address": "51 Skyhawk Road, Wigram, Christchurch, 8042",
+      "id": "3ee7214b-6df4-4fdb-9dd6-3b2fc252ba6b",
+      "latitude": -43.5532267333,
+      "longitude": 172.5580681167,
+      "name": "New World Wigram",
+      "physical_store_code": "0000008133",
+      "supermarket": "New World"
+    },
+    {
+      "address": "9 Lanark Street, Balclutha, 9230",
+      "id": "80bebcaf-d5a3-4ca6-a999-beab902aef55",
+      "latitude": -46.2381,
+      "longitude": 169.7437,
+      "name": "New World Balclutha",
+      "physical_store_code": "0000008151",
+      "supermarket": "New World"
+    },
+    {
+      "address": "75 Moore Street, Ashburton, 7700",
+      "id": "30a90cf9-3547-46d1-b8b1-cc9ff4af5f88",
+      "latitude": -43.9039,
+      "longitude": 171.7439,
+      "name": "New World Ashburton",
+      "physical_store_code": "0000008025",
+      "supermarket": "New World"
+    },
+    {
+      "address": "52-56 Anzac Street, Takapuna, Auckland, 0622",
+      "id": "1898a189-acf3-4320-8704-7a9cc6b3924d",
+      "latitude": -36.78756,
+      "longitude": 174.77005,
+      "name": "New World Metro Shore City",
+      "physical_store_code": "0000108224",
+      "supermarket": "New World"
+    },
+    {
+      "address": "1/12 Hawthorne Dr, Remarkables Park, Queenstown, 9300",
+      "id": "6ea5a1cf-56b8-44eb-856c-fd916560e92e",
+      "latitude": -45.0258,
+      "longitude": 168.7419,
+      "name": "New World Queenstown",
+      "physical_store_code": "0000008069",
+      "supermarket": "New World"
+    },
+    {
+      "address": "17 Paerata Road, Pukekohe, Auckland, 2120",
+      "id": "c032987b-0387-4fc0-bb44-ce7510e35335",
+      "latitude": -37.18988,
+      "longitude": 174.90306,
+      "name": "New World Pukekohe",
+      "physical_store_code": "0000108222",
+      "supermarket": "New World"
+    },
+    {
+      "address": "4 Freswick Street, Blenheim, Blenheim, 7201",
+      "id": "756356f9-9985-40c9-a368-bf1ea8072b0e",
+      "latitude": -41.5141,
+      "longitude": 173.9613,
+      "name": "New World Blenheim",
+      "physical_store_code": "0000008150",
+      "supermarket": "New World"
+    },
+    {
+      "address": "83 Sir Tim Wallis Drive, Wanaka, Wanaka, 9305",
+      "id": "ff528de5-233a-4cf6-a3a9-bc140565367e",
+      "latitude": -44.6993,
+      "longitude": 169.1553,
+      "name": "New World Three Parks",
+      "physical_store_code": "0000008077",
+      "supermarket": "New World"
+    },
+    {
+      "address": "20 Dunmore Street, Wānaka, Wānaka, 9305",
+      "id": "341f876f-9a83-4882-aa79-5e5c9dc8fb2e",
+      "latitude": -44.6963,
+      "longitude": 169.135,
+      "name": "New World Wanaka",
+      "physical_store_code": "0000008144",
+      "supermarket": "New World"
+    },
+    {
+      "address": "77 Gerald Street, Lincoln, Lincoln, 7608",
+      "id": "bfe3a4ae-2f6d-46ed-ba60-28451a4807bf",
+      "latitude": -43.642,
+      "longitude": 172.4739,
+      "name": "New World Lincoln",
+      "physical_store_code": "0000008143",
+      "supermarket": "New World"
+    },
+    {
+      "address": "42 Nuffield Street, Newmarket, Auckland, 1023",
+      "id": "51ee2a79-4693-410c-9287-66940847736d",
+      "latitude": -36.872037,
+      "longitude": 174.777922,
+      "name": "New World Newmarket",
+      "physical_store_code": "0000108265",
+      "supermarket": "New World"
+    },
+    {
+      "address": "145 Wai-Iti Road, Highfield, Timaru, 7910",
+      "id": "12c83069-9220-466b-9145-6ac5706d841c",
+      "latitude": -44.389894977891,
+      "longitude": 171.22618470502,
+      "name": "New World Timaru",
+      "physical_store_code": "0000008116",
+      "supermarket": "New World"
+    },
+    {
+      "address": "185 King Street, Temuka, Temuka, 7920",
+      "id": "d83b5f5e-db6e-4696-823e-5940493ef41c",
+      "latitude": -44.2413,
+      "longitude": 171.2763,
+      "name": "New World Temuka",
+      "physical_store_code": "0000008146",
+      "supermarket": "New World"
+    },
+    {
+      "address": "293 Great North Road, Winton, Winton, 9720",
+      "id": "5c3070dd-312f-4755-a92c-7607b2a694e4",
+      "latitude": -46.1417,
+      "longitude": 168.3256,
+      "name": "New World Winton",
+      "physical_store_code": "0000008118",
+      "supermarket": "New World"
+    },
+    {
+      "address": "133 Great King Street, Dunedin Central, Dunedin, 9016",
+      "id": "50a98f3b-ffbd-4229-84bc-bfd3c956119f",
+      "latitude": -45.8713,
+      "longitude": 170.5083,
+      "name": "New World Centre City",
+      "physical_store_code": "0000008117",
+      "supermarket": "New World"
+    },
+    {
+      "address": "92 Wilsons Road, Saint Martins, Christchurch, 8023",
+      "id": "bae1da58-ac6b-4ef2-816d-4932691218d1",
+      "latitude": -43.5578,
+      "longitude": 172.6548,
+      "name": "New World St Martins",
+      "physical_store_code": "0000008003",
+      "supermarket": "New World"
+    },
+    {
+      "address": "288 Stanmore Road, Richmond, Christchurch, 8013",
+      "id": "a0d86b5f-fdf4-44d1-b7a2-f418bdb37f4e",
+      "latitude": -43.5203,
+      "longitude": 172.6568,
+      "name": "New World Stanmore",
+      "physical_store_code": "0000008112",
+      "supermarket": "New World"
+    },
+    {
+      "address": "244 Palmerston St, Nelson, Westport, 7825",
+      "id": "401accb9-6430-45a1-888d-29337ab34f12",
+      "latitude": -41.7575,
+      "longitude": 171.5989,
+      "name": "New World Westport",
+      "physical_store_code": "0000008057",
+      "supermarket": "New World"
+    },
+    {
+      "address": "Cnr High & Marlborough Streets, Greymouth, Greymouth, 7805",
+      "id": "afbe3446-1f57-4dca-9a58-0c7d5a4a6020",
+      "latitude": -42.4617,
+      "longitude": 171.1961,
+      "name": "New World Greymouth",
+      "physical_store_code": "0000008147",
+      "supermarket": "New World"
+    },
+    {
+      "address": "10 Hartstonge Avenue, Mosgiel, Mosgiel, 9024",
+      "id": "b007db90-0a16-47d8-9a89-407be8496d9a",
+      "latitude": -45.8725,
+      "longitude": 170.3493,
+      "name": "New World Mosgiel",
+      "physical_store_code": "0000008095",
+      "supermarket": "New World"
+    },
+    {
+      "address": "41 Bishopdale Court, Bishopdale, Christchurch, 8053",
+      "id": "b3158cd8-72b9-40e5-8c4e-abd43c1be305",
+      "latitude": -43.4885,
+      "longitude": 172.5872,
+      "name": "New World Bishopdale",
+      "physical_store_code": "0000008137",
+      "supermarket": "New World"
+    },
+    {
+      "address": "19 Bridge Street, Opotiki, 3122",
+      "id": "e42fdd7c-6a4e-48d5-964c-5654fd36992b",
+      "latitude": -38.011812,
+      "longitude": 177.275962,
+      "name": "New World Opotiki",
+      "physical_store_code": "0000103118",
+      "supermarket": "New World"
+    },
+    {
+      "address": "247 Old Taupo Road, Hillcrest, Rotorua, 3015",
+      "id": "a799b706-07b8-4825-9524-95b03c9e0b14",
+      "latitude": -38.146066,
+      "longitude": 176.237248,
+      "name": "New World Westend",
+      "physical_store_code": "0000103096",
+      "supermarket": "New World"
+    },
+    {
+      "address": "19-23 Memorial Avenue, Fendalton, Christchurch, 8053",
+      "id": "81f807e9-1879-484c-b27e-ded56245c6a4",
+      "latitude": -43.5179,
+      "longitude": 172.5883,
+      "name": "New World Fendalton",
+      "physical_store_code": "0000008023",
+      "supermarket": "New World"
+    },
+    {
+      "address": "6 North Road, North East Valley, Dunedin, 9010",
+      "id": "4f76214d-40a5-4c71-a94f-81d45f3f0a59",
+      "latitude": -45.8549,
+      "longitude": 170.5197,
+      "name": "New World Gardens",
+      "physical_store_code": "0000008093",
+      "supermarket": "New World"
+    },
+    {
+      "address": "95 Queen Street, Waimate, Waimate, 7924",
+      "id": "04ba529d-3dee-4f86-adb6-62b0111114d7",
+      "latitude": -44.7337,
+      "longitude": 171.0472,
+      "name": "New World Waimate",
+      "physical_store_code": "0000008140",
+      "supermarket": "New World"
+    },
+    {
+      "address": "346 Halswell Road, Halswell, Christchurch, 8025",
+      "id": "95d161ea-9a31-4fca-acbe-96f271d627df",
+      "latitude": -43.5806,
+      "longitude": 172.566,
+      "name": "New World Halswell",
+      "physical_store_code": "0000008149",
+      "supermarket": "New World"
+    },
+    {
+      "address": "72 Wansbeck Street, Oamaru, Oamaru, 9400",
+      "id": "421d563e-ce40-4d5c-a79c-4afb521fc5b0",
+      "latitude": -45.102,
+      "longitude": 170.9548,
+      "name": "New World Oamaru",
+      "physical_store_code": "0000008142",
+      "supermarket": "New World"
+    },
+    {
+      "address": "51 Kakahoroa Drive, Whakatane, 3120",
+      "id": "96c43bec-8c0d-4752-b417-266546fddda1",
+      "latitude": -37.950929,
+      "longitude": 176.993759,
+      "name": "New World Whakatane",
+      "physical_store_code": "0000103014",
+      "supermarket": "New World"
+    },
+    {
+      "address": "42 Aorangi Street, Feilding, 4702",
+      "id": "810832cb-2748-4e87-bc17-929eab5a5a61",
+      "latitude": -40.228015,
+      "longitude": 175.569532,
+      "name": "New World Feilding",
+      "physical_store_code": "0000108213",
+      "supermarket": "New World"
+    },
+    {
+      "address": "107 Neale Avenue, Stoke, Nelson, 7011",
+      "id": "e3a57a0b-156f-4994-a06a-921df65c20cc",
+      "latitude": -41.3127,
+      "longitude": 173.2327,
+      "name": "New World Stoke",
+      "physical_store_code": "0000008109",
+      "supermarket": "New World"
+    },
+    {
+      "address": "6-8 Main Road, Te Kauwhata, 3710",
+      "id": "5eb8d7a2-c5e4-4046-a17e-be2806626fd7",
+      "latitude": -37.404219,
+      "longitude": 175.143247,
+      "name": "New World Te Kauwhata",
+      "physical_store_code": "0000108259",
+      "supermarket": "New World"
+    },
+    {
+      "address": "10 Bob Robertson Drive, Woodend, 7691",
+      "id": "f7f6ce3e-c7f6-459a-8466-e29d868257d1",
+      "latitude": -43.308,
+      "longitude": 172.6713,
+      "name": "New World Ravenswood",
+      "physical_store_code": "0000008088",
+      "supermarket": "New World"
+    },
+    {
+      "address": "280 Cambridge Road, Hillcrest, Hamilton, 3216",
+      "id": "177c82e0-7343-434c-8b98-9c20e72561c2",
+      "latitude": -37.801952,
+      "longitude": 175.322549,
+      "name": "New World Hillcrest",
+      "physical_store_code": "0000103177",
+      "supermarket": "New World"
+    },
+    {
+      "address": "39-51 Rora Street, Te Kuiti, 3910",
+      "id": "514b1db1-fe88-4e79-a6dd-f1e0d4d4c01f",
+      "latitude": -38.331839,
+      "longitude": 175.16319,
+      "name": "New World Te Kuiti",
+      "physical_store_code": "0000108171",
+      "supermarket": "New World"
+    },
+    {
+      "address": "2 Irk Street, Gore, Gore, 9710",
+      "id": "ca27a97f-03d4-4969-9400-e3af61c99816",
+      "latitude": -46.0993,
+      "longitude": 168.9427,
+      "name": "New World Gore",
+      "physical_store_code": "0000008138",
+      "supermarket": "New World"
+    },
+    {
+      "address": "47C/57C Peer Street, Upper Riccarton, Christchurch, 8041",
+      "id": "c6abac35-b75f-4a02-9b43-7ad5a7c7aa37",
+      "latitude": -43.5260484333,
+      "longitude": 172.5699320333,
+      "name": "New World Ilam",
+      "physical_store_code": "0000008096",
+      "supermarket": "New World"
+    },
+    {
+      "address": "84 Bridge Street, Tokoroa, 3420",
+      "id": "c15270b3-4ced-4b8e-be01-16b9fc31c4c7",
+      "latitude": -38.218917,
+      "longitude": 175.867537,
+      "name": "New World Tokoroa",
+      "physical_store_code": "0000103180",
+      "supermarket": "New World"
+    },
+    {
+      "address": "244 Elles Road, Strathern, Invercargill, 9812",
+      "id": "a7c2a0cc-d39d-4b26-93ba-09adaa3a8bf6",
+      "latitude": -46.4269544,
+      "longitude": 168.36167166667,
+      "name": "New World Elles Road",
+      "physical_store_code": "0000008136",
+      "supermarket": "New World"
+    },
+    {
+      "address": "52 Charles Street, Kaiapoi, Kaiapoi, 7630",
+      "id": "e197b67e-2cf9-4bae-bae5-5b8ffdccfa87",
+      "latitude": -43.3823,
+      "longitude": 172.6596,
+      "name": "New World Kaiapoi",
+      "physical_store_code": "0000008145",
+      "supermarket": "New World"
+    },
+    {
+      "address": "402 Thames Highway, Oamaru North, Oamaru, 9400",
+      "id": "10de9574-cf98-4bc8-973d-3d3e36cb0c4d",
+      "latitude": -45.0766,
+      "longitude": 170.9849,
+      "name": "New World Waitaki",
+      "physical_store_code": "0000008101",
+      "supermarket": "New World"
+    },
+    {
+      "address": "92 Rolleston Drive, Rolleston, Rolleston, 7614",
+      "id": "84c3115a-fe09-4bc3-b373-f43cc9e9627c",
+      "latitude": -43.5968,
+      "longitude": 172.3825,
+      "name": "New World Rolleston",
+      "physical_store_code": "0000008108",
+      "supermarket": "New World"
+    },
+    {
+      "address": "51 Windsor Street, Windsor, Invercargill, 9810",
+      "id": "d0914aa0-ab30-4354-a223-6ba9ef6069c1",
+      "latitude": -46.3954,
+      "longitude": 168.3661,
+      "name": "New World Windsor",
+      "physical_store_code": "0000008070",
+      "supermarket": "New World"
+    },
+    {
+      "address": "10 Good Street, Rangiora, Rangiora, 7400",
+      "id": "5080816d-825d-4a6e-9835-a93d986b1ee0",
+      "latitude": -43.302554280866,
+      "longitude": 172.594487955856,
+      "name": "New World Rangiora",
+      "physical_store_code": "0000008132",
+      "supermarket": "New World"
+    },
+    {
+      "address": "2 Murray Terrace, Cromwell, Cromwell, 9310",
+      "id": "9829c627-42c8-4ad7-b550-f9dba9fcd44a",
+      "latitude": -45.0375,
+      "longitude": 169.1943,
+      "name": "New World Cromwell",
+      "physical_store_code": "0000008114",
+      "supermarket": "New World"
+    },
+    {
+      "address": "175 Durham Street South, Christchurch Central, Christchurch, 8011",
+      "id": "c1aaac72-38c0-4cc0-ad05-f241047d88c5",
+      "latitude": -43.5388269667,
+      "longitude": 172.6332807333,
+      "name": "New World Durham Street",
+      "physical_store_code": "0000008135",
+      "supermarket": "New World"
+    },
+    {
+      "address": "83 Molesworth Drive, Mangawhai, 0505",
+      "id": "6739e54f-ffab-47b9-9fe1-899d91a7ad78",
+      "latitude": -36.1124401,
+      "longitude": 174.572448,
+      "name": "New World Mangawhai",
+      "physical_store_code": "0000108267",
+      "supermarket": "New World"
+    },
+    {
+      "address": "89 Centennial Avenue, Alexandra, Alexandra, 9320",
+      "id": "8d098344-5474-4626-ae1c-90ed0f57306f",
+      "latitude": -45.2499,
+      "longitude": 169.387,
+      "name": "New World Alexandra",
+      "physical_store_code": "0000008100",
+      "supermarket": "New World"
+    },
+    {
+      "address": "255 The Boulevard, Papamoa East, Tauranga, 3118",
+      "id": "c3f80f70-0ad3-409a-b60a-9eac6ad38681",
+      "latitude": -37.7273,
+      "longitude": 176.3464,
+      "name": "New World The Sands",
+      "physical_store_code": "0000108325",
+      "supermarket": "New World"
+    },
+    {
+      "address": "1132 Great North Road, Point Chevalier, Auckland, 1022",
+      "id": "871ff39f-99b5-4030-b035-b2dab7225082",
+      "latitude": -36.8699276,
+      "longitude": 174.7126578,
+      "name": "New World Point Chevalier",
+      "physical_store_code": "0000108375",
+      "supermarket": "New World"
+    },
+    {
+      "address": "34 Havelock Road, Havelock North, 4130",
+      "id": "d999418f-c2ca-4748-b56b-15ee82c6e85e",
+      "latitude": -39.668128,
+      "longitude": 176.875873,
+      "name": "New World Havelock North",
+      "physical_store_code": "0000108327",
+      "supermarket": "New World"
+    },
+    {
+      "address": "1 Alberton Avenue, Mt Albert, Auckland, 1025",
+      "id": "dae2d4e3-9b97-41f4-a969-4eded0bd3554",
+      "latitude": -36.880146,
+      "longitude": 174.72622,
+      "name": "New World Mt Albert",
+      "physical_store_code": "0000108333",
+      "supermarket": "New World"
+    },
+    {
+      "address": "45 Waharoa East Road, Matamata, 3400",
+      "id": "524d7a29-550c-4d14-8f89-ec334a60cd6d",
+      "latitude": -37.803437,
+      "longitude": 175.769835,
+      "name": "New World Matamata",
+      "physical_store_code": "0000103182",
+      "supermarket": "New World"
+    },
+    {
+      "address": "Tarawera Court, Kawerau, 3127",
+      "id": "f145f120-ba19-4524-9fc5-e8caf516e209",
+      "latitude": -38.085853,
+      "longitude": 176.700944,
+      "name": "New World Kawerau",
+      "physical_store_code": "0000103009",
+      "supermarket": "New World"
+    }
+  ],
+  "supermarket": "New World"
+}

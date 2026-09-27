@@ -1,10 +1,8 @@
 use eframe::egui::{self, CentralPanel, Panel, ScrollArea, Ui};
 use std::cell::RefCell;
-use std::collections::HashSet;
-use std::ops::Deref;
 use std::rc::Rc;
 use util::coordinate::Coordinate;
-use util::store::StoreBrand;
+
 
 use crate::gui::location_search::{LocationData, LocationStatus};
 use crate::gui::output_routes::OutputRoutesData;
@@ -39,13 +37,26 @@ pub trait ShowableWidget {
 
 impl ShowableWidget for AppData {
     fn show(&mut self, ui: &mut Ui) {
-        ScrollArea::both().show(ui, |ui| {
+        //ScrollArea::both().show(ui, |ui| {
             Panel::left("left_panel").show_inside(ui, |ui| {
-                self.shopping_list.show(ui);
+                let list_height = ui.available_height().min(300.0);
+                ScrollArea::vertical()
+                    .id_salt("shopping_list_scroll")
+                    .max_height(list_height)
+                    .auto_shrink([false, true])
+                    .show(ui, |ui| {
+                        self.shopping_list.show(ui);
+                    });
                 ui.separator();
                 self.preferences.show(ui);
                 ui.separator();
-                self.supermarkets.show(ui);
+                ScrollArea::vertical()
+                    .id_salt("supermarkets_scroll")
+                    .max_height(list_height)
+                    .auto_shrink([false, true])
+                    .show(ui, |ui| {
+                        self.supermarkets.show(ui);
+                    });
                 ui.separator();
                 self.transit.show(ui);
                 ui.separator();
@@ -57,7 +68,7 @@ impl ShowableWidget for AppData {
                 self.search_button(ui);
                 self.output_routes.show(ui);
             });
-        });
+        //});
     }
 }
 
@@ -101,17 +112,7 @@ impl AppData {
                 log::debug!("button clicked");
                 // Alex
                 // TODO: Fix this up once we have a better format of all the stores and individual location blacklisting
-                let mut banned_stores = HashSet::<StoreBrand>::new();
-
-                if !self.supermarkets.include_paknsave {
-                    banned_stores.insert(StoreBrand::Paknsave);
-                }
-                if !self.supermarkets.include_newworld {
-                    banned_stores.insert(StoreBrand::Newworld);
-                }
-                if !self.supermarkets.include_woolies {
-                    banned_stores.insert(StoreBrand::Woolworths);
-                }
+                let banned_stores = self.supermarkets.banned_stores();
 
                 let filters_builder = StoreFilters::builder()
                     .location(Coordinate::from_lat_long_f64(
@@ -120,7 +121,7 @@ impl AppData {
                     ))
                     .range(self.preferences.max_range.clone())
                     .max_store_visits(self.preferences.max_stores)
-                    .disallow_brands(banned_stores.iter().copied().collect::<Vec<_>>().deref());
+                    .disallow_brands(&banned_stores);
                 let filters = filters_builder.build();
 
                 let _origin_label = self.location_search.borrow().address.clone();
