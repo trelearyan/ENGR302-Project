@@ -54,9 +54,9 @@ fn main() -> ExitCode {
     // Placeholder coordinates — the real ones will come from the Route
     // Planner once it's wired up. Only `brand` matters for this demo.
     let in_range_stores = [
-        Store { brand: StoreBrand::Paknsave, location: Coordinate::WELLINGTON },
-        Store { brand: StoreBrand::Woolworths, location: Coordinate::WELLINGTON },
-        Store { brand: StoreBrand::Newworld, location: Coordinate::WELLINGTON },
+        Store { brand: StoreBrand::Paknsave, location: Coordinate::wellington() },
+        Store { brand: StoreBrand::Woolworths, location: Coordinate::wellington() },
+        Store { brand: StoreBrand::Newworld, location: Coordinate::wellington() },
     ];
 
     let item = "weet-bix";
