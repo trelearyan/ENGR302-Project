@@ -7,7 +7,7 @@ edition = "2021"
 # `bundled` ships SQLite source inside the binary, so users don't
 # need libsqlite3 installed on their machine. This also makes the
 # crate WASM-portable later, per design doc §6.3.
-rusqlite = { version = "0.31", features = ["bundled"] }
+rusqlite = {version = "0.40.2", features = ["bundled", "serialize", "ffi-sqlite-wasm-rs"] }
 serde_json = "1.0"
 util = { path = "../util" }
 bigdecimal = "0.4"
