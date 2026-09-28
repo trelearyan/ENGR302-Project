@@ -11,12 +11,12 @@ use rusqlite::{Connection, Error, Result};
 use regex::Regex;
 
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct SantizedSearchResult {
-    name: String,
-    unit: SearchUnits,
-    quantity: u32,
-    image_url: String,
+    pub name: String,
+    pub unit: SearchUnits,
+    pub quantity: u32,
+    pub image_url: String,
 }
 
 #[derive(Debug, PartialEq)]
@@ -137,7 +137,7 @@ pub fn resolve(item_query: &ShoppingItemQuery) -> Option<HashMap<u32, ShoppingIt
             ShoppingItem {
                 name: best.name.clone(),
                 quantity: best.quantity * best_mul.unwrap(),
-                unit: SearchUnits::EACH,
+                unit: best.unit.clone(),
                 price: Cost::from_cents(best.price * best_mul.unwrap()),
                 store: Store {
                     brand: best.store,
