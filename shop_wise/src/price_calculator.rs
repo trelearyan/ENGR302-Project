@@ -258,6 +258,7 @@ pub fn calculate(
         &stores,
         &routes,
     );
+    log::debug!("{:?}\n{:?}\n{:?}", cheap, fast, best);
     // Return the result
     Ok(CalculationTotal {
         cheapest: cheap,
