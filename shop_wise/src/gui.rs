@@ -1,5 +1,5 @@
-use eframe::CreationContext;
 use eframe::egui::{self, CentralPanel, Panel, ScrollArea, Ui};
+use eframe::CreationContext;
 use std::cell::RefCell;
 use std::rc::Rc;
 use util::coordinate::Coordinate;

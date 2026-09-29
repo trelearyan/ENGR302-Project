@@ -1,6 +1,6 @@
 use itertools::Itertools;
 use routx::AStarError;
-use routx::{Graph, osm::Options};
+use routx::{osm::Options, Graph};
 use std::{borrow::Borrow, fmt::Debug, iter, rc::Rc, time::Duration};
 
 use util::{
@@ -12,7 +12,7 @@ use util::{
 
 use crate::{
     gui::transit::MileageOptions,
-    route_planner::filters::{StoreFilters, filter_stores},
+    route_planner::filters::{filter_stores, StoreFilters},
 };
 
 pub mod filters;
@@ -58,7 +58,7 @@ impl RoutePlan {
                     .collect::<Vec<_>>()
             })
             .min_by(|iter_a, iter_b| {
-                to_dist(iter_a.into_iter()).cmp(&to_dist(iter_b.into_iter())) // find minimum 
+                to_dist(iter_a.into_iter()).cmp(&to_dist(iter_b.into_iter())) // find minimum
             })?;
 
         Some(RoutePath {
