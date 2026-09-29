@@ -1,4 +1,3 @@
-
 use crate::gui::ShowableWidget;
 
 pub mod filehandling;
@@ -10,7 +9,7 @@ pub mod route_planner;
 use eframe::egui;
 use gui::AppData;
 
-impl eframe::App for AppData {
+impl eframe::App for AppData<'_> {
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
         self.show(ui);
     }
@@ -24,7 +23,7 @@ fn main() -> eframe::Result {
     eframe::run_native(
         "ShopWise",
         options,
-        Box::new(|_| Ok(Box::new(AppData::default()))),
+        Box::new(|context| Ok(Box::new(AppData::new(context)))),
     )
 }
 
