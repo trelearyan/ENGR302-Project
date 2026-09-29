@@ -12,6 +12,8 @@ use util::store::{Store, StoreBrand};
 use rusqlite::{Connection, Error, Result};
 use regex::Regex;
 
+use crate::database::db_access;
+
 // Public facing types
 
 #[derive(Debug, PartialEq, Clone)]
@@ -201,15 +203,6 @@ fn score_item(terms: &[&str], item: &&SearchResult, price: u32) -> i32 {
     score - (price as i32) - (item.name.len() as i32)
 }
 
-const DB: &[u8] =
-    include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/../data/shopwise.db"));
-
-fn open_database() -> Result<Connection> {
-    let mut conn: Connection = Connection::open_in_memory()?;
-    conn.deserialize_bytes("main", DB)?;
-    return Ok(conn);
-}
-
 fn query_cache(search_term: &str) -> Option<HashMap<u32, Vec<SearchResult>>> {
     Some(QUERY_CACHE.read().ok()?.get(search_term)?.clone())
 }
@@ -221,7 +214,7 @@ fn write_cache(search_term: &str, result: HashMap<u32, Vec<SearchResult>>) -> ()
 
 fn query_db(search_terms: &[&str]) -> Result<HashMap<usize, HashMap<u32, Vec<SearchResult>>>> {
     // Get the database connection
-    let conn = open_database()?;
+    let conn: Connection = db_access::open_database()?;
     let mut result: HashMap<usize, HashMap<u32, Vec<SearchResult>>> = HashMap::new();
     for term_i in 0..search_terms.len() {
         let search_term = search_terms.get(term_i).unwrap();
@@ -458,7 +451,7 @@ mod tests {
     }
 
     fn simple_query(sql_query: &str) -> Vec<String> {
-        let conn = open_database().unwrap();
+        let conn: Connection = db_access::open_database().unwrap();
         let mut stm = conn.prepare(sql_query).unwrap();
         stm.query_map([], |row: &rusqlite::Row<'_>| -> Result<String, Error>{
                 Ok(row.get(0)?)
