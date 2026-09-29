@@ -42,8 +42,8 @@ impl Cost {
     // Source: https://web.archive.org/web/20111006085119/http://www.newcoins.govt.nz/1570749.html
     #[must_use]
     pub fn round(&self) -> Cost {
-        Self::new(self.inner.with_precision_round(
-            NonZeroU64::new(2).expect("This should be a compile time constant 2"),
+        Self::new(self.inner.with_scale_round(
+            1,
             RoundingMode::HalfDown,
         ))
     }
@@ -68,5 +68,18 @@ impl<NUMBER: Into<BigDecimal>> From<NUMBER> for Cost {
 impl Default for Cost {
     fn default() -> Self {
         Self::new(BigDecimal::zero())
+    }
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_rounding() {
+        assert_eq!(Cost::from_cents(100), Cost::from_cents(104).round());
+        assert_eq!(Cost::from_cents(110), Cost::from_cents(106).round());
+        assert_eq!(Cost::from_cents(1232100), Cost::from_cents(1232100).round());
     }
 }

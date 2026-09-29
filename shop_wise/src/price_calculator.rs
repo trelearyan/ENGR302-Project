@@ -190,12 +190,11 @@ pub fn calculate(
                     err_msg: "Could not find item ".to_owned() + &shop_list.get(item_key).unwrap().name,
                 })};
                 // Convert to cents for efficient copying
-                let price = item
+                let price = (item
                     .price
                     .clone()
-                    .round()
+                    .round()*100)
                     .inner()
-                    .with_scale(2)
                     .to_u32()
                     .unwrap()*item.multiplier;
                 // Create item to add to item lookup table
@@ -601,5 +600,15 @@ mod tests {
         };
         assert!(result.is_ok());
         assert_eq!(correct_result, result.unwrap().0);
+    }
+
+    #[test]
+    fn test_assumptions() {
+        assert_eq!(11230, (Cost::from_cents(11231)
+                    .clone()
+                    .round()*100)
+                    .inner()
+                    .to_u32()
+                    .unwrap());
     }
 }
