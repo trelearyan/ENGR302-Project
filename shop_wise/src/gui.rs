@@ -22,6 +22,8 @@ pub mod supermarkets;
 pub mod transit;
 pub mod masthead;
 
+const SECTION_MAX_HEIGHT: f32 = 300.0;
+
 #[derive(Default, Clone)]
 pub struct AppData {
     shopping_list: ShoppingListData,
@@ -43,49 +45,58 @@ impl ShowableWidget for AppData {
 
         if !self.filters_collapsed{
             Panel::left("left_panel").show_inside(ui, |ui| {
-                let list_height = ui.available_height().min(300.0);
                 ScrollArea::vertical()
-                    .id_salt("shopping_list_scroll")
-                    .max_height(list_height)
-                    .auto_shrink([false, true])
-                    .show(ui, |ui| {
-                        self.shopping_list.show(ui);
+                    .id_salt("left panel scroll")
+                    .auto_shrink([false; 2])
+                    .show(ui, |ui|{
+                        ScrollArea::vertical()
+                            .id_salt("shopping_list_scroll")
+                            .max_height(SECTION_MAX_HEIGHT)
+                            .auto_shrink([false, true])
+                            .show(ui, |ui| {
+                                self.shopping_list.show(ui);
+                            });
+                        ui.separator();
+                        self.preferences.show(ui);
+                        ui.separator();
+                        ScrollArea::vertical()
+                            .id_salt("supermarkets_scroll")
+                            .max_height(SECTION_MAX_HEIGHT)
+                            .auto_shrink([false, true])
+                            .show(ui, |ui| {
+                                let origin = {
+                                    let loc = self.location_search.borrow();
+                                    match (loc.latitude, loc.longitude) {
+                                        (Some(lat), Some(lon)) => {
+                                            Some(Coordinate::from_lat_long_f64(lat, lon))
+                                        }
+                                        _ => None,
+                                    }
+                                };
+                                self.supermarkets.show_in_range(
+                                    ui,
+                                    origin.as_ref(),
+                                    &self.preferences.max_range,
+                                );
+                            });
+                        ui.separator();
+                        self.transit.show(ui);
+                        ui.separator();
                     });
-                ui.separator();
-                self.preferences.show(ui);
-                ui.separator();
-                ScrollArea::vertical()
-                    .id_salt("supermarkets_scroll")
-                    .max_height(list_height)
-                    .auto_shrink([false, true])
-                    .show(ui, |ui| {
-                        let origin = {
-                            let loc = self.location_search.borrow();
-                            match (loc.latitude, loc.longitude) {
-                                (Some(lat), Some(lon)) => {
-                                    Some(Coordinate::from_lat_long_f64(lat, lon))
-                                }
-                                _ => None,
-                            }
-                        };
-                        self.supermarkets.show_in_range(
-                            ui,
-                            origin.as_ref(),
-                            &self.preferences.max_range,
-                        );
-                    });
-                ui.separator();
-                self.transit.show(ui);
-                ui.separator();
             });
         }
 
-            CentralPanel::default().show_inside(ui, |ui| {
-                LocationData::show(&self.location_search, ui);
-                ui.separator();
-                self.search_button(ui);
-                self.output_routes.show(ui);
-            });
+        CentralPanel::default().show_inside(ui, |ui| {
+            ScrollArea::vertical()
+                .id_salt("central panel scroll")
+                .auto_shrink([false; 2])
+                .show(ui, |ui| {
+                    LocationData::show(&self.location_search, ui);
+                    ui.separator();
+                    self.search_button(ui);
+                    self.output_routes.show(ui);
+                })
+        });
     }
 }
 
