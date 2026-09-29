@@ -40,6 +40,7 @@ pub struct Message {
 #[derive(Debug, PartialEq)]
 pub enum CalculationErrorType {
     InternalError,
+    RouteError,
     CouldNotResolveItem,
     NoPlanFound,
     CommonItemFailure,
@@ -56,6 +57,7 @@ impl CalculationError {
     pub fn pretty(&self) -> String {
         match self.err_type {
             CalculationErrorType::InternalError => "Unknown Error",
+            CalculationErrorType::RouteError => "Route Error",
             CalculationErrorType::CouldNotResolveItem => "Item Resolution Error: ",
             CalculationErrorType::NoPlanFound => "No Complete Shopping Route Found: ",
             CalculationErrorType::CommonItemFailure => "No Shopping Route Found - Common Item cause of Failure: ",
@@ -150,7 +152,11 @@ pub fn calculate(
                 .inner()
                 .with_scale(2)
                 .to_u32()
-                .unwrap(),
+                .ok_or_else(||CalculationError {
+                        err_type: CalculationErrorType::RouteError,
+                        err_msg: "Route cost was not able to be represented in cents".to_owned(),
+                    }
+                )?,
             route_time: route.travel_time.as_secs(),
             route_id,
         });
