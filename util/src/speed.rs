@@ -1,14 +1,7 @@
-use std::{
-    ops::Mul,
-    str::FromStr,
-    time::Duration,
-};
+use std::{ops::Mul, str::FromStr, time::Duration};
 
 use bigdecimal::{BigDecimal, Zero};
-use derive_more::{
-    Add, AddAssign, Display, Neg, Rem, RemAssign, Sub,
-    SubAssign, Sum,
-};
+use derive_more::{Add, AddAssign, Display, Neg, Rem, RemAssign, Sub, SubAssign, Sum};
 use num_traits::FromPrimitive;
 
 use crate::distance::Distance;
