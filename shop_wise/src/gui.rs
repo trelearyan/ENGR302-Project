@@ -1,12 +1,14 @@
+use eframe::CreationContext;
 use eframe::egui::{self, CentralPanel, Panel, ScrollArea, Ui};
+use std::cell::RefCell;
 use std::collections::HashSet;
 use std::ops::Deref;
+use std::rc::Rc;
 use util::coordinate::Coordinate;
 use util::store::StoreBrand;
-use std::cell::RefCell;
-use std::rc::Rc;
 
 use crate::gui::location_search::{LocationData, LocationStatus};
+use crate::gui::map::MapData;
 use crate::gui::output_routes::OutputRoutesData;
 use crate::gui::preferences::PreferencesData;
 use crate::gui::shopping_list::ShoppingListData;
@@ -17,30 +19,45 @@ use crate::price_calculator::{self};
 use crate::route_planner::filters::StoreFilters;
 
 pub mod location_search;
+pub mod map;
 pub mod output_routes;
 pub mod preferences;
 pub mod shopping_list;
 pub mod supermarkets;
 pub mod transit;
 
-#[derive(Default, Clone, Debug)]
-pub struct AppData {
+pub struct AppData<'a> {
     shopping_list: ShoppingListData,
     preferences: PreferencesData,
     supermarkets: SupermarketsData,
     transit: TransitData,
     location_search: Rc<RefCell<LocationData>>,
     output_routes: OutputRoutesData,
+    map: MapData<'a>,
+}
+
+impl AppData<'_> {
+    pub fn new(creation_context: &CreationContext) -> Self {
+        Self {
+            map: MapData::new(creation_context),
+            shopping_list: Default::default(),
+            preferences: Default::default(),
+            supermarkets: Default::default(),
+            transit: Default::default(),
+            location_search: Default::default(),
+            output_routes: Default::default(),
+        }
+    }
 }
 
 pub trait ShowableWidget {
     fn show(&mut self, ui: &mut Ui);
 }
 
-impl ShowableWidget for AppData {
+impl ShowableWidget for AppData<'_> {
     fn show(&mut self, ui: &mut Ui) {
         ScrollArea::both().show(ui, |ui| {
-            Panel::left("left_panel").show_inside(ui, |ui| {
+            Panel::left("left_panel").show(ui, |ui| {
                 self.shopping_list.show(ui);
                 ui.separator();
                 self.preferences.show(ui);
@@ -52,7 +69,7 @@ impl ShowableWidget for AppData {
                 LocationData::show(&self.location_search, ui);
             });
 
-            CentralPanel::default().show_inside(ui, |ui| {
+            CentralPanel::default().show(ui, |ui| {
                 self.search_button(ui);
                 self.output_routes.show(ui);
             });
@@ -60,7 +77,7 @@ impl ShowableWidget for AppData {
     }
 }
 
-impl AppData {
+impl AppData<'_> {
     pub fn search_button(&mut self, ui: &mut egui::Ui) {
         ui.horizontal(|ui| {
             // First: check if both shopping list and location are not empty
@@ -114,7 +131,7 @@ impl AppData {
                     .disallow_brands(banned_stores.iter().copied().collect::<Vec<_>>().deref());
                 let filters = filters_builder.build();
 
-                let _origin_label = self.location_search.borrow().address.clone(); 
+                let _origin_label = self.location_search.borrow().address.clone();
 
                 // Sam
                 let res = price_calculator::calculate(
@@ -124,7 +141,7 @@ impl AppData {
                 );
                 log::info!("{res:?}");
 
-                let origin_label = self.location_search.borrow().address.clone(); 
+                let origin_label = self.location_search.borrow().address.clone();
                 self.output_routes.results = match res {
                     Some(calc) => ResultsState::Ready(Box::new(
                         price_calculator::results::Results::from_calculation(&calc, origin_label),
