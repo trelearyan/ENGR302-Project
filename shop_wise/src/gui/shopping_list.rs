@@ -33,8 +33,16 @@ struct AddItemState {
 #[derive(Clone, Debug, Default)]
 pub struct ShoppingListData {
     pub shopping_items: Vec<ShoppingItemQuery>,
+    /// Runs the "Load CSV" and "Save CSV" file dialogs. It is in an
+    /// [`Rc`] so cloning the panel keeps the same channel, and results from
+    /// dialogs that are still open are not lost.
     pub files: Rc<FileChannel>,
+    /// The last load or save message, such as "Loaded shopping-list.csv", shown
+    /// under the buttons. [`None`] hides it.
     pub csv_status: Option<String>,
+    /// The items removed by the last "Clear", stored so "Undo" can put them
+    /// back. [`None`] when there is nothing to undo. Adding or loading
+    /// items clears it.
     pub cleared_items: Option<Vec<ShoppingItemQuery>>,
     add_item_modal: Option<Rc<RefCell<AddItemState>>>,
 }
@@ -143,10 +151,14 @@ impl ShowableWidget for ShoppingListData {
 }
 
 impl ShoppingListData {
+    /// Shows a file picker for a CSV shopping list. The file is loaded
+    /// later by [`check_file_results`](Self::check_file_results).
     fn load_csv(&mut self) {
         self.files.open("CSV", &["csv"]);
     }
-
+    /// Saves the list as `Shopwise shopping list.csv`, leaving out items
+    /// with a blank name. The result is shown by
+    /// [`check_file_results`](Self::check_file_results).
     fn save_csv(&mut self) {
         let text = crate::filehandling::csv::write_to_csv(
             self.shopping_items
@@ -162,6 +174,32 @@ impl ShoppingListData {
         );
     }
 
+    /// Handles any finished "Load CSV" or "Save CSV" dialogs and updates
+    /// [`csv_status`](Self::csv_status) with a message for the user.
+    ///
+    /// - When a file is loaded and [`read_csv`] succeeds, the loaded items
+    ///   replace the whole shopping list and any pending "Undo" is
+    ///   dropped.
+    /// - If the file cannot be read or parsed, the list is not changed and
+    ///   the error is shown.
+    /// - When a save finishes or fails, only the message changes.
+    ///
+    /// [`ShowableWidget::show`] calls this every frame, so you only need to
+    /// call it yourself if the panel is not being drawn.
+    ///
+    /// [`read_csv`]: crate::filehandling::csv::read_csv
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use shop_wise::gui::shopping_list::ShoppingListData;
+    ///
+    /// let mut list = ShoppingListData::default();
+    /// list.check_file_results();
+    ///
+    /// // No dialog was opened, so nothing changed.
+    /// assert!(list.csv_status.is_none());
+    /// ```
     pub fn check_file_results(&mut self) {
         use crate::filehandling::file_dialog::FileOutcome;
 
