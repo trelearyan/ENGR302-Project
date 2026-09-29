@@ -68,7 +68,7 @@ impl Div<Speed> for Distance {
     type Output = Duration;
 
     fn div(self, rhs: Speed) -> Self::Output {
-        Duration::from_millis((self.base_value_metres / rhs.inner()).to_u64().unwrap())
+        Duration::from_secs((self.base_value_metres / rhs.inner()).to_u64().unwrap())
     }
 }
 
@@ -115,7 +115,7 @@ mod tests {
         assert_eq!(Duration::from_secs(100), Distance::from_metres(1000) / Speed::from_kilometres_per_hour(36));
         assert_eq!(Duration::from_secs(1), Distance::from_metres(1000) / Speed::from_kilometres_per_hour(3600));
         assert_eq!(Duration::from_secs(1), Distance::from_metres(100) / Speed::from_kilometres_per_hour(360));
-        assert_eq!(Duration::from_secs(1000), Distance::from_metres(10000) / Speed::from_metres_per_second(36));
+        assert_eq!(Duration::from_secs(1000), Distance::from_metres(10000) / Speed::from_kilometres_per_hour(36));
 
         assert_eq!(Duration::from_secs(100), Distance::from_kilometres_f64(1.0) / Speed::from_metres_per_second(10));
         assert_eq!(Duration::from_secs(10), Distance::from_kilometres_f64(1.0) / Speed::from_metres_per_second(100));
