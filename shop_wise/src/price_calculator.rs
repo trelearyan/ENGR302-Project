@@ -438,25 +438,24 @@ mod tests {
 
     #[test]
     fn test_cheapest_demo() {
-        assert_eq!(3, 1 + 2);
         let items = [0, 1, 2];
         let mut routes: Vec<LocalRoute> = Vec::new();
         routes.push(LocalRoute {
             shops: [0].to_vec(),
             route_travel_cost: 196,
-            route_time: 0,
+            route_time: 196,
             route_id: 0,
         });
         routes.push(LocalRoute {
             shops: [1].to_vec(),
             route_travel_cost: 190,
-            route_time: 0,
+            route_time: 190,
             route_id: 1,
         });
         routes.push(LocalRoute {
             shops: [0, 1].to_vec(),
             route_travel_cost: 295,
-            route_time: 0,
+            route_time: 295,
             route_id: 2,
         });
         let mut database: Vec<Vec<Option<u32>>> = Vec::new();
@@ -485,8 +484,119 @@ mod tests {
             total_item_cost: 2618,
             total_travel_cost: 295,
             total_shop_cost: 2913,
-            total_time: 0,
+            total_time: 295,
             route_id: 2,
+        };
+        assert!(result.is_ok());
+        assert_eq!(correct_result, result.unwrap().0);
+    }
+    
+    #[test]
+    fn test_fastest_demo() {
+        let items = [0, 1, 2];
+        let mut routes: Vec<LocalRoute> = Vec::new();
+        routes.push(LocalRoute {
+            shops: [0].to_vec(),
+            route_travel_cost: 196,
+            route_time: 196,
+            route_id: 0,
+        });
+        routes.push(LocalRoute {
+            shops: [1].to_vec(),
+            route_travel_cost: 190,
+            route_time: 190,
+            route_id: 1,
+        });
+        routes.push(LocalRoute {
+            shops: [0, 1].to_vec(),
+            route_travel_cost: 295,
+            route_time: 295,
+            route_id: 2,
+        });
+        let mut database: Vec<Vec<Option<u32>>> = Vec::new();
+        let mut store0: Vec<Option<u32>> = Vec::new();
+        store0.push(Some(599));
+        store0.push(Some(720));
+        store0.push(Some(1450));
+        database.push(store0);
+        let mut store1: Vec<Option<u32>> = Vec::new();
+        store1.push(Some(620));
+        store1.push(Some(899));
+        store1.push(Some(1299));
+        database.push(store1);
+        let result = calculate_minimised(
+            items.len(),
+            routes.as_ref(),
+            &database,
+            |_a: &u32, b: &LocalRoute| -> u32 {
+                return b.route_time as u32;
+            },
+            &Vec::new(),
+        );
+        let correct_result= BestPlan {
+            best_shop_plan: vec![1, 1, 1],
+            best_cost: 190,
+            total_item_cost: 2818,
+            total_travel_cost: 190,
+            total_shop_cost: 3008,
+            total_time: 190,
+            route_id: 1,
+        };
+        assert!(result.is_ok());
+        assert_eq!(correct_result, result.unwrap().0);
+    }
+
+    
+    #[test]
+    fn test_best_demo() {
+        let items = [0, 1, 2];
+        let mut routes: Vec<LocalRoute> = Vec::new();
+        routes.push(LocalRoute {
+            shops: [0].to_vec(),
+            route_travel_cost: 196,
+            route_time: 196,
+            route_id: 0,
+        });
+        routes.push(LocalRoute {
+            shops: [1].to_vec(),
+            route_travel_cost: 190,
+            route_time: 190,
+            route_id: 1,
+        });
+        routes.push(LocalRoute {
+            shops: [0, 1].to_vec(),
+            route_travel_cost: 295,
+            route_time: 295,
+            route_id: 2,
+        });
+        let mut database: Vec<Vec<Option<u32>>> = Vec::new();
+        let mut store0: Vec<Option<u32>> = Vec::new();
+        store0.push(Some(599));
+        store0.push(Some(720));
+        store0.push(Some(1450));
+        database.push(store0);
+        let mut store1: Vec<Option<u32>> = Vec::new();
+        store1.push(Some(620));
+        store1.push(Some(899));
+        store1.push(Some(1299));
+        database.push(store1);
+        let result = calculate_minimised(
+            items.len(),
+            routes.as_ref(),
+            &database,
+            |a: &u32, b: &LocalRoute| -> u32 {
+                return a + b.route_travel_cost + ((5 * b.route_time) / 6) as u32;
+            },
+            &Vec::new(),
+        );
+        let correct_result= BestPlan {
+            best_shop_plan: vec![0, 0, 0],
+            best_cost: 3128,
+            total_item_cost: 2769,
+            total_travel_cost: 196,
+            total_shop_cost: 2965,
+            total_time: 196,
+            route_id: 0,
         };
         assert!(result.is_ok());
         assert_eq!(correct_result, result.unwrap().0);
