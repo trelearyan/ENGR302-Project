@@ -49,7 +49,7 @@ fn main() {
             .start(
                 canvas,
                 eframe::WebOptions::default(),
-                Box::new(|_| Ok(Box::new(AppData::default()))),
+                Box::new(|context| Ok(Box::new(AppData::new(context)))),
             )
             .await
             .unwrap();
