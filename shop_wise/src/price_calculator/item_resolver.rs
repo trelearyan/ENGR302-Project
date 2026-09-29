@@ -6,7 +6,7 @@ use std::sync::RwLock;
 use lazy_static::lazy_static;
 use util::coordinate::Coordinate;
 use util::cost::Cost;
-use util::search::{SearchUnits, ShoppingItem, ShoppingItemQuery, match_sid_to_brand};
+use util::search::{ResolvedItem, SearchUnits, ShoppingItem, ShoppingItemQuery, match_sid_to_brand};
 use util::store::{Store, StoreBrand};
 
 use rusqlite::{Connection, Error, Result};
@@ -90,10 +90,10 @@ pub fn search(item_query: &str, num_options: u32) -> Option<Vec<SantizedSearchRe
 /// <br>
 /// None if the string could not be resolved
 #[must_use]
-pub fn resolve(item_query: &ShoppingItemQuery) -> Option<HashMap<u32, ShoppingItem>> {
+pub fn resolve(item_query: &ShoppingItemQuery) -> Option<HashMap<StoreBrand, ResolvedItem>> {
     // Split item_query into search terms
     let terms: Vec<&str> = item_query.name.split(' ').filter(|f|->bool{f.len()>=1}).collect();
-    let mut result: HashMap<u32, ShoppingItem> = HashMap::new();
+    let mut result: HashMap<StoreBrand, ResolvedItem> = HashMap::new();
     let mut search: HashMap<usize, HashMap<u32, Vec<SearchResult>>> = query_db(&terms).unwrap();
     let search_unit = SearchUnits::match_to_unit(&item_query.unit).unwrap();
     // For each store (future narrow to allowed)
@@ -142,17 +142,13 @@ pub fn resolve(item_query: &ShoppingItemQuery) -> Option<HashMap<u32, ShoppingIt
         }
         let best = itemlist.get(&(best_key.unwrap() as u32)).unwrap();
         result.insert(
-            i,
-            ShoppingItem {
+            best.store,
+            ResolvedItem {
                 name: best.name.clone(),
                 multiplier: best_mul.unwrap(),
                 quantity: best.quantity,
                 unit: best.unit.clone(),
                 price: Cost::from_cents(best.price),
-                store: Store {
-                    brand: best.store,
-                    location: Coordinate::from_lat_long_f32(i as f32, i as f32),
-                },
             },
         );
     }
@@ -372,9 +368,9 @@ mod tests {
                 unit: SearchUnits::GRAM.to_str().to_owned(),
             })
             .unwrap();
-            assert_eq!(false, res.contains_key(&1));
-            assert_eq!(false, res.contains_key(&2));
-            assert_eq!(false, res.contains_key(&3));
+            assert_eq!(false, res.contains_key(&StoreBrand::Paknsave));
+            assert_eq!(false, res.contains_key(&StoreBrand::Woolworths));
+            assert_eq!(false, res.contains_key(&StoreBrand::Newworld));
         }
         {
             let res = resolve(&ShoppingItemQuery {
@@ -383,9 +379,9 @@ mod tests {
                 unit: SearchUnits::GRAM.to_str().to_owned(),
             })
             .unwrap();
-            assert_eq!(false, res.contains_key(&1));
-            assert_eq!(true, res.contains_key(&2));
-            assert_eq!(false, res.contains_key(&3));
+            assert_eq!(false, res.contains_key(&StoreBrand::Paknsave));
+            assert_eq!(true, res.contains_key(&StoreBrand::Woolworths));
+            assert_eq!(false, res.contains_key(&StoreBrand::Newworld));
         }
     }
 
@@ -398,15 +394,15 @@ mod tests {
             unit: SearchUnits::GRAM.to_str().to_owned(),
         })
         .unwrap(); //Maggi Onion Soup
-        assert_eq!("Onion Soup Mix Sachet", res.get(&1).unwrap().name);
+        assert_eq!("Onion Soup Mix Sachet", res.get(&StoreBrand::Paknsave).unwrap().name);
         let res = resolve(&ShoppingItemQuery {
             name: String::from("Reduced Cream"),
             quantity: 1,
             unit: SearchUnits::MILLILITRE.to_str().to_owned(),
         })
         .unwrap();
-        assert_eq!("Reduced Cream", res.get(&1).unwrap().name);
-        assert_eq!("nestlé reduced cream original kiwi dip", res.get(&2).unwrap().name);
+        assert_eq!("Reduced Cream", res.get(&StoreBrand::Paknsave).unwrap().name);
+        assert_eq!("nestlé reduced cream original kiwi dip", res.get(&StoreBrand::Woolworths).unwrap().name);
     }
 
     #[test]
@@ -418,15 +414,15 @@ mod tests {
             unit: SearchUnits::GRAM.to_str().to_owned(),
         })
         .unwrap(); //Maggi Onion Soup
-        assert_eq!("Onion Soup Mix Sachet", res.get(&1).unwrap().name);
+        assert_eq!("Onion Soup Mix Sachet", res.get(&StoreBrand::Paknsave).unwrap().name);
         let res = resolve(&ShoppingItemQuery {
             name: String::from("Reduced Cream"),
             quantity: 1,
             unit: SearchUnits::MILLILITRE.to_str().to_owned(),
         })
         .unwrap();
-        assert_eq!("Reduced Cream", res.get(&1).unwrap().name);
-        assert_eq!("nestlé reduced cream original kiwi dip", res.get(&2).unwrap().name);
+        assert_eq!("Reduced Cream", res.get(&StoreBrand::Paknsave).unwrap().name);
+        assert_eq!("nestlé reduced cream original kiwi dip", res.get(&StoreBrand::Woolworths).unwrap().name);
         // Repeat test to ensure that works both times
         let res = resolve(&ShoppingItemQuery {
             name: String::from("Onion Soup"),
@@ -434,15 +430,15 @@ mod tests {
             unit: SearchUnits::GRAM.to_str().to_owned(),
         })
         .unwrap(); //Maggi Onion Soup
-        assert_eq!("Onion Soup Mix Sachet", res.get(&1).unwrap().name);
+        assert_eq!("Onion Soup Mix Sachet", res.get(&StoreBrand::Paknsave).unwrap().name);
         let res = resolve(&ShoppingItemQuery {
             name: String::from("Reduced Cream"),
             quantity: 1,
             unit: SearchUnits::MILLILITRE.to_str().to_owned(),
         })
         .unwrap();
-        assert_eq!("Reduced Cream", res.get(&1).unwrap().name);
-        assert_eq!("nestlé reduced cream original kiwi dip", res.get(&2).unwrap().name);
+        assert_eq!("Reduced Cream", res.get(&StoreBrand::Paknsave).unwrap().name);
+        assert_eq!("nestlé reduced cream original kiwi dip", res.get(&StoreBrand::Woolworths).unwrap().name);
     }
 
     #[test]

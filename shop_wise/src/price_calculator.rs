@@ -181,14 +181,10 @@ pub fn calculate(
         for store_id in 0..stores.len() {
             // Mock store specific availability by just assuming same
             // among all stores within a brand
-            let global_store_key = match stores.get(store_id).unwrap().brand {
-                StoreBrand::Paknsave => 1,
-                StoreBrand::Woolworths => 2,
-                StoreBrand::Newworld => 3,
-            };
+            let store   = stores.get(store_id).unwrap();
             // If this store has an entry for the item add it
-            if res.contains_key(&global_store_key) {
-                let Some(item) = res.remove(&global_store_key) else {
+            if res.contains_key(&store.brand) {
+                let Some(item) = res.remove(&store.brand) else {
             return Err(CalculationError {
                 err_type: CalculationErrorType::CouldNotResolveItem,
                 err_msg: "Could not find item ".to_owned() + &shop_list.get(item_key).unwrap().name,
@@ -202,8 +198,16 @@ pub fn calculate(
                     .with_scale(2)
                     .to_u32()
                     .unwrap()*item.multiplier;
-                // Add item to item lookup table
-                item_lookup.get_mut(item_key).unwrap().insert(store_id, item);
+                // Create item to add to item lookup table
+                let real_item = ShoppingItem {
+                    name: item.name.clone(),
+                    multiplier: item.multiplier,
+                    quantity: item.quantity,
+                    unit: item.unit.clone(),
+                    price: item.price,
+                    store: store.clone(),
+                };
+                item_lookup.get_mut(item_key).unwrap().insert(store_id, real_item);
                 // Add price to short database
                 short_database.get_mut(store_id).unwrap().push(Some(price));
             } else {
