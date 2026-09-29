@@ -172,7 +172,7 @@ pub fn calculate(
         item_lookup.push(HashMap::new());
         // Resolve query
         let query: &ShoppingItemQuery = shop_list.get(item_key).unwrap();
-        let Some(mut res) = resolve(query) else {
+        let Some(res) = resolve(query) else {
             return Err(CalculationError {
                 err_type: CalculationErrorType::CouldNotResolveItem,
                 err_msg: "Could not find item ".to_owned() + &query.name,
@@ -184,11 +184,11 @@ pub fn calculate(
             let store   = stores.get(store_id).unwrap();
             // If this store has an entry for the item add it
             if res.contains_key(&store.brand) {
-                let Some(item) = res.remove(&store.brand) else {
-            return Err(CalculationError {
-                err_type: CalculationErrorType::CouldNotResolveItem,
-                err_msg: "Could not find item ".to_owned() + &shop_list.get(item_key).unwrap().name,
-            })};
+                let Some(item) = res.get(&store.brand) else {
+                return Err(CalculationError {
+                    err_type: CalculationErrorType::CouldNotResolveItem,
+                    err_msg: "Could not find item ".to_owned() + &shop_list.get(item_key).unwrap().name,
+                })};
                 // Convert to cents for efficient copying
                 let price = item
                     .price
@@ -204,7 +204,7 @@ pub fn calculate(
                     multiplier: item.multiplier,
                     quantity: item.quantity,
                     unit: item.unit.clone(),
-                    price: item.price,
+                    price: item.price.clone(),
                     store: store.clone(),
                 };
                 item_lookup.get_mut(item_key).unwrap().insert(store_id, real_item);
