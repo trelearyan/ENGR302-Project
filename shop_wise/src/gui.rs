@@ -40,6 +40,8 @@ pub trait ShowableWidget {
 impl ShowableWidget for AppData {
     fn show(&mut self, ui: &mut Ui) {
         self.masthead(ui);
+
+        if !self.filters_collapsed{
             Panel::left("left_panel").show_inside(ui, |ui| {
                 let list_height = ui.available_height().min(300.0);
                 ScrollArea::vertical()
@@ -63,6 +65,7 @@ impl ShowableWidget for AppData {
                 self.transit.show(ui);
                 ui.separator();
             });
+        }
 
             CentralPanel::default().show_inside(ui, |ui| {
                 LocationData::show(&self.location_search, ui);
