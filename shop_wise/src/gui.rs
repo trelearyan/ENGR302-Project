@@ -53,36 +53,25 @@ pub trait ShowableWidget {
 
 impl ShowableWidget for AppData<'_> {
     fn show(&mut self, ui: &mut Ui) {
-        //ScrollArea::both().show(ui, |ui| {
-        Panel::left("left_panel").show_inside(ui, |ui| {
-            let list_height = ui.available_height().min(300.0);
-            ScrollArea::vertical()
-                .id_salt("shopping_list_scroll")
-                .max_height(list_height)
-                .auto_shrink([false, true])
-                .show(ui, |ui| {
-                    self.shopping_list.show(ui);
-                });
-            ui.separator();
-            self.preferences.show(ui);
-            ui.separator();
-            ScrollArea::vertical()
-                .id_salt("supermarkets_scroll")
-                .max_height(list_height)
-                .auto_shrink([false, true])
-                .show(ui, |ui| {
-                    self.supermarkets.show(ui);
-                });
-            ui.separator();
-            self.transit.show(ui);
-            ui.separator();
-        });
+        ScrollArea::both().show(ui, |ui| {
+            Panel::left("left_panel").show(ui, |ui| {
+                self.shopping_list.show(ui);
+                ui.separator();
+                self.preferences.show(ui);
+                ui.separator();
+                self.supermarkets.show(ui);
+                ui.separator();
+                self.transit.show(ui);
+                ui.separator();
+            });
 
-        CentralPanel::default().show(ui, |ui| {
             LocationData::show(&self.location_search, ui);
             ui.separator();
-            self.search_button(ui);
-            self.output_routes.show(ui);
+
+            CentralPanel::default().show(ui, |ui| {
+                self.search_button(ui);
+                self.output_routes.show(ui);
+            });
         });
     }
 }
