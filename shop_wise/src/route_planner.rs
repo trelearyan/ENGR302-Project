@@ -1,10 +1,8 @@
 use itertools::Itertools;
-use std::{
-    fmt::Debug,
-    iter,
-    rc::Rc,
-    time::Duration,
-};
+#[cfg(feature = "include_routing")]
+use routx::AStarError;
+use routx::{Graph, osm::Options};
+use std::{borrow::Borrow, fmt::Debug, iter, rc::Rc, time::Duration};
 
 use util::{
     coordinate::Coordinate,
@@ -35,45 +33,56 @@ pub struct RoutePlan {
 pub struct RoutePath {
     pub ordered_stops: Rc<[Coordinate]>,
     pub mileage: MileageOptions,
-    pub travel_distance: Distance,
-    pub travel_cost: Cost,
-    pub travel_time: Duration,
+}
+
+#[must_use]
+fn to_dist(coords: impl IntoIterator<Item = impl Borrow<Coordinate> + Clone>) -> Distance {
+    coords
+        .into_iter()
+        .tuple_windows::<(_, _)>()
+        .map(|(a, b)| a.borrow().distance_to(b.borrow()))
+        .sum()
 }
 
 impl RoutePlan {
+    /// Returns Some(RoutePath) if there is at least 1 stop in `self.unordered_stops`, None otherwise
     #[must_use]
-    pub fn calculate(&self) -> RoutePath {
-        // let ordered_stops = iter::onceself.start_stopself.optimise_order();
+    pub fn calculate(&self) -> Option<RoutePath> {
+        let ordered_stops = self
+            .unordered_stops
+            .iter()
+            .permutations(self.unordered_stops.len()) // unordered stops -> iter of every possible stop ordering
+            .map(|route_vec| {
+                iter::once(self.start_stop.clone()) //                      add start and end stops to
+                    .chain(route_vec.iter().cloned().map(|a| a.clone())) // the start and end of each
+                    .chain(iter::once(self.end_stop.clone())) //            route, also collect into vecs
+                    .collect::<Vec<_>>()
+            })
+            .min_by(|iter_a, iter_b| {
+                to_dist(iter_a.into_iter()).cmp(&to_dist(iter_b.into_iter())) // find minimum 
+            })?;
 
-        let ordered_stops: Rc<[Coordinate]> = iter::once(&self.start_stop)
-            .chain(&*self.optimise_order())
-            .chain(iter::once(&self.end_stop))
-            .map(std::clone::Clone::clone)
-            .collect_vec()
-            .into();
-
-        let travel_distance: Distance = ordered_stops
-            .array_windows::<2>()
-            .map(|a| a[0].distance_to(a[1].clone()))
-            .reduce(|acc, next| acc + next)
-            .expect("Expected there to be more than 0 stops");
-
-        let travel_time: Duration = travel_distance.clone() / self.mileage.average_speed();
-
-        let travel_cost = Cost::from(self.mileage.clone()) * travel_distance.inner();
-
-        RoutePath {
-            ordered_stops,
+        Some(RoutePath {
+            ordered_stops: ordered_stops.into(),
             mileage: self.mileage.clone(),
-            travel_distance,
-            travel_cost,
-            travel_time,
-        }
+        })
+    }
+}
+
+impl RoutePath {
+    pub fn travel_distance(&self) -> Distance {
+        to_dist(self.ordered_stops.clone().into_iter())
+    }
+    pub fn travel_time(&self) -> Duration {
+        self.travel_distance().clone() / self.mileage.average_speed()
+    }
+    pub fn travel_cost(&self) -> Cost {
+        Cost::from(self.mileage.clone()) * self.travel_distance().inner()
     }
 
-    fn optimise_order(&self) -> Rc<[Coordinate]> {
-        // TODO: implement stop order optimisation
-        self.unordered_stops.clone()
+    /// You can also just read the field directly
+    pub fn mileage(&self) -> MileageOptions {
+        self.mileage.clone()
     }
 }
 
@@ -116,7 +125,109 @@ pub fn all_possible_routes(filters: &StoreFilters, mileage: &MileageOptions) -> 
             end_stop: filters.location.clone(),
             mileage: mileage.clone(),
         })
-        .map(|plan| plan.calculate())
+        .map(|plan| plan.calculate().unwrap())
         .collect_vec()
         .into_boxed_slice()
+}
+
+#[derive(Debug)]
+pub struct RoutePlannerData<'a> {
+    graph: Graph,
+    options: Options<'a>,
+}
+
+impl RoutePlannerData<'_> {
+    pub fn with_nz() -> Self {
+        println!("graph init");
+        let mut graph = routx::Graph::new();
+
+        println!("options init");
+        let options = routx::osm::Options {
+            profile: &routx::osm::CAR_PROFILE,
+            file_format: routx::osm::FileFormat::Unknown,
+            bbox: [166.086_32, -47.447_61, 178.679_81, -32.975_4], // tightly bound around nz north and south islands
+        };
+
+        #[cfg(feature = "include_routing")]
+        {
+            println!("adding features");
+            routx::osm::add_features_from_buffer(
+                &mut graph,
+                &options,
+                include_bytes!("../../nz2-pruned.osm.pbf"),
+            )
+            .expect("failed to load nz2-pruned.osm.pbf");
+        }
+
+        Self { graph, options }
+    }
+
+    #[cfg(not(feature = "include_routing"))]
+    pub fn route_search(
+        &self,
+        start_coord: Coordinate,
+        end_coord: Coordinate,
+    ) -> Result<RoutePlan, AStarError> {
+        unimplemented!()
+    }
+
+    #[cfg(feature = "include_routing")]
+    pub fn route_search(
+        &self,
+        start_coord: Coordinate,
+        end_coord: Coordinate,
+    ) -> Result<Vec<Coordinate>, AStarError> {
+        use bigdecimal::num_traits::ToPrimitive;
+
+        println!("find nearest start node");
+        println!("satrt {start_coord:?}");
+        println!("end {end_coord:?}");
+        let start_node = self
+            .graph
+            .find_nearest_node(
+                start_coord
+                    .latitude
+                    .to_f32()
+                    .expect("lat or long to be in range of f32"),
+                start_coord
+                    .longitude
+                    .to_f32()
+                    .expect("lat or long to be in range of f32"),
+            )
+            .expect("start location out of range");
+        println!("find nearest end node");
+        let end_node = self
+            .graph
+            .find_nearest_node(
+                end_coord
+                    .latitude
+                    .to_f32()
+                    .expect("lat or long to be in range of f32"),
+                end_coord
+                    .longitude
+                    .to_f32()
+                    .expect("lat or long to be in range of f32"),
+            )
+            .expect("end location out of range");
+        println!("route searcch");
+        println!("start_node construction {start_node:?}");
+        println!("end_node construction {end_node:?}");
+        routx::find_route_without_turn_around(
+            &self.graph,
+            start_node.id,
+            end_node.id,
+            routx::DEFAULT_STEP_LIMIT,
+        )
+        .map(|ids| {
+            ids.iter()
+                .map(|id| {
+                    let node = self
+                        .graph
+                        .get_node(*id)
+                        .expect("node id to be valid after construction");
+                    Coordinate::from_lat_long_f32(node.lat, node.lon)
+                })
+                .collect()
+        })
+    }
 }
