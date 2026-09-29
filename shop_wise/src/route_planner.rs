@@ -10,14 +10,12 @@ use util::{
     coordinate::Coordinate,
     cost::Cost,
     distance::Distance,
-    store::{Store, StoreBrand},
+    store::Store,
 };
 
 use crate::{
     gui::transit::MileageOptions,
     route_planner::filters::{StoreFilters, filter_stores},
-    route_planner::loc_resolver::load_store_locations,
-    database::db_access,
 };
 
 pub mod filters;

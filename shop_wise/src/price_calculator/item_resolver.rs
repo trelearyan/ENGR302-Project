@@ -4,10 +4,9 @@ use std::collections::hash_map::Iter as HashIter;
 use std::slice::Iter as VecIter;
 use std::sync::RwLock;
 use lazy_static::lazy_static;
-use util::coordinate::Coordinate;
 use util::cost::Cost;
-use util::search::{ResolvedItem, SearchUnits, ShoppingItem, ShoppingItemQuery, match_sid_to_brand};
-use util::store::{Store, StoreBrand};
+use util::search::{ResolvedItem, SearchUnits, ShoppingItemQuery, match_sid_to_brand};
+use util::store::StoreBrand;
 
 use rusqlite::{Connection, Error, Result};
 use regex::Regex;
