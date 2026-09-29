@@ -84,20 +84,8 @@ impl RoutePlan {
 // on their filters.
 #[must_use]
 pub fn all_stores() -> Box<[Store]> {
-    Box::new([
-        Store {
-            brand: StoreBrand::Paknsave,
-            location: Coordinate::default(),
-        },
-        Store {
-            brand: StoreBrand::Newworld,
-            location: Coordinate::default(),
-        },
-        Store {
-            brand: StoreBrand::Woolworths,
-            location: Coordinate::default(),
-        },
-    ])
+    let stores = loc_resolver::load_store_locations().unwrap();
+    stores.into_boxed_slice()
 }
 
 // Returns every possible route the user could take between supermarkets based
