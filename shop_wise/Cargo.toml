@@ -3,6 +3,10 @@ name = "shop_wise"
 version = "0.1.0"
 edition = "2024"
 
+[features]
+default = ["include_routing"]
+include_routing = []
+
 [lints]
 workspace = true
 
@@ -17,7 +21,7 @@ strum_macros = "0.28.0"
 serde_json = "1.0.149"
 serde = {version= "1.0.228", features= ["derive"] }
 termsize = "0.1.9"
-eframe = "0.34.2"
+eframe = "0.36.2"
 log = "0.4"
 wasm-bindgen = "0.2"
 wasm-bindgen-futures = "0.4"
@@ -31,6 +35,8 @@ csv = "1.4.0"
 rfd = "0.17.2"
 regex = "1.13.1"
 lazy_static = "1.5.0"
+walkers = "0.60.0"
+routx = "1.1.0"
 
 [dependencies.web-sys]
 version = "0.3"
