@@ -146,7 +146,7 @@ pub fn calculate(
         local_routes.push(LocalRoute {
             shops: visited,
             route_travel_cost: route
-                .travel_cost
+                .travel_cost()
                 .clone()
                 .round()
                 .inner()
@@ -157,7 +157,7 @@ pub fn calculate(
                         err_msg: "Route cost was not able to be represented in cents".to_owned(),
                     }
                 )?,
-            route_time: route.travel_time.as_secs(),
+            route_time: route.travel_time().as_secs(),
             route_id,
         });
     }
@@ -305,7 +305,7 @@ fn delocalise(
         total_item_cost: Cost::from_cents(plan.0.total_item_cost),
         total_travel_cost: Cost::from_cents(plan.0.total_travel_cost),
         total_time: Duration::from_secs(plan.0.total_time),
-        total_dist: rp.travel_distance.clone(),
+        total_dist: rp.travel_distance().clone(),
         shopping_plan,
         msg_log: plan.1,
         //route: rp,
