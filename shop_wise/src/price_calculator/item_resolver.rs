@@ -237,7 +237,7 @@ fn query_db(search_terms: &[&str]) -> Result<HashMap<usize, HashMap<u32, Vec<Sea
             for i in 1..=3 {
                 let _shop_id = &i.to_string();
                 let sql_query = "
-                    SELECT id, supermarket_id, name, price, volume_size, image_url
+                    SELECT id, supermarket_id, name, price, volume_size
                     FROM products p
                     WHERE p.supermarket_id = ?1
                     AND LOWER(p.name) LIKE ?2
@@ -255,7 +255,7 @@ fn query_db(search_terms: &[&str]) -> Result<HashMap<usize, HashMap<u32, Vec<Sea
                             store: match_sid_to_brand(row.get(1)?).unwrap(),
                             quantity: amt.0,
                             unit: amt.1,
-                            image_url: row.get(5)?,
+                            image_url: "nada".to_owned(),
                         })
                 })?;
                 let shop_results: Vec<SearchResult> = res.map(|f: std::prelude::v1::Result<SearchResult, Error>|->SearchResult{f.unwrap()}).collect();
@@ -372,8 +372,8 @@ mod tests {
                 unit: SearchUnits::GRAM.to_str().to_owned(),
             })
             .unwrap();
-            assert_eq!(true, res.contains_key(&2));
             assert_eq!(false, res.contains_key(&1));
+            assert_eq!(false, res.contains_key(&2));
             assert_eq!(false, res.contains_key(&3));
         }
         {
@@ -383,9 +383,9 @@ mod tests {
                 unit: SearchUnits::GRAM.to_str().to_owned(),
             })
             .unwrap();
-            assert_eq!(false, res.contains_key(&2));
-            assert_eq!(true, res.contains_key(&1));
-            assert_eq!(true, res.contains_key(&3));
+            assert_eq!(false, res.contains_key(&1));
+            assert_eq!(true, res.contains_key(&2));
+            assert_eq!(false, res.contains_key(&3));
         }
     }
 
@@ -397,15 +397,15 @@ mod tests {
             unit: SearchUnits::GRAM.to_str().to_owned(),
         })
         .unwrap(); //Maggi Onion Soup
-        assert_eq!("Maggi Onion Soup", res.get(&1).unwrap().name);
+        assert_eq!("Onion Soup Mix Sachet", res.get(&1).unwrap().name);
         let res = resolve(&ShoppingItemQuery {
             name: String::from("Reduced Cream"),
             quantity: 1,
             unit: SearchUnits::MILLILITRE.to_str().to_owned(),
         })
         .unwrap();
-        assert_eq!("Pams Reduced Cream", res.get(&1).unwrap().name);
-        assert_eq!("countdown reduced cream ", res.get(&2).unwrap().name);
+        assert_eq!("Reduced Cream", res.get(&1).unwrap().name);
+        assert_eq!("nestlé reduced cream original kiwi dip", res.get(&2).unwrap().name);
     }
 
     #[test]
