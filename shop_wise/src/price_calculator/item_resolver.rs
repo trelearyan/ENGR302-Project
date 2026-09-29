@@ -354,8 +354,14 @@ fn get_unit(unit_text: String) -> (u32, SearchUnits) {
 mod tests {
     use super::*;
 
+    fn clear_cache() {
+        let Ok(mut map) = QUERY_CACHE.write() else {return;};
+        map.clear();
+    }
+
     #[test]
     fn test_result() {
+        clear_cache();
         let _ = resolve(&ShoppingItemQuery {
             name: String::from("Eggs"),
             quantity: 1,
@@ -365,6 +371,7 @@ mod tests {
 
     #[test]
     fn test_weetbix() {
+        clear_cache();
         {
             let res = resolve(&ShoppingItemQuery {
                 name: String::from("Weetbix"),
@@ -391,6 +398,43 @@ mod tests {
 
     #[test]
     fn test_dip() {
+        clear_cache();
+        let res = resolve(&ShoppingItemQuery {
+            name: String::from("Onion Soup"),
+            quantity: 1,
+            unit: SearchUnits::GRAM.to_str().to_owned(),
+        })
+        .unwrap(); //Maggi Onion Soup
+        assert_eq!("Onion Soup Mix Sachet", res.get(&1).unwrap().name);
+        let res = resolve(&ShoppingItemQuery {
+            name: String::from("Reduced Cream"),
+            quantity: 1,
+            unit: SearchUnits::MILLILITRE.to_str().to_owned(),
+        })
+        .unwrap();
+        assert_eq!("Reduced Cream", res.get(&1).unwrap().name);
+        assert_eq!("nestlé reduced cream original kiwi dip", res.get(&2).unwrap().name);
+    }
+
+    #[test]
+    fn test_caching() {
+        clear_cache();
+        let res = resolve(&ShoppingItemQuery {
+            name: String::from("Onion Soup"),
+            quantity: 1,
+            unit: SearchUnits::GRAM.to_str().to_owned(),
+        })
+        .unwrap(); //Maggi Onion Soup
+        assert_eq!("Onion Soup Mix Sachet", res.get(&1).unwrap().name);
+        let res = resolve(&ShoppingItemQuery {
+            name: String::from("Reduced Cream"),
+            quantity: 1,
+            unit: SearchUnits::MILLILITRE.to_str().to_owned(),
+        })
+        .unwrap();
+        assert_eq!("Reduced Cream", res.get(&1).unwrap().name);
+        assert_eq!("nestlé reduced cream original kiwi dip", res.get(&2).unwrap().name);
+        // Repeat test to ensure that works both times
         let res = resolve(&ShoppingItemQuery {
             name: String::from("Onion Soup"),
             quantity: 1,
