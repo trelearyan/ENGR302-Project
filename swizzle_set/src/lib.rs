@@ -3,8 +3,8 @@
 use itertools::Itertools;
 use std::{collections::HashSet, num::NonZero};
 use unsynn::{
-    Comma, CommaDelimitedVec, Error, IParse, LiteralCharacter, LiteralInteger, LiteralString,
-    ParenthesisGroupContaining, ToTokenIter, TrailingDelimiter::Forbidden, unsynn,
+    unsynn, Comma, CommaDelimitedVec, Error, IParse, LiteralCharacter, LiteralInteger,
+    LiteralString, ParenthesisGroupContaining, ToTokenIter, TrailingDelimiter::Forbidden,
 };
 
 unsynn! {
@@ -399,4 +399,14 @@ mod tests {
             .into()
         );
     }
+}
+
+struct a {
+    m: usize,
+    y: usize,
+    a: usize,
+}
+
+impl a {
+    impl_swizzle_functions!("mya");
 }
