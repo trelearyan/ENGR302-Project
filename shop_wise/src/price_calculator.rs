@@ -106,14 +106,14 @@ pub fn calculate(
         local_routes.push(LocalRoute {
             shops: visited,
             route_travel_cost: route
-                .travel_cost
+                .travel_cost()
                 .clone()
                 .round()
                 .inner()
                 .with_scale(2)
                 .to_u32()
                 .unwrap(),
-            route_time: route.travel_time.as_secs(),
+            route_time: route.travel_time().as_secs(),
             route_id,
         });
     }
@@ -244,7 +244,7 @@ fn delocalise(
         total_item_cost: Cost::from_cents(plan.total_item_cost),
         total_travel_cost: Cost::from_cents(plan.total_travel_cost),
         total_time: Duration::from_secs(plan.total_time),
-        total_dist: rp.travel_distance.clone(),
+        total_dist: rp.travel_distance().clone(),
         shopping_plan,
         //route: rp,
     }
