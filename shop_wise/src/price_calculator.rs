@@ -216,6 +216,7 @@ pub fn calculate(
             }
         }
     }
+    log::debug!("Local Routes:\n{:?}\n\n\nShort Database:\n{:?}\n\n\nItem Lookup:\n{:?}", local_routes, short_database, item_lookup);
     // Calculate minimising for combined item and travel cost
     let cheap = delocalise(
         calculate_minimised(
@@ -258,7 +259,7 @@ pub fn calculate(
         &stores,
         &routes,
     );
-    log::debug!("{:?}\n{:?}\n{:?}", cheap, fast, best);
+    log::debug!("Cheapest Plan:\n{:?}\n\n\nFastest Plan:\n{:?}\n\n\nBest Plan:\n{:?}", cheap, fast, best);
     // Return the result
     Ok(CalculationTotal {
         cheapest: cheap,
