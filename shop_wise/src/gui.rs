@@ -45,6 +45,11 @@ impl ShowableWidget for AppData {
 
         if !self.filters_collapsed{
             Panel::left("left_panel").show_inside(ui, |ui| {
+                Panel::bottom("left_footer")
+                    .resizable(false)
+                    .show_inside(ui, |ui| {
+                        ui.label("Footer");
+                    });
                 ScrollArea::vertical()
                     .id_salt("left panel scroll")
                     .auto_shrink([false; 2])
