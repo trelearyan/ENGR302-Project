@@ -1,67 +1,18 @@
-use std::fs::read_to_string;
 
-use util::store::Store;
+use crate::gui::ShowableWidget;
 
-use crate::route_planner::filters::{StoreFilters, filter_stores};
+pub mod filehandling;
 
-mod input_gui;
-mod price_calculator;
-mod route_planner;
+pub mod gui;
+pub mod price_calculator;
+pub mod route_planner;
 
 use eframe::egui;
-use input_gui::MyApp;
+use gui::AppData;
 
-fn demo_route_planner() {
-    let filters: StoreFilters =
-        serde_json::from_str(read_to_string("filters.json").unwrap().as_str()).unwrap();
-
-    let stores: Vec<Store> =
-        serde_json::from_str(read_to_string("stores.json").unwrap().as_str()).unwrap();
-
-    let output = filter_stores(&stores, &filters);
-
-    print_bar();
-    println!("List of all stores:");
-    println!("{}", read_to_string("stores.json").unwrap().as_str());
-
-    print_bar();
-    println!("List of current user filters:");
-    println!("{}", read_to_string("filters.json").unwrap().as_str());
-
-    print_bar();
-    println!("Filtered stores:");
-    println!("{}", serde_json::to_string_pretty(&output).unwrap());
-    print_bar();
-}
-
-fn print_bar() {
-    let terminal_cols = termsize::get().unwrap().cols;
-    for _ in 0..terminal_cols {
-        print!("=");
-    }
-}
-
-impl eframe::App for MyApp {
+impl eframe::App for AppData {
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
-        egui::Panel::left("left_panel")
-            .resizable(true)
-            .show_inside(ui, |ui| {
-                egui::ScrollArea::vertical().show(ui, |ui| {
-                    self.shopping_list_ui(ui);
-                    ui.separator();
-                    // fr 10
-                    self.filters(ui);
-                    ui.separator();
-                    self.mileage(ui);
-                });
-            });
-
-        egui::CentralPanel::default().show_inside(ui, |ui| {
-            self.location(ui);
-            self.search_button(ui);
-            // for debugging
-            self.print_filters(ui);
-        });
+        self.show(ui);
     }
 }
 
@@ -73,7 +24,7 @@ fn main() -> eframe::Result {
     eframe::run_native(
         "ShopWise",
         options,
-        Box::new(|_| Ok(Box::new(MyApp::default()))),
+        Box::new(|_| Ok(Box::new(AppData::default()))),
     )
 }
 
@@ -98,7 +49,7 @@ fn main() {
             .start(
                 canvas,
                 eframe::WebOptions::default(),
-                Box::new(|_| Ok(Box::new(MyApp::default()))),
+                Box::new(|_| Ok(Box::new(AppData::default()))),
             )
             .await
             .unwrap();

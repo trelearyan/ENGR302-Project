@@ -1,161 +1,303 @@
 use std::collections::HashMap;
+use std::time::Duration;
+use util::distance::Distance;
+use util::{cost::Cost, store::{Store, StoreBrand}};
+use bigdecimal::ToPrimitive;
+use util::{search::{ShoppingItem, ShoppingItemQuery}};
 
-pub type StoreId = i32;
-pub type ItemId = i32;
-pub type RoutePlan = Vec<StoreId>;
-pub type ShoppingPlan = HashMap<StoreId, Vec<ItemId>>;
+use crate::{
+    gui::transit::MileageOptions,
+    price_calculator::item_resolver::resolve,
+    route_planner::{
+        RoutePath, all_possible_routes, all_stores,
+        filters::{StoreFilters, filter_stores},
+    },
+};
 
-pub struct CurrentPlan {
-    current_shop_plan: ShoppingPlan,
-    current_stores: RoutePlan,
-    current_item_cost: i32,
-    current_travel_cost: i32,
+// Public types
+
+pub mod item_resolver;
+pub mod results;
+
+#[derive(Debug)]
+pub struct StorePlan {
+    pub store: Store,
+    pub items: Vec<ShoppingItem>,
 }
+
+#[derive(Debug)]
+pub struct Calculation {
+    pub total_shop_cost: Cost,
+    pub total_item_cost: Cost,
+    pub total_travel_cost: Cost,
+    pub total_time: Duration,
+    pub total_dist: Distance,
+    pub shopping_plan: Vec<StorePlan>,
+}
+
+#[derive(Debug)]
+pub struct CalculationTotal {
+    pub cheapest: Calculation,
+    pub fastest: Calculation,
+    pub best: Calculation,
+}
+
+// Private types
+
+type StoreId = usize;
+type GlobalStoreId = u32;
+type ItemId = usize;
+type RouteId = usize;
+type ShoppingPlan = Vec<StoreId>;
 
 #[derive(PartialEq, Debug)]
-pub struct BestPlan {
+struct BestPlan {
     best_shop_plan: ShoppingPlan,
-    best_cost: i32,
+    best_cost: u32,
+    total_item_cost: u32,
+    total_travel_cost: u32,
+    total_shop_cost: u32,
+    total_time: u64,
+    route_id: RouteId,
 }
 
-//pub mod shopping_list_parser;
+#[derive(Debug, PartialEq)]
+struct LocalRoute {
+    route_id: RouteId,
+    shops: Vec<StoreId>,
+    route_travel_cost: u32,
+    route_time: u64,
+}
 
-//pub mod item_resolver;
-
-pub mod calculator {
-    use crate::price_calculator::*;
-    pub fn calculate(
-        _items: &[ShoppingItem],
-        _supermarkets: &[Supermarket],
-        _database: &HashMap<StoreId, HashMap<ItemId, i32>>) {
-        /* Will call calculate cheapest, best and fastest
-         *            with their respective closures and then return
-         *            their results */
+// Given the parsed shopping list, perform price optimisation
+#[must_use]
+pub fn calculate(
+    shop_list: &[ShoppingItemQuery],
+    filters: &StoreFilters,
+    mileage: &MileageOptions,
+) -> Option<CalculationTotal> {
+    // Get all visitable stores, position in Vec is local ID (StoreId)
+    let stores: Vec<Store> = filter_stores(&all_stores(), filters)
+        .iter()
+        .map(|a: &Store| -> Store { a.to_owned() })
+        .collect();
+    // Fetch all (2^n-1) routes for the n stores in range
+    let routes: Box<[RoutePath]> = all_possible_routes(filters, mileage);
+    let mut local_routes: Vec<LocalRoute> = Vec::new();
+    for route_id in 0..routes.len() {
+        let route = routes.get(route_id)?;
+        // Calculate set of StoreIds for visited stores
+        let mut visited: Vec<RouteId> = Vec::new();
+        for stop in route.ordered_stops.iter() {
+            let mut found_id: Option<StoreId> = None;
+            for i in 0..stores.len() {
+                let store = &stores[i];
+                if store.location == *stop {
+                    found_id = Some(i);
+                    break;
+                }
+            }
+            if found_id.is_none() {
+                continue;
+            }
+            visited.push(found_id.unwrap());
         }
-
-        pub fn calculate_cheapest(
-            items: &[ItemId],
-            supermarkets: &[StoreId],
-            routes: &HashMap<RoutePlan, i32>,
-            database: &HashMap<StoreId, HashMap<ItemId, i32>>
-        ) -> Option<BestPlan> {
-
-            let mut current_plan = CurrentPlan {
-                current_shop_plan: HashMap::new(),
-                current_stores: Vec::new(),
-                current_item_cost: 0,
-                current_travel_cost: 0,
+        // Encode route into LocalRoute
+        local_routes.push(LocalRoute {
+            shops: visited,
+            route_travel_cost: route
+                .travel_cost
+                .clone()
+                .round()
+                .inner()
+                .with_scale(2)
+                .to_u32()
+                .unwrap(),
+            route_time: route.travel_time.as_secs(),
+            route_id,
+        });
+    }
+    // Encode necessary data into a short_database Price indexed by ItemId, indexed by StoreId
+    let mut short_database: Vec<Vec<Option<u32>>> = Vec::new();
+    for _i in 0..stores.len() {
+        short_database.push(Vec::new());
+    }
+    // Keep shopping items for returning to output_gui
+    let mut item_lookup: Vec<HashMap<StoreId, ShoppingItem>> = Vec::new();
+    for item_key in 0..shop_list.len() {
+        item_lookup.push(HashMap::new());
+        // Resolve query
+        let query = shop_list.get(item_key)?;
+        let mut res: HashMap<GlobalStoreId, ShoppingItem> = resolve(query)?;
+        // Record resolution at each visited store
+        for store_id in 0..stores.len() {
+            // Mock store specific availability by just assuming same
+            // among all stores within a brand
+            let global_store_key = match stores.get(store_id)?.brand {
+                StoreBrand::Paknsave => 1,
+                StoreBrand::Woolworths => 2,
+                StoreBrand::Newworld => 3,
             };
-
-            let mut best_plan = BestPlan {
-                best_shop_plan: HashMap::new(),
-                best_cost: i32::MAX,
-            };
-
-            cheapest_search(0,
-                            items,
-                            supermarkets,
-                            database,
-                            routes,
-                            &mut current_plan,
-                            &mut best_plan,
-            );
-
-            if best_plan.best_cost == i32::MAX {
-                /* Couldn't buy all the items and return None,
-                 *            need to work out how to deal with certain errors
-                 *            and some of this needs to be done in a pre-check */
-                return None;
-            }
-            return Some(best_plan);
-        }
-
-        pub fn cheapest_search(
-            item_index: usize,
-            items: &[ItemId],
-            supermarkets: &[StoreId],
-            database: &HashMap<StoreId, HashMap<ItemId, i32>>,
-            routes: &HashMap<RoutePlan, i32>,
-            current_plan: &mut CurrentPlan,
-            best_plan: &mut BestPlan,
-        ) {
-            // Base case
-            if item_index >= items.len() {
-                if current_plan.current_item_cost + current_plan.current_travel_cost < best_plan.best_cost {
-                    best_plan.best_cost = current_plan.current_item_cost + current_plan.current_travel_cost;
-                    best_plan.best_shop_plan = current_plan.current_shop_plan.clone();
-                }
-                return;
-            }
-            // Retrieve item we want to add
-            let item = &items[item_index];
-            // Run through every possible store to purchase this item at
-            for (store_id, shop_pricings) in database {
-                // Check if we can shop at this supermarket
-                if !supermarkets.contains(&store_id) {
-                    continue;
-                }
-                // Check if this supermarket sells that item, otherwise skip
-                if !shop_pricings.contains_key(item)  {
-                    continue;
-                }
-                let mut added_store: bool = false;
-                let mut store_index: usize = 0;
-                let old_travel_cost: i32 = current_plan.current_travel_cost;
-                // If store not on route currently, add it
-                if !current_plan.current_shop_plan.contains_key(store_id) {
-                    added_store = true;
-                    // Keep current_stores sorted, by using binary search and insertion
-                    store_index = match current_plan.current_stores.binary_search(store_id) {
-                        Ok(i) | Err(i) => i,
-                    };
-                    current_plan.current_stores.insert(store_index, *store_id);
-                    current_plan.current_travel_cost = *routes.get(&current_plan.current_stores).unwrap();
-                }
-                // Update current best_plan to include this decision
-                current_plan.current_shop_plan
-                .entry(*store_id)
-                .or_insert_with(Vec::new)
-                .push(*item);
-                // Update current cost with item pricing
-                let price = *shop_pricings.get(item).unwrap();
-                current_plan.current_item_cost += price;
-
-                // Cull recursions if we already know sub-optimal (price strictly increases)
-                if current_plan.current_item_cost + current_plan.current_travel_cost < best_plan.best_cost {
-                    // Recurse
-                    cheapest_search(
-                        item_index+1,
-                        items,
-                        supermarkets,
-                        database,
-                        routes,
-                        current_plan,
-                        best_plan,
-                    );
-                }
-                // Rollback to previous state to continue search
-                current_plan.current_item_cost -= price;
-                if let Some(items) = current_plan.current_shop_plan.get_mut(store_id) {
-                    items.pop();
-                }
-                if added_store {
-                    current_plan.current_shop_plan.remove(store_id);
-                    current_plan.current_stores.remove(store_index);
-                    current_plan.current_travel_cost = old_travel_cost;
-                }
+            // If this store has an entry for the item add it
+            if res.contains_key(&global_store_key) {
+                let item: ShoppingItem = res.remove(&global_store_key)?;
+                // Convert to cents for efficient copying
+                let price = item
+                    .price
+                    .clone()
+                    .round()
+                    .inner()
+                    .with_scale(2)
+                    .to_u32()
+                    .unwrap()*item.multiplier;
+                // Add item to item lookup table
+                item_lookup.get_mut(item_key)?.insert(store_id, item);
+                // Add price to short database
+                short_database.get_mut(store_id)?.push(Some(price));
+            } else {
+                // Don't add price to short database
+                short_database.get_mut(store_id)?.push(None);
             }
         }
+    }
+    // Calculate minimising for combined item and travel cost
+    let cheap = delocalise(
+        calculate_minimised(
+            shop_list.len(),
+            &local_routes,
+            &short_database,
+            |a: &u32, b: &LocalRoute| -> u32 { a + b.route_travel_cost },
+        )?,
+        &item_lookup,
+        &stores,
+        &routes,
+    );
+    // Calculate minimising only for travel time
+    let fast = delocalise(
+        calculate_minimised(
+            shop_list.len(),
+            &local_routes,
+            &short_database,
+            |_a: &u32, b: &LocalRoute| -> u32 { b.route_time as u32 },
+        )?,
+        &item_lookup,
+        &stores,
+        &routes,
+    );
+    // Calculate minimising for total cost, with a $30 hourly rate
+    let best = delocalise(
+        calculate_minimised(
+            shop_list.len(),
+            &local_routes,
+            &short_database,
+            |a: &u32, b: &LocalRoute| -> u32 {
+                // Assume people would drive an hour to save 30 dollars for now (5/6 cents per second)
+                a + b.route_travel_cost + ((5 * b.route_time) / 6) as u32
+            },
+        )?,
+        &item_lookup,
+        &stores,
+        &routes,
+    );
+    // Return the result
+    Some(CalculationTotal {
+        cheapest: cheap,
+        fastest: fast,
+        best,
+    })
 }
 
-pub struct ShoppingItem<'a> {
-    name: &'a str,
+fn delocalise(
+    plan: BestPlan,
+    item_lookup: &Vec<HashMap<StoreId, ShoppingItem>>,
+    stores: &Vec<Store>,
+    routes: &Box<[RoutePath]>,
+) -> Calculation {
+    // Compile shopping plan into Vec<StorePlan>
+    let mut shopping_plan: Vec<StorePlan> = Vec::new();
+    for shop_id in 0..stores.len() {
+        let mut items: Vec<ShoppingItem> = Vec::new();
+        for item_id in 0..item_lookup.len() {
+            // If this item was brought at the cuurent store
+            if *plan.best_shop_plan.get(item_id).unwrap() == shop_id {
+                let item: &ShoppingItem =
+                    item_lookup.get(item_id).unwrap().get(&(shop_id)).unwrap();
+                items.push(ShoppingItem {
+                    name: item.name.clone(),
+                    multiplier: item.multiplier,
+                    quantity: item.quantity,
+                    unit: item.unit.clone(),
+                    price: item.price.clone(),
+                    store: item.store.clone(),
+                });
+            }
+        }
+        if !items.is_empty() {
+            shopping_plan.push(StorePlan {
+                store: stores.get(shop_id).unwrap().clone(),
+                items,
+            });
+        }
+    }
+    let rp: &RoutePath = routes.get(plan.route_id).unwrap();
+    Calculation {
+        total_shop_cost: Cost::from_cents(plan.total_shop_cost),
+        total_item_cost: Cost::from_cents(plan.total_item_cost),
+        total_travel_cost: Cost::from_cents(plan.total_travel_cost),
+        total_time: Duration::from_secs(plan.total_time),
+        total_dist: rp.travel_distance.clone(),
+        shopping_plan,
+        //route: rp,
+    }
 }
 
-// Maybe this belongs in Database?
-pub struct Supermarket<'a> {
-    name: &'a str,
-    id: i32,
+fn calculate_minimised(
+    list: ItemId,
+    routes: &[LocalRoute],
+    short_database: &[Vec<Option<u32>>],
+    cost_fn: fn(ic: &u32, lr: &LocalRoute) -> u32,
+) -> Option<BestPlan> {
+    let mut current_shop_plan: ShoppingPlan;
+    let mut best_plan: Option<BestPlan> = None;
+
+    // Run through every possible route
+    'outer: for route in routes {
+        // Clear current plan
+        current_shop_plan = Vec::new();
+        // For each item pick the best store on the route
+        let mut total_item: u32 = 0;
+        for item in 0..list {
+            let mut best_place: Option<StoreId> = None;
+            let mut best_cost: u32 = u32::MAX;
+            for shop in &route.shops {
+                let temp_cost: Option<u32> = *short_database.get(*shop)?.get(item)?;
+                if (temp_cost.is_some()) && (best_place.is_none() || temp_cost? < best_cost) {
+                    best_cost = temp_cost?;
+                    best_place = Some(*shop);
+                }
+            }
+            // If no store sells this item - abandon route and skip to next
+            if best_place.is_none() {
+                continue 'outer;
+            }
+            total_item += best_cost;
+            current_shop_plan.push(best_place?);
+        }
+        // Calculate cost and update best
+        let new: u32 = cost_fn(&total_item, route);
+        if best_plan.is_none() || new < best_plan.as_ref()?.best_cost {
+            best_plan = Some(BestPlan {
+                best_shop_plan: current_shop_plan,
+                best_cost: new,
+                total_item_cost: total_item,
+                total_travel_cost: route.route_travel_cost,
+                total_shop_cost: total_item + route.route_travel_cost,
+                total_time: route.route_time,
+                route_id: route.route_id,
+            });
+        }
+    }
+    best_plan
 }
 
 #[cfg(test)]
@@ -163,38 +305,56 @@ mod tests {
     use super::*;
 
     #[test]
-    fn demo_test() {
-        let items = vec![0, 1, 2];
-        let supermarkets = vec![0, 1];
-        let mut routes:  HashMap<RoutePlan, i32> = HashMap::new();
-        routes.insert(vec![], 0);
-        routes.insert(vec![0], 196);
-        routes.insert(vec![1], 190);
-        routes.insert(vec![0,1],295);
-        let mut database: HashMap<StoreId, HashMap<ItemId, i32>> = HashMap::new();
-        let mut store0: HashMap<ItemId, i32> = HashMap::new();
-        store0.insert(0, 599);
-        store0.insert(1, 720);
-        store0.insert(2, 1450);
-        database.insert(0, store0);
-        let mut store1: HashMap<ItemId, i32> = HashMap::new();
-        store1.insert(0, 620);
-        store1.insert(1, 899);
-        store1.insert(2, 1299);
-        database.insert(1, store1);
-        let result: Option<BestPlan> = calculator::calculate_cheapest(
-            &items,
-            &supermarkets,
-            &routes,
-            &database
-        );
-        let mut correct_shop = HashMap::new();
-        correct_shop.insert(0, vec![0,1]);
-        correct_shop.insert(1, vec![2]);
-        let correct_result: Option<BestPlan> = Some(BestPlan {
-            best_shop_plan: correct_shop,
-            best_cost: 2913,
+    fn test_cheapest_demo() {
+        assert_eq!(3, 1 + 2);
+        let items = [0, 1, 2];
+        let mut routes: Vec<LocalRoute> = Vec::new();
+        routes.push(LocalRoute {
+            shops: [0].to_vec(),
+            route_travel_cost: 196,
+            route_time: 0,
+            route_id: 0,
         });
-        assert_eq!(result,correct_result);
+        routes.push(LocalRoute {
+            shops: [1].to_vec(),
+            route_travel_cost: 190,
+            route_time: 0,
+            route_id: 1,
+        });
+        routes.push(LocalRoute {
+            shops: [0, 1].to_vec(),
+            route_travel_cost: 295,
+            route_time: 0,
+            route_id: 2,
+        });
+        let mut database: Vec<Vec<Option<u32>>> = Vec::new();
+        let mut store0: Vec<Option<u32>> = Vec::new();
+        store0.push(Some(599));
+        store0.push(Some(720));
+        store0.push(Some(1450));
+        database.push(store0);
+        let mut store1: Vec<Option<u32>> = Vec::new();
+        store1.push(Some(620));
+        store1.push(Some(899));
+        store1.push(Some(1299));
+        database.push(store1);
+        let result: Option<BestPlan> = calculate_minimised(
+            items.len(),
+            routes.as_ref(),
+            &database,
+            |a: &u32, b: &LocalRoute| -> u32 {
+                return a + b.route_travel_cost;
+            },
+        );
+        let correct_result: Option<BestPlan> = Some(BestPlan {
+            best_shop_plan: vec![0, 0, 1],
+            best_cost: 2913,
+            total_item_cost: 2618,
+            total_travel_cost: 295,
+            total_shop_cost: 2913,
+            total_time: 0,
+            route_id: 2,
+        });
+        assert_eq!(correct_result, result);
     }
 }

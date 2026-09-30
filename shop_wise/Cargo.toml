@@ -24,7 +24,13 @@ wasm-bindgen-futures = "0.4"
 reqwest = { version = "0.12", features = ["json"] }
 urlencoding = "2.1"
 bigdecimal = "0.4.10"
-derive_more = { version = "2.1.1", features = ["display", "is_variant"] }
+derive_more = { version = "2.1.1", features = ["full"] }
+itertools = "0.15.0"
+rusqlite = {version = "0.40.2", features = ["bundled", "serialize", "ffi-sqlite-wasm-rs"] }
+csv = "1.4.0"
+rfd = "0.17.2"
+regex = "1.13.1"
+image = { version = "0.25", default-features = false, features = ["png"] }
 
 [dependencies.web-sys]
 version = "0.3"
@@ -39,4 +45,15 @@ features = [
     "Geolocation",
     "Position",
     "Coordinates",
+    "PositionOptions",
+    "PositionError",
+
+    # Saving a file
+    "Element",
+    "HtmlElement",
+    "HtmlAnchorElement",
 ]
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+pollster = "0.4"
+
