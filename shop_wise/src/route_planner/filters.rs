@@ -308,7 +308,4 @@ pub fn filter_stores(stores: &[Store], filters: &StoreFilters) -> Vec<Store> {
 
 #[cfg(test)]
 mod tests {
-    use serde_json::Deserializer;
-
-    use super::*;
 }

@@ -5,6 +5,7 @@ pub mod filehandling;
 pub mod gui;
 pub mod price_calculator;
 pub mod route_planner;
+pub mod database;
 
 use eframe::egui;
 use gui::AppData;
