@@ -76,8 +76,7 @@ pub fn brand_label(brand: StoreBrand) -> &'static str {
 #[derive(Clone, Debug)]
 pub struct ItemLine {
     pub name: String,
-    pub multiplier: u32,
-    pub quantity: String,
+    pub quantity: u32,
     pub unit_price: Cost,
     pub on_special: bool,
     pub needs_loyalty_card: bool,
@@ -86,7 +85,7 @@ pub struct ItemLine {
 impl ItemLine {
     #[must_use]
     pub fn line_total(&self) -> Cost {
-        self.unit_price.clone() * BigDecimal::from(self.multiplier)
+        self.unit_price.clone() * BigDecimal::from(self.quantity)
     }
 }
 
@@ -131,7 +130,7 @@ impl Scenario {
         self.stops
             .iter()
             .flat_map(|s| s.items.iter())
-            .map(|i| i.multiplier)
+            .map(|i| i.quantity)
             .sum()
     }
 
@@ -168,12 +167,11 @@ impl Scenario {
                     .iter()
                     .map(|info| ItemLine {
                         name: info.name.clone(),
-                        quantity: info.multiplier.to_string() + "x " + &info.quantity.to_string() + info.unit.to_str(),
+                        quantity: info.quantity,
                         unit_price: info.price.clone(),
                         // TODO: loyalty pricing
                         on_special: false,
                         needs_loyalty_card: false,
-                        multiplier: info.multiplier,
                     })
                     .collect();
 
@@ -296,37 +294,7 @@ mod tests {
             address: Some(String::new()),
             items: vec![ItemLine {
                 name: "Milk 2L".to_owned(),
-                multiplier: 1,
-                quantity: "1x 2L".to_owned(),
-                unit_price: Cost::from_cents(898),
-                on_special: false,
-                needs_loyalty_card: false,
-            }],
-        };
-        let scenario = Scenario {
-            kind: ScenarioKind::Cheapest,
-            stops: vec![stop],
-            travel_cost: Some(Cost::from_cents(380)),
-            distance_km: Some(Distance::from_kilometres_f64(8.6)),
-            duration_min: Some(19.0),
-        };
-        assert_eq!(scenario.grocery_cost(), Cost::from_cents(898));
-        assert_eq!(scenario.total_cost(), Cost::from_cents(1278));
-        assert_eq!(scenario.item_count(), 1);
-    }
-
-    
-
-    #[test]
-    fn total_is_groceries_plus_travel2() {
-        let stop = StoreStop {
-            store_name: Some("Test".to_owned()),
-            chain: StoreBrand::Paknsave,
-            address: Some(String::new()),
-            items: vec![ItemLine {
-                name: "Milk 1L".to_owned(),
-                multiplier: 2,
-                quantity: "2x 1L".to_owned(),
+                quantity: 2,
                 unit_price: Cost::from_cents(449),
                 on_special: false,
                 needs_loyalty_card: false,

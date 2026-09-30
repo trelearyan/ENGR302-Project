@@ -2,30 +2,24 @@ use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::collections::hash_map::Iter as HashIter;
 use std::slice::Iter as VecIter;
-use std::sync::RwLock;
-use lazy_static::lazy_static;
+use util::coordinate::Coordinate;
 use util::cost::Cost;
-use util::search::{ResolvedItem, SearchUnits, ShoppingItemQuery, match_sid_to_brand};
-use util::store::StoreBrand;
+use util::search::{SearchUnits, ShoppingItem, ShoppingItemQuery, match_sid_to_brand};
+use util::store::{Store, StoreBrand};
 
 use rusqlite::{Connection, Error, Result};
 use regex::Regex;
 
-use crate::database::db_access;
 
-// Public facing types
-
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq)]
 pub struct SantizedSearchResult {
-    pub name: String,
-    pub unit: SearchUnits,
-    pub quantity: u32,
-    pub image_url: String,
+    name: String,
+    unit: SearchUnits,
+    quantity: u32,
+    image_url: String,
 }
 
-// Private/Internal types
-
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq)]
 struct SearchResult {
     item_id: u32,
     name: String,
@@ -35,9 +29,7 @@ struct SearchResult {
     unit: SearchUnits,
     image_url: String,
 }
-lazy_static!{
-static ref QUERY_CACHE: RwLock<HashMap<String, HashMap<u32, Vec<SearchResult>>>> = RwLock::new(HashMap::new());
-}
+
 
 /// Return a list of the best matching items for the given search
 /// so the user can pick the one that best matches what they mean
@@ -51,7 +43,7 @@ static ref QUERY_CACHE: RwLock<HashMap<String, HashMap<u32, Vec<SearchResult>>>>
 /// None if the string could not be resolved
 pub fn search(item_query: &str, num_options: u32) -> Option<Vec<SantizedSearchResult>> {
     let terms: Vec<&str> = item_query.split(' ').collect();
-    let res = query_db(&terms).unwrap();
+    let res = demo_db(&terms).unwrap();
     // Flatten and collect returned items with their scores
     let mut list = res.iter()
         .flat_map(|search_map: (&usize, &HashMap<u32, Vec<SearchResult>>)|->
@@ -89,11 +81,11 @@ pub fn search(item_query: &str, num_options: u32) -> Option<Vec<SantizedSearchRe
 /// <br>
 /// None if the string could not be resolved
 #[must_use]
-pub fn resolve(item_query: &ShoppingItemQuery) -> Option<HashMap<StoreBrand, ResolvedItem>> {
+pub fn resolve(item_query: &ShoppingItemQuery) -> Option<HashMap<u32, ShoppingItem>> {
     // Split item_query into search terms
-    let terms: Vec<&str> = item_query.name.split(' ').filter(|f|->bool{f.len()>=1}).collect();
-    let mut result: HashMap<StoreBrand, ResolvedItem> = HashMap::new();
-    let mut search: HashMap<usize, HashMap<u32, Vec<SearchResult>>> = query_db(&terms).unwrap();
+    let terms: Vec<&str> = item_query.name.split(' ').collect();
+    let mut result: HashMap<u32, ShoppingItem> = HashMap::new();
+    let mut search: HashMap<usize, HashMap<u32, Vec<SearchResult>>> = demo_db(&terms).unwrap();
     let search_unit = SearchUnits::match_to_unit(&item_query.unit).unwrap();
     // For each store (future narrow to allowed)
     for i in 1..=3 {
@@ -141,13 +133,16 @@ pub fn resolve(item_query: &ShoppingItemQuery) -> Option<HashMap<StoreBrand, Res
         }
         let best = itemlist.get(&(best_key.unwrap() as u32)).unwrap();
         result.insert(
-            best.store,
-            ResolvedItem {
+            i,
+            ShoppingItem {
                 name: best.name.clone(),
-                multiplier: best_mul.unwrap(),
-                quantity: best.quantity,
-                unit: best.unit.clone(),
-                price: Cost::from_cents(best.price),
+                quantity: best.quantity * best_mul.unwrap(),
+                unit: SearchUnits::EACH,
+                price: Cost::from_cents(best.price * best_mul.unwrap()),
+                store: Store {
+                    brand: best.store,
+                    location: Coordinate::from_lat_long_f32(i as f32, i as f32),
+                },
             },
         );
     }
@@ -198,61 +193,52 @@ fn score_item(terms: &[&str], item: &&SearchResult, price: u32) -> i32 {
     score - (price as i32) - (item.name.len() as i32)
 }
 
-fn query_cache(search_term: &str) -> Option<HashMap<u32, Vec<SearchResult>>> {
-    Some(QUERY_CACHE.read().ok()?.get(search_term)?.clone())
+const DB: &[u8] =
+    include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/demo_db/shopwise.db"));
+
+fn open_database() -> Result<Connection> {
+    let mut conn = Connection::open_in_memory()?;
+    conn.deserialize_bytes("main", DB)?;
+    Ok(conn)
 }
 
-fn write_cache(search_term: &str, result: HashMap<u32, Vec<SearchResult>>) -> () {
-    let Ok(mut map) = QUERY_CACHE.write() else {return;};
-    map.insert(search_term.to_owned(), result);
-}
+/// Mock the sqlite database by using a python version and some jank commands
+fn demo_db(search_terms: &[&str]) -> Result<HashMap<usize, HashMap<u32, Vec<SearchResult>>>> {
+    let conn = open_database()?;
+    // Check Database is loaded correctly
 
-fn query_db(search_terms: &[&str]) -> Result<HashMap<usize, HashMap<u32, Vec<SearchResult>>>> {
-    // Get the database connection
-    let conn: Connection = db_access::open_database()?;
     let mut result: HashMap<usize, HashMap<u32, Vec<SearchResult>>> = HashMap::new();
     for term_i in 0..search_terms.len() {
         let search_term = search_terms.get(term_i).unwrap();
-        if search_term.len() < 2 {
-            continue;
+        let mut term_results: HashMap<u32, Vec<SearchResult>> = HashMap::new();
+        for i in 1..=3 {
+            let _shop_id = &i.to_string();
+            let sql_query = "
+                SELECT id, supermarket_id, name, price, volume_size, image_url
+                FROM products p
+                WHERE p.supermarket_id = ?1
+                AND LOWER(p.name) LIKE ?2
+            ";
+            let search_pattern = format!("%{}%", search_term.to_lowercase());
+            let mut stm = conn.prepare(sql_query)?;
+            let res = stm.query_map( 
+                rusqlite::params! {i, search_pattern,},
+                |row: &rusqlite::Row<'_>|->Result<SearchResult, Error>{
+                    let amt = get_unit(row.get(4).unwrap_or("ea".to_owned()));
+                    Ok(SearchResult {
+                        item_id: row.get(0)?,
+                        name: row.get(2)?,
+                        price: (row.get::<usize,f32>(3)? * 100.0) as u32,
+                        store: match_sid_to_brand(row.get(1)?).unwrap(),
+                        quantity: amt.0,
+                        unit: amt.1,
+                        image_url: row.get(5)?,
+                    })
+            })?;
+            let shop_results: Vec<SearchResult> = res.map(|f: std::prelude::v1::Result<SearchResult, Error>|->SearchResult{f.unwrap()}).collect();
+            term_results.insert(i, shop_results);
         }
-        // Check cache
-        let cache_res = query_cache(search_term);
-        if cache_res.is_some() {
-            result.insert(term_i, cache_res.unwrap());
-        } else {
-            let mut term_results: HashMap<u32, Vec<SearchResult>> = HashMap::new();
-            for i in 1..=3 {
-                let _shop_id = &i.to_string();
-                let sql_query = "
-                    SELECT id, supermarket_id, name, price, volume_size
-                    FROM products p
-                    WHERE p.supermarket_id = ?1
-                    AND LOWER(p.name) LIKE ?2
-                ";
-                let search_pattern = format!("%{}%", search_term.to_lowercase());
-                let mut stm = conn.prepare(sql_query)?;
-                let res = stm.query_map( 
-                    rusqlite::params! {i, search_pattern,},
-                    |row: &rusqlite::Row<'_>|->Result<SearchResult, Error>{
-                        let amt = get_unit(row.get(4).unwrap_or("ea".to_owned()));
-                        Ok(SearchResult {
-                            item_id: row.get(0)?,
-                            name: row.get(2)?,
-                            price: (row.get::<usize,f32>(3)? * 100.0) as u32,
-                            store: match_sid_to_brand(row.get(1)?).unwrap(),
-                            quantity: amt.0,
-                            unit: amt.1,
-                            image_url: "nada".to_owned(),
-                        })
-                })?;
-                let shop_results: Vec<SearchResult> = res.map(|f: std::prelude::v1::Result<SearchResult, Error>|->SearchResult{f.unwrap()}).collect();
-                term_results.insert(i, shop_results);
-            }
-            // Update cache
-            write_cache(search_term, term_results.clone());
-            result.insert(term_i, term_results);
-        }
+        result.insert(term_i, term_results);
     }
     Ok(result)
 }
@@ -342,14 +328,8 @@ fn get_unit(unit_text: String) -> (u32, SearchUnits) {
 mod tests {
     use super::*;
 
-    fn clear_cache() {
-        let Ok(mut map) = QUERY_CACHE.write() else {return;};
-        map.clear();
-    }
-
     #[test]
     fn test_result() {
-        clear_cache();
         let _ = resolve(&ShoppingItemQuery {
             name: String::from("Eggs"),
             quantity: 1,
@@ -359,7 +339,6 @@ mod tests {
 
     #[test]
     fn test_weetbix() {
-        clear_cache();
         {
             let res = resolve(&ShoppingItemQuery {
                 name: String::from("Weetbix"),
@@ -367,9 +346,9 @@ mod tests {
                 unit: SearchUnits::GRAM.to_str().to_owned(),
             })
             .unwrap();
-            assert_eq!(false, res.contains_key(&StoreBrand::Paknsave));
-            assert_eq!(false, res.contains_key(&StoreBrand::Woolworths));
-            assert_eq!(false, res.contains_key(&StoreBrand::Newworld));
+            assert_eq!(true, res.contains_key(&2));
+            assert_eq!(false, res.contains_key(&1));
+            assert_eq!(false, res.contains_key(&3));
         }
         {
             let res = resolve(&ShoppingItemQuery {
@@ -378,66 +357,29 @@ mod tests {
                 unit: SearchUnits::GRAM.to_str().to_owned(),
             })
             .unwrap();
-            assert_eq!(false, res.contains_key(&StoreBrand::Paknsave));
-            assert_eq!(true, res.contains_key(&StoreBrand::Woolworths));
-            assert_eq!(false, res.contains_key(&StoreBrand::Newworld));
+            assert_eq!(false, res.contains_key(&2));
+            assert_eq!(true, res.contains_key(&1));
+            assert_eq!(true, res.contains_key(&3));
         }
     }
 
     #[test]
     fn test_dip() {
-        clear_cache();
         let res = resolve(&ShoppingItemQuery {
             name: String::from("Onion Soup"),
             quantity: 1,
             unit: SearchUnits::GRAM.to_str().to_owned(),
         })
         .unwrap(); //Maggi Onion Soup
-        assert_eq!("Onion Soup Mix Sachet", res.get(&StoreBrand::Paknsave).unwrap().name);
+        assert_eq!("Maggi Onion Soup", res.get(&1).unwrap().name);
         let res = resolve(&ShoppingItemQuery {
             name: String::from("Reduced Cream"),
             quantity: 1,
             unit: SearchUnits::MILLILITRE.to_str().to_owned(),
         })
         .unwrap();
-        assert_eq!("Reduced Cream", res.get(&StoreBrand::Paknsave).unwrap().name);
-        assert_eq!("nestlé reduced cream original kiwi dip", res.get(&StoreBrand::Woolworths).unwrap().name);
-    }
-
-    #[test]
-    fn test_caching() {
-        clear_cache();
-        let res = resolve(&ShoppingItemQuery {
-            name: String::from("Onion Soup"),
-            quantity: 1,
-            unit: SearchUnits::GRAM.to_str().to_owned(),
-        })
-        .unwrap(); //Maggi Onion Soup
-        assert_eq!("Onion Soup Mix Sachet", res.get(&StoreBrand::Paknsave).unwrap().name);
-        let res = resolve(&ShoppingItemQuery {
-            name: String::from("Reduced Cream"),
-            quantity: 1,
-            unit: SearchUnits::MILLILITRE.to_str().to_owned(),
-        })
-        .unwrap();
-        assert_eq!("Reduced Cream", res.get(&StoreBrand::Paknsave).unwrap().name);
-        assert_eq!("nestlé reduced cream original kiwi dip", res.get(&StoreBrand::Woolworths).unwrap().name);
-        // Repeat test to ensure that works both times
-        let res = resolve(&ShoppingItemQuery {
-            name: String::from("Onion Soup"),
-            quantity: 1,
-            unit: SearchUnits::GRAM.to_str().to_owned(),
-        })
-        .unwrap(); //Maggi Onion Soup
-        assert_eq!("Onion Soup Mix Sachet", res.get(&StoreBrand::Paknsave).unwrap().name);
-        let res = resolve(&ShoppingItemQuery {
-            name: String::from("Reduced Cream"),
-            quantity: 1,
-            unit: SearchUnits::MILLILITRE.to_str().to_owned(),
-        })
-        .unwrap();
-        assert_eq!("Reduced Cream", res.get(&StoreBrand::Paknsave).unwrap().name);
-        assert_eq!("nestlé reduced cream original kiwi dip", res.get(&StoreBrand::Woolworths).unwrap().name);
+        assert_eq!("Pams Reduced Cream", res.get(&1).unwrap().name);
+        assert_eq!("countdown reduced cream ", res.get(&2).unwrap().name);
     }
 
     #[test]
@@ -446,7 +388,7 @@ mod tests {
     }
 
     fn simple_query(sql_query: &str) -> Vec<String> {
-        let conn: Connection = db_access::open_database().unwrap();
+        let conn = open_database().unwrap();
         let mut stm = conn.prepare(sql_query).unwrap();
         stm.query_map([], |row: &rusqlite::Row<'_>| -> Result<String, Error>{
                 Ok(row.get(0)?)

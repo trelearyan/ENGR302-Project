@@ -1,7 +1,14 @@
-use std::{ops::Mul, str::FromStr, time::Duration};
+use std::{
+    ops::Mul,
+    str::FromStr,
+    time::Duration,
+};
 
 use bigdecimal::{BigDecimal, Zero};
-use derive_more::{Add, AddAssign, Display, Neg, Rem, RemAssign, Sub, SubAssign, Sum};
+use derive_more::{
+    Add, AddAssign, Display, Neg, Rem, RemAssign, Sub,
+    SubAssign, Sum,
+};
 use num_traits::FromPrimitive;
 
 use crate::distance::Distance;
@@ -42,7 +49,7 @@ impl Speed {
     #[must_use]
     pub fn from_kilometres_per_hour<NUMBER: Into<BigDecimal>>(kph: NUMBER) -> Self {
         Self::new(
-            kph.into() / BigDecimal::from_str("3.6").expect("3.6 should be a valid BigDecimal"),
+            kph.into() * BigDecimal::from_str("3.6").expect("3.6 should be a valid BigDecimal"),
         )
     }
 

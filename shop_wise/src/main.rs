@@ -1,3 +1,4 @@
+
 use crate::gui::ShowableWidget;
 
 pub mod filehandling;
@@ -5,7 +6,6 @@ pub mod filehandling;
 pub mod gui;
 pub mod price_calculator;
 pub mod route_planner;
-pub mod database;
 
 use eframe::egui;
 use gui::AppData;
@@ -24,7 +24,7 @@ fn main() -> eframe::Result {
     eframe::run_native(
         "ShopWise",
         options,
-        Box::new(|context| Ok(Box::new(AppData::new(context)))),
+        Box::new(|_| Ok(Box::new(AppData::default()))),
     )
 }
 
@@ -49,7 +49,7 @@ fn main() {
             .start(
                 canvas,
                 eframe::WebOptions::default(),
-                Box::new(|context| Ok(Box::new(AppData::new(context)))),
+                Box::new(|_| Ok(Box::new(AppData::default()))),
             )
             .await
             .unwrap();

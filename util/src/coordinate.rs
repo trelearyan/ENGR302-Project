@@ -4,7 +4,6 @@ use bigdecimal::BigDecimal;
 use num_traits::FromPrimitive;
 use num_traits::ToPrimitive;
 use serde::{Deserialize, Serialize};
-use walkers::Position;
 
 use crate::distance::Distance;
 
@@ -61,7 +60,7 @@ impl Coordinate {
 
     #[must_use]
     /// Construct a
-    pub fn distance_to(&self, other: &Self) -> Distance {
+    pub fn distance_to(&self, other: Self) -> Distance {
         const ERROR_MESSAGE: &str =
             "This shouldnt be a weird float, if this fails, Coordinate is implemented wrong";
         Distance::from_metres(
@@ -81,7 +80,7 @@ impl Coordinate {
     }
 
     #[must_use]
-    pub fn within_range(&self, other: &Self, range_metres: &Distance) -> bool {
+    pub fn within_range(&self, other: Self, range_metres: &Distance) -> bool {
         &self.distance_to(other) <= range_metres
     }
 
@@ -94,12 +93,7 @@ impl Coordinate {
         Coordinate::from_lat_long_str("-36.848461", "174.763336").unwrap()
     }
 }
-
-impl From<Coordinate> for Position {
-    fn from(value: Coordinate) -> Self {
-        Self::new(
-            value.longitude.to_f64().unwrap(),
-            value.latitude.to_f64().unwrap(),
-        )
-    }
+#[cfg(test)]
+mod coordinate_tests {
+    use crate::float_absolute_compare;
 }

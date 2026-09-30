@@ -19,9 +19,6 @@ pub enum StoreBrand {
 
 #[derive(Debug, PartialEq, PartialOrd, Clone, Serialize, Deserialize)]
 pub struct Store {
-    pub id: u32,
-    pub name: String,
-    pub address: String,
     pub brand: StoreBrand,
     pub location: Coordinate,
 }

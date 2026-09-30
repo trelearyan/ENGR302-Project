@@ -153,20 +153,9 @@ pub struct ShoppingItemQuery {
     pub unit: String,
 }
 
-
-#[derive(Debug, PartialEq)]
-pub struct ResolvedItem {
-    pub name: String,
-    pub multiplier: u32,
-    pub quantity: u32,
-    pub unit: SearchUnits,
-    pub price: Cost,
-}
-
 #[derive(Debug, PartialEq)]
 pub struct ShoppingItem {
     pub name: String,
-    pub multiplier: u32,
     pub quantity: u32,
     pub unit: SearchUnits,
     pub price: Cost,
