@@ -20,8 +20,11 @@ pub mod preferences;
 pub mod shopping_list;
 pub mod supermarkets;
 pub mod transit;
+pub mod masthead;
 
-#[derive(Default, Clone, Debug)]
+const SECTION_MAX_HEIGHT: f32 = 300.0;
+
+#[derive(Default, Clone)]
 pub struct AppData {
     shopping_list: ShoppingListData,
     preferences: PreferencesData,
@@ -29,6 +32,7 @@ pub struct AppData {
     transit: TransitData,
     location_search: Rc<RefCell<LocationData>>,
     output_routes: OutputRoutesData,
+    filters_collapsed: bool,
 }
 
 pub trait ShowableWidget {
@@ -37,38 +41,49 @@ pub trait ShowableWidget {
 
 impl ShowableWidget for AppData {
     fn show(&mut self, ui: &mut Ui) {
-        //ScrollArea::both().show(ui, |ui| {
+        self.masthead(ui);
+
+        if !self.filters_collapsed{
             Panel::left("left_panel").show_inside(ui, |ui| {
-                let list_height = ui.available_height().min(300.0);
                 ScrollArea::vertical()
-                    .id_salt("shopping_list_scroll")
-                    .max_height(list_height)
-                    .auto_shrink([false, true])
-                    .show(ui, |ui| {
-                        self.shopping_list.show(ui);
+                    .id_salt("left panel scroll")
+                    .auto_shrink([false; 2])
+                    .show(ui, |ui|{
+                        ScrollArea::vertical()
+                            .id_salt("shopping_list_scroll")
+                            .max_height(SECTION_MAX_HEIGHT)
+                            .auto_shrink([false, true])
+                            .show(ui, |ui| {
+                                self.shopping_list.show(ui);
+                            });
+                        ui.separator();
+                        self.preferences.show(ui);
+                        ui.separator();
+                        ScrollArea::vertical()
+                            .id_salt("supermarkets_scroll")
+                            .max_height(SECTION_MAX_HEIGHT)
+                            .auto_shrink([false, true])
+                            .show(ui, |ui| {
+                                self.supermarkets.show(ui);
+                            });
+                        ui.separator();
+                        self.transit.show(ui);
+                        ui.separator();
                     });
-                ui.separator();
-                self.preferences.show(ui);
-                ui.separator();
-                ScrollArea::vertical()
-                    .id_salt("supermarkets_scroll")
-                    .max_height(list_height)
-                    .auto_shrink([false, true])
-                    .show(ui, |ui| {
-                        self.supermarkets.show(ui);
-                    });
-                ui.separator();
-                self.transit.show(ui);
-                ui.separator();
             });
+        }
 
             CentralPanel::default().show_inside(ui, |ui| {
-                LocationData::show(&self.location_search, ui);
-                ui.separator();
-                self.search_button(ui);
-                self.output_routes.show(ui);
+                ScrollArea::vertical()
+                    .id_salt("central panel scroll")
+                    .auto_shrink([false; 2])
+                    .show(ui, |ui| {
+                        LocationData::show(&self.location_search, ui);
+                        ui.separator();
+                        self.search_button(ui);
+                        self.output_routes.show(ui);
+                    })
             });
-        //});
     }
 }
 
