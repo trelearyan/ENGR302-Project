@@ -2,13 +2,10 @@ use std::sync::OnceLock;
 use eframe::egui::{self, Color32, Stroke, Ui};
 use super::AppData;
 
-const INK: Color32 = Color32::from_rgb(0x0F, 0x3B, 0x45);
 const FILL: Color32 = Color32::from_rgb(0xF5, 0xF1, 0xE8);
-const LINE: Color32 = Color32::BLACK;
+const LINE: Color32 = Color32::from_rgb(0, 0, 0);
 const MASTHEAD_HEIGHT: f32 = 60.0;
-const LOGO_SIZE: f32 = 44.0;
-const LOGO_GAP: f32 = 2.0;
-const TEXT_SIZE: f32 = 24.0;
+const LOGO_HEIGHT: f32 = 36.0;
 const GITLAB_ICON_SIZE: f32 = 50.0;
 const MENU_ICON_SIZE: f32 = 22.0;
 const LEFT_EDGE_MARGIN: f32 = -25.0;
@@ -16,7 +13,6 @@ const RIGHT_EDGE_MARGIN: f32 = 16.0;
 const ICON_REST_ALPHA: u8 = 200;
 const ICON_HOVER_ALPHA: u8 = 255;
 const ICON_PRESSED_ALPHA: u8 = 150;
-const LOGO_NUDGE_Y: f32 = 0.0;
 const REPO_URL: &str = "https://gitlab.ecs.vuw.ac.nz/course-work/engr301/2026/project1/team5/shopwise";
 const FULL_UV: egui::Rect = egui::Rect::from_min_max(egui::pos2(0.0, 0.0), egui::pos2(1.0, 1.0));
 
@@ -63,11 +59,11 @@ impl AppData {
             include_bytes!("../../assets/arrow-right.png")
         );
 
-        egui::Panel::top("masthead")
-            .min_size(MASTHEAD_HEIGHT)
-            .max_size(MASTHEAD_HEIGHT)
-            .resizable(false)
-            //.exact_size(MASTHEAD_HEIGHT)
+        let panel = egui::Panel::top("masthead")
+            //.min_size(MASTHEAD_HEIGHT)
+            //.max_size(MASTHEAD_HEIGHT)
+            //.resizable(false)
+            .exact_size(MASTHEAD_HEIGHT)
             .frame(
                 egui::Frame::default()
                     .fill(FILL)
@@ -87,7 +83,7 @@ impl AppData {
 
                 let menu_hover_text = if self.filters_collapsed {
                     "Show filters panel"
-                    }else {
+                }else {
                     "Hide filters panel"
                 };
 
@@ -107,25 +103,18 @@ impl AppData {
                     &menu_collapse_icon
                 };
 
-                match menu_icon {
-                    Some(icon) => {
-                        let icon_rect = egui::Rect::from_center_size(
-                            menu_rect.center(),
-                            egui::Vec2::splat(MENU_ICON_SIZE),
-                        );
+                if let Some(icon) = menu_icon {
+                    let icon_rect = egui::Rect::from_center_size(
+                        menu_rect.center(),
+                        egui::Vec2::splat(MENU_ICON_SIZE),
+                    );
 
-                        ui.painter().image(
-                            icon.id(),
-                            icon_rect,
-                            FULL_UV,
-                            Color32::from_white_alpha(menu_alpha),
-                        );
-                    },
-                    &None => todo!()
-                    // Falls back to a text glyph if either PNG failed to
-                    // decode, so a bad asset degrades instead of leaving a
-                    // dead, invisible button.
-
+                    ui.painter().image(
+                        icon.id(),
+                        icon_rect,
+                        FULL_UV,
+                        Color32::from_white_alpha(menu_alpha),
+                    );
                 }
 
                 if menu.clicked() {
@@ -176,42 +165,23 @@ impl AppData {
                     ui.ctx().open_url(egui::OpenUrl::new_tab(REPO_URL));
                 }
 
-                let galley = ui.painter().layout_no_wrap(
-                    "ShopWise".to_owned(),
-                    egui::FontId::proportional(TEXT_SIZE),
-                    INK,
-                );
-
-                let logo_advance = if logo.is_some() {
-                    LOGO_SIZE + LOGO_GAP
-                } else {
-                    0.0
-                };
-
-                let group_width = logo_advance + galley.size().x;
-                let group_left = rect.center().x - group_width / 2.0;
-                let group_centre_y = centre_y + LOGO_NUDGE_Y;
-
                 if let Some(logo) = &logo {
-                    let logo_rect = egui::Rect::from_min_size(
-                        egui::pos2(group_left, group_centre_y - LOGO_SIZE / 2.0),
-                        egui::Vec2::splat(LOGO_SIZE),
+                    let [width, height] = logo.size();
+                    let logo_width = LOGO_HEIGHT * width as f32 / height as f32;
+
+                    let logo_rect = egui::Rect::from_center_size(
+                        egui::pos2(rect.center().x, centre_y),
+                        egui::vec2(logo_width, LOGO_HEIGHT),
                     );
 
                     ui.painter()
                         .image(logo.id(), logo_rect, FULL_UV, Color32::WHITE);
                 }
-
-                let text_pos = egui::pos2(
-                    group_left + logo_advance,
-                    group_centre_y - galley.size().y / 2.0,
-                );
-
-                ui.painter().galley(text_pos, galley, INK);
-
-                ui.painter()
-                    .hline(rect.x_range(), rect.bottom(), Stroke::new(1.0_f32, LINE));
             });
+        let line_width = 1.0_f32;
+        let bar = panel.response.rect;
+        ui.painter()
+            .hline(bar.x_range(), bar.bottom()-line_width/2.0, Stroke::new(line_width, LINE));
     }
 }
 
