@@ -76,7 +76,6 @@ impl ShowableWidget for AppData {
             ui.separator();
             self.transit.show(ui);
             ui.separator();
-        });
 
             LocationData::show(&self.location_search, ui);
             ui.separator();
