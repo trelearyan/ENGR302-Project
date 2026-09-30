@@ -17,6 +17,7 @@ Work on branches that are not yet merged into `main`.
 - Store dropdown only lists stores within the maximum range (#85)
 - Clear error messages when the price calculator can't find a plan (#82)
 - Footer with privacy and data source information (#109)
+- CI checks that failed merge requests that don't add a changelog entry, and keeps the Cargo.toml version in sync with the changelog (NFR-15)
 
 ### Changed
 - Price calculator uses the real scraped product database instead of demo data, with caching (#110)

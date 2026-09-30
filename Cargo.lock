@@ -792,7 +792,7 @@ checksum = "f27ae1dd37df86211c42e150270f82743308803d90a6f6e6651cd730d5e1732f"
 
 [[package]]
 name = "database"
-version = "0.1.0"
+version = "0.7.0"
 
 [[package]]
 name = "derive_more"
@@ -2167,7 +2167,7 @@ checksum = "0ceec5bc11778974d1bcb055b18002eba7f4b3518b6a0081b3af5f21666da9ad"
 
 [[package]]
 name = "map"
-version = "0.1.0"
+version = "0.7.0"
 
 [[package]]
 name = "map_3d"
@@ -3583,7 +3583,7 @@ checksum = "f8fadd59c855ef2080decdef8ff161eb6661b86933c9d82e5ba29dc602a55aba"
 
 [[package]]
 name = "shop_wise"
-version = "0.1.0"
+version = "0.7.0"
 dependencies = [
  "bigdecimal",
  "csv",
@@ -4272,7 +4272,7 @@ checksum = "b6c140620e7ffbb22c2dee59cafe6084a59b5ffc27a8859a5f0d494b5d52b6be"
 
 [[package]]
 name = "util"
-version = "0.1.0"
+version = "0.7.0"
 dependencies = [
  "bigdecimal",
  "derive_more",
