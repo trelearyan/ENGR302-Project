@@ -1,9 +1,12 @@
+use bigdecimal::ToPrimitive;
 use std::collections::HashMap;
 use std::time::Duration;
 use util::distance::Distance;
-use util::{cost::Cost, store::{Store, StoreBrand}};
-use bigdecimal::ToPrimitive;
-use util::{search::{ShoppingItem, ShoppingItemQuery}};
+use util::search::{ShoppingItem, ShoppingItemQuery};
+use util::{
+    cost::Cost,
+    store::{Store, StoreBrand},
+};
 
 use crate::{
     gui::transit::MileageOptions,
@@ -149,9 +152,21 @@ pub fn calculate(
                     .inner()
                     .with_scale(2)
                     .to_u32()
-                    .unwrap()*item.multiplier;
-                // Add item to item lookup table
-                item_lookup.get_mut(item_key)?.insert(store_id, item);
+                    .unwrap()
+                    * item.multiplier;
+                // Create item to add to item lookup table
+                let real_item = ShoppingItem {
+                    name: item.name.clone(),
+                    multiplier: item.multiplier,
+                    quantity: item.quantity,
+                    unit: item.unit.clone(),
+                    price: item.price.clone(),
+                    store: store.clone(),
+                };
+                item_lookup
+                    .get_mut(item_key)
+                    .unwrap()
+                    .insert(store_id, real_item);
                 // Add price to short database
                 short_database.get_mut(store_id)?.push(Some(price));
             } else {
