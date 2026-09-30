@@ -21,6 +21,7 @@ pub mod shopping_list;
 pub mod supermarkets;
 pub mod transit;
 pub mod masthead;
+pub mod footer;
 
 const SECTION_MAX_HEIGHT: f32 = 300.0;
 
@@ -33,6 +34,7 @@ pub struct AppData {
     location_search: Rc<RefCell<LocationData>>,
     output_routes: OutputRoutesData,
     filters_collapsed: bool,
+    footer: footer::FooterData,
 }
 
 pub trait ShowableWidget {
@@ -48,7 +50,7 @@ impl ShowableWidget for AppData {
                 Panel::bottom("left_footer")
                     .resizable(false)
                     .show_inside(ui, |ui| {
-                        ui.label("Footer");
+                      self.footer.show(ui);
                     });
                 ScrollArea::vertical()
                     .id_salt("left panel scroll")
