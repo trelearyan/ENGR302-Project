@@ -298,7 +298,7 @@ pub fn filter_stores(stores: &[Store], filters: &StoreFilters) -> Vec<Store> {
                 // dbg!(filters.max_range_metres);
                 filters
                     .location
-                    .within_range(store.location.clone(), &range)
+                    .within_range(&store.location.clone(), &range)
             }
             None => panic!(),
         })
@@ -308,7 +308,4 @@ pub fn filter_stores(stores: &[Store], filters: &StoreFilters) -> Vec<Store> {
 
 #[cfg(test)]
 mod tests {
-    use serde_json::Deserializer;
-
-    use super::*;
 }

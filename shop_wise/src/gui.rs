@@ -1,10 +1,11 @@
+use eframe::CreationContext;
 use eframe::egui::{self, CentralPanel, Panel, ScrollArea, Ui};
 use std::cell::RefCell;
 use std::rc::Rc;
 use util::coordinate::Coordinate;
 
-
 use crate::gui::location_search::{LocationData, LocationStatus};
+use crate::gui::map::MapData;
 use crate::gui::output_routes::OutputRoutesData;
 use crate::gui::preferences::PreferencesData;
 use crate::gui::shopping_list::ShoppingListData;
@@ -15,13 +16,13 @@ use crate::price_calculator::{self};
 use crate::route_planner::filters::StoreFilters;
 
 pub mod location_search;
+pub mod map;
 pub mod output_routes;
 pub mod preferences;
 pub mod shopping_list;
 pub mod supermarkets;
 pub mod transit;
 
-#[derive(Default, Clone, Debug)]
 pub struct AppData {
     shopping_list: ShoppingListData,
     preferences: PreferencesData,
@@ -29,6 +30,21 @@ pub struct AppData {
     transit: TransitData,
     location_search: Rc<RefCell<LocationData>>,
     output_routes: OutputRoutesData,
+    map: MapData,
+}
+
+impl AppData {
+    pub fn new(creation_context: &CreationContext) -> Self {
+        Self {
+            map: MapData::new(creation_context),
+            shopping_list: Default::default(),
+            preferences: Default::default(),
+            supermarkets: Default::default(),
+            transit: Default::default(),
+            location_search: Default::default(),
+            output_routes: Default::default(),
+        }
+    }
 }
 
 pub trait ShowableWidget {
@@ -38,37 +54,36 @@ pub trait ShowableWidget {
 impl ShowableWidget for AppData {
     fn show(&mut self, ui: &mut Ui) {
         //ScrollArea::both().show(ui, |ui| {
-            Panel::left("left_panel").show_inside(ui, |ui| {
-                let list_height = ui.available_height().min(300.0);
-                ScrollArea::vertical()
-                    .id_salt("shopping_list_scroll")
-                    .max_height(list_height)
-                    .auto_shrink([false, true])
-                    .show(ui, |ui| {
-                        self.shopping_list.show(ui);
-                    });
-                ui.separator();
-                self.preferences.show(ui);
-                ui.separator();
-                ScrollArea::vertical()
-                    .id_salt("supermarkets_scroll")
-                    .max_height(list_height)
-                    .auto_shrink([false, true])
-                    .show(ui, |ui| {
-                        self.supermarkets.show(ui);
-                    });
-                ui.separator();
-                self.transit.show(ui);
-                ui.separator();
-            });
+        Panel::left("left_panel").show(ui, |ui| {
+            let list_height = ui.available_height().min(300.0);
+            ScrollArea::vertical()
+                .id_salt("shopping_list_scroll")
+                .max_height(list_height)
+                .auto_shrink([false, true])
+                .show(ui, |ui| {
+                    self.shopping_list.show(ui);
+                });
+            ui.separator();
+            self.preferences.show(ui);
+            ui.separator();
+            ScrollArea::vertical()
+                .id_salt("supermarkets_scroll")
+                .max_height(list_height)
+                .auto_shrink([false, true])
+                .show(ui, |ui| {
+                    self.supermarkets.show(ui);
+                });
+            ui.separator();
+            self.transit.show(ui);
+            ui.separator();
+        });
 
-            CentralPanel::default().show_inside(ui, |ui| {
-                LocationData::show(&self.location_search, ui);
-                ui.separator();
-                self.search_button(ui);
-                self.output_routes.show(ui);
-            });
-        //});
+        CentralPanel::default().show(ui, |ui| {
+            LocationData::show(&self.location_search, ui);
+            ui.separator();
+            self.search_button(ui);
+            self.output_routes.show(ui);
+        });
     }
 }
 
@@ -104,11 +119,11 @@ impl AppData {
                     }
                     (true, true) => unreachable!(),
                 };
-                button = button.on_disabled_hover_text("Check if you have added an item to shopping list and entered a location");
+                button = button.on_disabled_hover_text(
+                    "Check if you have added an item to shopping list and entered a location",
+                );
             }
-            if button
-                .on_hover_text("I am ready to search")
-                .clicked() {
+            if button.on_hover_text("I am ready to search").clicked() {
                 log::debug!("button clicked");
                 // Alex
                 // TODO: Fix this up once we have a better format of all the stores and individual location blacklisting
@@ -136,11 +151,11 @@ impl AppData {
 
                 let origin_label = self.location_search.borrow().address.clone();
                 self.output_routes.results = match res {
-                    Some(calc) => ResultsState::Ready(Box::new(
+                    Ok(calc) => ResultsState::Ready(Box::new(
                         price_calculator::results::Results::from_calculation(&calc, origin_label),
                     )),
-                    None => ResultsState::Failed(
-                        "No combination of stores in range can supply this list".to_owned(),
+                    _ => ResultsState::Failed(
+                        res.unwrap_err().pretty(),
                     ),
                 };
             }
