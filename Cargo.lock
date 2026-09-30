@@ -3638,6 +3638,7 @@ dependencies = [
  "database",
  "derive_more",
  "eframe",
+ "image",
  "itertools",
  "lazy_static",
  "log",
