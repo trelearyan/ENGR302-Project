@@ -2,6 +2,46 @@
 
 All notable changes to ShopWise are documented in this file (NFR-15).
 
+## [Unreleased]
+
+Work on branches that are not yet merged into `main`.
+
+### Added
+- Map showing the planned route (#75)
+- Store locations loaded from the database (#110)
+- Store dropdown only lists stores within the maximum range (#85)
+- Clear error messages when the price calculator can't find a plan (#82)
+- Footer with privacy and data source information (#109)
+
+### Changed
+- Price calculator uses the real scraped product database instead of demo data, with caching (#110)
+- Distances follow real roads between stops, using OpenStreetMap routing data instead of straight lines (#81)
+- Updated eframe to 0.36; routing data is stored with Git LFS (#75)
+- Redesigned logo and browser tab icon (#109)
+- Code documentation for the shopping list, stores and file handling (#103)
+
+### Fixed
+- Travel distance and speed calculations (#110)
+- Very large mileage values now show a proper error instead of failing (#110)
+- Items were removed from the results for a whole brand instead of a single store (#110)
+- Web (WASM) build failed to compile (#81)
+
+## [0.7.0] - 2026-09-30
+
+### Added
+- Masthead with the ShopWise logo, a link to the GitLab repository and a browser tab icon (#83)
+- Masthead button that collapses and expands the filters panel (#84)
+- Product search when adding an item: the Add Item button opens a search box with a scrollable list of matching products from the database (#78)
+
+### Changed
+- Shopping list rows are read-only, with the remove button at the start of each row; items are added through product search (#78)
+- The filters panel and the output panel scroll, and the shopping list and supermarket sections have a fixed maximum height (#76)
+- Results show the pack size of each item, e.g. "2x 1L", and line totals use the number of packs (#86)
+
+### Fixed
+- Unit was always shown as "each" in the results (#86)
+- Item resolver now uses the base unit when scaling quantities (#78)
+
 ## [0.6.0] - 2026-09-18
 
 ### Added
