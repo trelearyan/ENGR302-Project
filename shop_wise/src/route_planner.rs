@@ -129,7 +129,7 @@ struct GlobalGraph {
     options: Options<'static>,
 }
 
-pub const NZ: LazyLock<GlobalGraph> = LazyLock::new(GlobalGraph::with_nz);
+pub static NZ: LazyLock<GlobalGraph> = LazyLock::new(GlobalGraph::with_nz);
 
 impl GlobalGraph {
     pub fn with_nz() -> Self {
