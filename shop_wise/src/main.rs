@@ -9,7 +9,7 @@ pub mod route_planner;
 use eframe::egui;
 use gui::AppData;
 
-impl eframe::App for AppData<'_> {
+impl eframe::App for AppData {
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
         self.show(ui);
     }

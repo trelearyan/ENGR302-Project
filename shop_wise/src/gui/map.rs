@@ -9,33 +9,28 @@ use serde::Serialize;
 use util::coordinate::Coordinate;
 use walkers::{HttpTiles, Map, MapMemory, Plugin, Position, Projector, sources::OpenStreetMap};
 
-use crate::route_planner::RoutePlannerData;
-
-pub struct MapData<'a> {
+pub struct MapData {
     current_pos: Option<(f32, f32)>,
     last_pos: Option<(f32, f32)>,
-    route_data: RoutePlannerData<'a>,
     current_displayed_route: Rc<[Coordinate]>,
 
     tiles: HttpTiles,
     map_memory: MapMemory,
 }
 
-impl MapData<'_> {
+impl MapData {
     pub fn new(creation_context: &CreationContext) -> Self {
-        let route_data = RoutePlannerData::with_nz();
         Self {
             tiles: HttpTiles::new(OpenStreetMap, creation_context.egui_ctx.clone()),
             map_memory: MapMemory::default(),
             current_pos: None,
             last_pos: None,
-            route_data,
             current_displayed_route: Rc::new([]),
         }
     }
 }
 
-impl eframe::App for MapData<'_> {
+impl eframe::App for MapData {
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
         let mut map = Map::new(
             Some(&mut self.tiles),
@@ -44,6 +39,7 @@ impl eframe::App for MapData<'_> {
         );
         if self.current_displayed_route.len() > 1 {
             println!("wahoo");
+
             map = map.with_plugin(RouteDrawingPlugin(self.current_displayed_route.clone()));
         }
     }
