@@ -1,6 +1,8 @@
 use itertools::Itertools;
+use log::logger;
 use routx::AStarError;
-use routx::{osm::Options, Graph};
+use routx::{Graph, osm::Options};
+use std::sync::LazyLock;
 use std::{borrow::Borrow, fmt::Debug, iter, rc::Rc, time::Duration};
 
 use util::{
@@ -12,7 +14,7 @@ use util::{
 
 use crate::{
     gui::transit::MileageOptions,
-    route_planner::filters::{filter_stores, StoreFilters},
+    route_planner::filters::{StoreFilters, filter_stores},
 };
 
 pub mod filters;
@@ -47,14 +49,17 @@ impl RoutePlan {
     /// Returns Some(RoutePath) if there is at least 1 stop in `self.unordered_stops`, None otherwise
     #[must_use]
     pub fn calculate(&self) -> Option<RoutePath> {
-        let ordered_stops = self
+        let ordered_stops: Vec<_> = self
             .unordered_stops
             .iter()
             .permutations(self.unordered_stops.len()) // unordered stops -> iter of every possible stop ordering
             .map(|route_vec| {
                 iter::once(self.start_stop.clone()) //                      add start and end stops to
-                    .chain(route_vec.iter().cloned().map(|a| a.clone())) // the start and end of each
+                    .chain(route_vec.clone().iter().cloned().map(|a| a.clone())) // the start and end of each
                     .chain(iter::once(self.end_stop.clone())) //            route, also collect into vecs
+                    .tuple_windows::<(_, _)>()
+                    .flat_map(|(a, b)| NZ.route_search(a, b)) // path between stops
+                    .flatten()
                     .collect::<Vec<_>>()
             })
             .min_by(|iter_a, iter_b| {
@@ -130,17 +135,17 @@ pub fn all_possible_routes(filters: &StoreFilters, mileage: &MileageOptions) -> 
 }
 
 #[derive(Debug)]
-pub struct RoutePlannerData<'a> {
+struct GlobalGraph {
     graph: Graph,
-    options: Options<'a>,
+    options: Options<'static>,
 }
 
-impl RoutePlannerData<'_> {
+pub const NZ: LazyLock<GlobalGraph> = LazyLock::new(GlobalGraph::with_nz);
+
+impl GlobalGraph {
     pub fn with_nz() -> Self {
-        println!("graph init");
         let mut graph = routx::Graph::new();
 
-        println!("options init");
         let options = routx::osm::Options {
             profile: &routx::osm::CAR_PROFILE,
             file_format: routx::osm::FileFormat::Unknown,
@@ -149,14 +154,18 @@ impl RoutePlannerData<'_> {
 
         #[cfg(feature = "include_routing")]
         {
-            println!("adding features");
+            log::info!("Initializing graph");
             routx::osm::add_features_from_buffer(
                 &mut graph,
                 &options,
                 include_bytes!("../../nz2-pruned.osm.pbf"),
             )
             .expect("failed to load nz2-pruned.osm.pbf");
-        }
+            log::info!("Finished initializing graph");
+        };
+
+        #[cfg(not(feature = "include_routing"))]
+        log::info!("include_routing feature gate disabled, routing data not initialized");
 
         Self { graph, options }
     }
@@ -178,9 +187,8 @@ impl RoutePlannerData<'_> {
     ) -> Result<Vec<Coordinate>, AStarError> {
         use bigdecimal::num_traits::ToPrimitive;
 
-        println!("find nearest start node");
-        println!("satrt {start_coord:?}");
-        println!("end {end_coord:?}");
+        log::info!("find nearest start node");
+        log::info!("satrt {start_coord:?}");
         let start_node = self
             .graph
             .find_nearest_node(
@@ -194,7 +202,8 @@ impl RoutePlannerData<'_> {
                     .expect("lat or long to be in range of f32"),
             )
             .expect("start location out of range");
-        println!("find nearest end node");
+        log::info!("find nearest end node");
+        log::info!("end {end_coord:?}");
         let end_node = self
             .graph
             .find_nearest_node(
@@ -208,9 +217,8 @@ impl RoutePlannerData<'_> {
                     .expect("lat or long to be in range of f32"),
             )
             .expect("end location out of range");
-        println!("route searcch");
-        println!("start_node construction {start_node:?}");
-        println!("end_node construction {end_node:?}");
+        log::info!("start_node construction {start_node:?}");
+        log::info!("end_node construction {end_node:?}");
         routx::find_route_without_turn_around(
             &self.graph,
             start_node.id,
