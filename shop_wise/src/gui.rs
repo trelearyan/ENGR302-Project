@@ -23,17 +23,17 @@ pub mod shopping_list;
 pub mod supermarkets;
 pub mod transit;
 
-pub struct AppData<'a> {
+pub struct AppData {
     shopping_list: ShoppingListData,
     preferences: PreferencesData,
     supermarkets: SupermarketsData,
     transit: TransitData,
     location_search: Rc<RefCell<LocationData>>,
     output_routes: OutputRoutesData,
-    map: MapData<'a>,
+    map: MapData,
 }
 
-impl AppData<'_> {
+impl AppData {
     pub fn new(creation_context: &CreationContext) -> Self {
         Self {
             map: MapData::new(creation_context),
@@ -51,19 +51,32 @@ pub trait ShowableWidget {
     fn show(&mut self, ui: &mut Ui);
 }
 
-impl ShowableWidget for AppData<'_> {
+impl ShowableWidget for AppData {
     fn show(&mut self, ui: &mut Ui) {
-        ScrollArea::both().show(ui, |ui| {
-            Panel::left("left_panel").show(ui, |ui| {
-                self.shopping_list.show(ui);
-                ui.separator();
-                self.preferences.show(ui);
-                ui.separator();
-                self.supermarkets.show(ui);
-                ui.separator();
-                self.transit.show(ui);
-                ui.separator();
-            });
+        //ScrollArea::both().show(ui, |ui| {
+        Panel::left("left_panel").show(ui, |ui| {
+            let list_height = ui.available_height().min(300.0);
+            ScrollArea::vertical()
+                .id_salt("shopping_list_scroll")
+                .max_height(list_height)
+                .auto_shrink([false, true])
+                .show(ui, |ui| {
+                    self.shopping_list.show(ui);
+                });
+            ui.separator();
+            self.preferences.show(ui);
+            ui.separator();
+            ScrollArea::vertical()
+                .id_salt("supermarkets_scroll")
+                .max_height(list_height)
+                .auto_shrink([false, true])
+                .show(ui, |ui| {
+                    self.supermarkets.show(ui);
+                });
+            ui.separator();
+            self.transit.show(ui);
+            ui.separator();
+        });
 
             LocationData::show(&self.location_search, ui);
             ui.separator();
@@ -78,7 +91,7 @@ impl ShowableWidget for AppData<'_> {
     }
 }
 
-impl AppData<'_> {
+impl AppData {
     pub fn search_button(&mut self, ui: &mut egui::Ui) {
         ui.horizontal(|ui| {
             // First: check if both shopping list and location are not empty
