@@ -2,6 +2,11 @@
 
 All notable changes to ShopWise are documented in this file (NFR-15).
 
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html),
+as recommended by the Rust API guidelines
+([C-RELNOTES](https://rust-lang.github.io/api-guidelines/documentation.html#release-notes-document-all-significant-changes-c-relnotes)).
+
 ## [Unreleased]
 
 Work on branches that are not yet merged into `main`.
