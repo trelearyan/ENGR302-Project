@@ -189,7 +189,7 @@ impl ShoppingListData {
         {
             let mut state = state_rc.borrow_mut();
 
-            let response = ui.add(egui::TextEdit::singleline(&mut state.query).hint_text("Enter Your Item Name (e.g. milk)"),);
+            let response = ui.add(egui::TextEdit::singleline(&mut state.query).hint_text("Enter Your Item Name"),);
 
             if response.changed() {
                 state.status = AddItemStatus::Idle;
