@@ -58,12 +58,6 @@ impl ShowableWidget for ShoppingListData {
         ui.heading("Your shopping list");
 
         ui.horizontal(|ui| {
-            if ui.button("+ Add Item")
-                .on_hover_text("Add an item to your shopping list")
-                .clicked() {
-                self.add_item_modal = Some(Rc::new(RefCell::new(AddItemState::default())));
-                self.cleared_items = None;
-            }
 
             if ui.button("Load CSV")
                 .on_hover_text("Load in your own shopping list CSV file")
