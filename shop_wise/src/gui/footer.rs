@@ -1,11 +1,20 @@
 use eframe::egui::{self, Context, RichText, Ui};
 
-const PRICES_AS_AT: &str = "date?";
+const PRICES_AS_OF: &str = "09/10/2026?";
 
 const REPO_URL: &str =
     "https://gitlab.ecs.vuw.ac.nz/course-work/engr301/2026/project1/team5/shopwise";
 const CLUB_PLUS_URL: &str = "https://www.clubplus.co.nz";
 const EVERYDAY_REWARDS_URL: &str = "https://www.woolworths.co.nz/help/everyday-rewards-faqs";
+const OSM_COPYRIGHT_URL: &str = "https://www.openstreetmap.org/copyright";
+const IRD_URL: &str = "https://www.ird.govt.nz/income-tax/income-tax-for-businesses-and-organisations/types-of-business-expenses/claiming-vehicle-expenses/kilometre-rates-2025-2026";
+
+
+const POPUP_WIDTH: f32 = 450.0;
+const POPUP_MAX_HEIGHT: f32 = 450.0;
+const POPUP_SCREEN_MARGIN: f32 = 50.0;
+const HEADING_SIZE: f32 = 16.0;
+const TERM_WIDTH: f32 = 100.0;
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum FooterPage {
@@ -90,18 +99,21 @@ impl FooterData {
         }
 
         let mut open = true;
+        let width = POPUP_WIDTH.min(ctx.content_rect().width() - POPUP_SCREEN_MARGIN);
 
         egui::Window::new(page.title())
             .id(egui::Id::new("footer_window"))
             .open(&mut open)
             .collapsible(false)
             .resizable(false)
-            .default_width(440.0)
             .anchor(egui::Align2::CENTER_CENTER, egui::Vec2::ZERO)
             .show(ctx, |ui| {
                 egui::ScrollArea::vertical()
-                    .max_height(420.0)
-                    .show(ui, |ui| page.body(ui));
+                    .max_height(POPUP_MAX_HEIGHT)
+                    .show(ui, |ui| {
+                        ui.set_width(width);
+                        page.body(ui);
+                    });
             });
         if !open {
             self.open = FooterPage::None;
@@ -110,53 +122,70 @@ impl FooterData {
 }
 
 fn heading(ui: &mut Ui, text: &str) {
-    ui.add_space(6.0);
-    ui.label(RichText::new(text).strong());
+    ui.add_space(8.0);
+    ui.label(RichText::new(text).strong().size(HEADING_SIZE));
+    ui.add_space(2.0);
 }
 
-fn para(ui: &mut Ui, text: &str) {
+fn paragraph(ui: &mut Ui, text: &str) {
     ui.label(text);
-    ui.add_space(4.0);
+    ui.add_space(2.0);
+}
+
+fn term<R>(ui: &mut Ui, width: f32, term: &str, add_contents: impl FnOnce(&mut Ui) -> R) {
+    ui.horizontal_top(|ui| {
+        ui.vertical(|ui| {
+            ui.set_width(width);
+            ui.label(RichText::new(term).strong());
+        });
+        ui.vertical(add_contents);
+    });
+    ui.add_space(2.0);
 }
 
 fn about(ui: &mut Ui) {
-    para(
+    paragraph(
         ui,
         "ShopWise prices your whole shopping list across Pak'nSave, New World and \
          Woolworths near you, and counts the petrol it costs to get there.",
     );
-    heading(ui, "The Three Shopping Scenarios");
-    para(ui, "Cheapest: the lowest total, even if it means visiting more than one store.");
-    para(ui, "Fastest: the shortest trip that still covers your entire shopping list.");
-    para(
-        ui,
-        "Best Value: a balance of the two. It can cost a little more than Cheapest \
-         when it saves you a stop or a noticeable amount of driving.",
-    );
+    heading(ui, "Our three shopping scenarios:");
+    term(ui, TERM_WIDTH, "Cheapest:", |ui| {
+        ui.label("The lowest total, even if it means visiting more than one store.")
+    });
+    term(ui, TERM_WIDTH, "Fastest:", |ui| {
+        ui.label("The shortest trip that still covers your entire shopping list.")
+    });
+    term(ui, TERM_WIDTH, "Best Value:", |ui| {
+        ui.label(
+            "A balance of the two. It can cost a little more than Cheapest when it \
+             saves you a stop or a noticeable amount of driving.",
+        )
+    });
 }
 
 fn privacy(ui: &mut Ui) {
-    para(
+    paragraph(
         ui,
         "ShopWise runs entirely in your browser or on your computer. There is no \
          account, no server of ours, and no cookies, analytics or tracking.",
     );
-    heading(ui, "What stays on your device");
-    para(
+    heading(ui, "What stays on your device:");
+    paragraph(
         ui,
         "Your shopping list, your settings and your location are never sent to us. \
          Prices are a snapshot bundled with the app and read locally.",
     );
-    heading(ui, "What leaves your device");
-    para(
+    heading(ui, "What leaves your device:");
+    paragraph(
         ui,
         "When you search for your address, the text you type is sent to OpenStreetMap's \
          Nominatim service to find its coordinates. If you use your current location, \
-         your browser asks your permission first and the coordinates are looked up the \
+         your browser asks your permission first, and the coordinates are looked up the \
          same way.",
     );
-    heading(ui, "Files");
-    para(
+    heading(ui, "Files:");
+    paragraph(
         ui,
         "Saved shopping lists go only where you choose to save them. Loaded files are \
          read on your device and are not uploaded.",
@@ -164,20 +193,20 @@ fn privacy(ui: &mut Ui) {
 }
 
 fn terms(ui: &mut Ui) {
-    para(
+    paragraph(
         ui,
-        "ShopWise is a university student project, built for ENGR 302 at  \
+        "ShopWise is a university student project, built for ENGR 302 at \
          Victoria University of Wellington. It is provided as is, without any \
          warranty.",
     );
-    heading(ui, "Prices are indicative");
-    para(
+    heading(ui, "Prices are estimates");
+    paragraph(
         ui,
         "Prices come from a snapshot and change often. Always check the price in store \
          before relying on it. Distances and petrol costs are estimates.",
     );
     heading(ui, "Not affiliated");
-    para(
+    paragraph(
         ui,
         "ShopWise is not affiliated with or endorsed by Foodstuffs, Woolworths New \
          Zealand or any supermarket. Store names and trademarks belong to their owners.",
@@ -185,54 +214,77 @@ fn terms(ui: &mut Ui) {
 }
 
 fn data(ui: &mut Ui) {
-    heading(ui, "Prices");
-    para(
-        ui,
-        &format!(
-            "Collected from the supermarkets' public websites. Prices as at {PRICES_AS_AT}."
-        ),
-    );
-    heading(ui, "Store locations");
-    para(ui, "Collected from each chain's public store finder.");
-    heading(ui, "Petrol");
-    para(ui, "Per kilometre rates follow the IRD vehicle rates for 2025 to 2026.");
-    heading(ui, "Maps and addresses");
-    para(ui, "Address search uses Nominatim. Map data © OpenStreetMap contributors.");
+    paragraph(ui, "Where ShopWise's data comes from:");
+    ui.add_space(4.0);
+    term(ui, TERM_WIDTH, "Prices:", |ui| {
+        ui.label("Collected from the supermarkets' public websites.");
+        ui.label(RichText::new(format!("Prices as at {PRICES_AS_OF}")).weak());
+    });
+    term(ui, TERM_WIDTH, "Store locations:", |ui| {
+        ui.label("Collected from each chain's public store finder.")
+    });
+    term(ui, TERM_WIDTH, "Petrol:", |ui| {
+        ui.label("Per-kilometre rates follow the IRD vehicle rates for 2025 to 2026.");
+        ui.hyperlink_to("IRD KM rates 25/26", IRD_URL);
+    });
+    term(ui, TERM_WIDTH, "Maps:", |ui| {
+        ui.label("Address search uses Nominatim.");
+        ui.hyperlink_to("Map data ©OpenStreetMap contributors", OSM_COPYRIGHT_URL);
+    });
 }
 
 fn loyalty(ui: &mut Ui) {
-    para(
+    paragraph(
         ui,
-        "Both loyalty programmes are free to join and unlock member-only prices. \
-         You can TICK the ones you have in the Supermarkets section.",
+        "Both loyalty programmes are free to join to unlock their members-only prices. \
+         Tick the ones you have in the Supermarkets section.",
     );
-
-    heading(ui, "Club+");
-    para(
+    ui.add_space(4.0);
+    programme(
         ui,
-        "One card for Pak'nSave and New World, with Clbu Prices on selected products",
+        "Club+",
+        "Pak'nSave / New World",
+        "One card for both stores, with Club Prices on selected products.",
+        ("Join Club+", CLUB_PLUS_URL),
     );
-    ui.hyperlink_to("Join Club+", CLUB_PLUS_URL);
+    programme(
+        ui,
+        "Everyday Rewards",
+        "Woolworths",
+        "Woolworths' loyalty programme, with Member Prices on selected products.",
+        ("Join Everyday Rewards", EVERYDAY_REWARDS_URL),
+    );
+}
 
-    heading(ui, "Everyday Rewards");
-    para(ui, "Woolworths' loyalty programme, with Member Prices on selected products.");
-    ui.hyperlink_to("Join Everyday Rewards", EVERYDAY_REWARDS_URL);
+fn programme(ui: &mut Ui, name: &str, stores: &str, text: &str, (link, url): (&str, &str)) {
+    egui::Frame::group(ui.style())
+        .inner_margin(egui::Margin::same(10))
+        .show(ui, |ui| {
+            ui.set_width(ui.available_width());
+            ui.horizontal(|ui| {
+                ui.label(RichText::new(name).strong().size(HEADING_SIZE));
+                ui.label(RichText::new(stores).weak());
+            });
+            ui.label(text);
+            ui.add_space(2.0);
+            ui.hyperlink_to(link, url);
+        });
+    ui.add_space(6.0);
 }
 
 fn snake(ui: &mut Ui) {
-    para(ui, "This project was built by Team 5 as a part of ENGR301/302, 2026.");
-    for (name, role) in [
-        ("Alexander Worth:", "Route planner"),
-        ("Samuel Smith:", "Price calculator, item resolver and Parser"),
-        ("Syon Krishna:", "Database"),
-        ("Benjamin Khokgawe:", "Input GUI"),
-        ("Ryan Treleaven:", "Output GUI"),
+    paragraph(ui, "This project was built by Team 5 as a part of ENGR301/302, 2026.");
+    ui.add_space(4.0);
+    for (team, names) in [
+        ("Frontend:", &["Benjamin Khokgawe", "Ryan Treleaven"][..]),
+        ("Backend:", &["Alexander Worth", "Samuel Smith", "Syon Krishna"][..]),
     ] {
-        ui.horizontal(|ui| {
-            ui.label(RichText::new(name).strong());
-            ui.label(RichText::new(role).weak());
+        term(ui, TERM_WIDTH, team, |ui| {
+            for name in names {
+                ui.label(*name);
+            }
         });
     }
-    ui.add_space(8.0);
-    ui.hyperlink_to("GitLab", REPO_URL);
+    ui.add_space(6.0);
+    ui.hyperlink_to("View our GitLab", REPO_URL);
 }
