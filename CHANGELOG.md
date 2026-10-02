@@ -27,10 +27,23 @@ Work on branches that are not yet merged into `main`.
 - Code documentation for the shopping list, stores and file handling (#103)
 
 ### Fixed
+- Web (WASM) build failed to compile (#81)
+
+
+## [0.8.0] - 2026-09-30
+
+### Added
+- Store locations loaded from the database (#110)
+- Real database items loaded (#110)
+
+### Changed
+
+- Store locations loaded from the database (#110)
+
+### Fixed
 - Travel distance and speed calculations (#110)
 - Very large mileage values now show a proper error instead of failing (#110)
 - Items were removed from the results for a whole brand instead of a single store (#110)
-- Web (WASM) build failed to compile (#81)
 
 ## [0.7.0] - 2026-09-30
 
