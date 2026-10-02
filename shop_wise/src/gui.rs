@@ -1,4 +1,4 @@
-use eframe::egui::{self, CentralPanel, Panel, ScrollArea, Ui};
+use eframe::egui::{self, CentralPanel, Color32, Panel, ScrollArea, Stroke, Ui};
 use std::cell::RefCell;
 use std::rc::Rc;
 use util::coordinate::Coordinate;
@@ -21,6 +21,7 @@ pub mod shopping_list;
 pub mod supermarkets;
 pub mod transit;
 pub mod masthead;
+pub mod footer;
 
 const SECTION_MAX_HEIGHT: f32 = 300.0;
 
@@ -32,6 +33,7 @@ pub struct AppData {
     transit: TransitData,
     location_search: Rc<RefCell<LocationData>>,
     output_routes: OutputRoutesData,
+    footer: footer::FooterData,
     pub(crate) filters_collapsed: bool,
 }
 
@@ -44,7 +46,12 @@ impl ShowableWidget for AppData {
         self.masthead(ui);
 
         if !self.filters_collapsed{
-            Panel::left("left_panel").show_inside(ui, |ui| {
+            let panel = Panel::left("left_panel").show_inside(ui, |ui| {
+                Panel::bottom("left_footer")
+                    .resizable(false)
+                    .show_inside(ui, |ui| {
+                      self.footer.show(ui);
+                    });
                 ScrollArea::vertical()
                     .id_salt("left panel scroll")
                     .auto_shrink([false; 2])
@@ -84,6 +91,9 @@ impl ShowableWidget for AppData {
                         ui.separator();
                     });
             });
+            let line_width = 1.0_f32;
+            let bar = panel.response.rect;
+            ui.painter().vline(bar.right(), bar.y_range(), Stroke::new(line_width, Color32::BLACK));
         }
 
         CentralPanel::default().show_inside(ui, |ui| {
