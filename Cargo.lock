@@ -804,13 +804,7 @@ checksum = "f27ae1dd37df86211c42e150270f82743308803d90a6f6e6651cd730d5e1732f"
 
 [[package]]
 name = "database"
-version = "0.1.0"
-dependencies = [
- "bigdecimal",
- "rusqlite",
- "serde_json",
- "util",
-]
+version = "0.7.0"
 
 [[package]]
 name = "derive_more"
@@ -2199,7 +2193,7 @@ checksum = "f9f8bd3e56ce4dfc153cf470fffbfa98c7620958b312ca5c3a4b8d5181fd13c6"
 
 [[package]]
 name = "map"
-version = "0.1.0"
+version = "0.7.0"
 
 [[package]]
 name = "map_3d"
@@ -3631,7 +3625,7 @@ checksum = "f8fadd59c855ef2080decdef8ff161eb6661b86933c9d82e5ba29dc602a55aba"
 
 [[package]]
 name = "shop_wise"
-version = "0.1.0"
+version = "0.7.0"
 dependencies = [
  "bigdecimal",
  "csv",
@@ -4322,7 +4316,7 @@ checksum = "b6c140620e7ffbb22c2dee59cafe6084a59b5ffc27a8859a5f0d494b5d52b6be"
 
 [[package]]
 name = "util"
-version = "0.1.0"
+version = "0.7.0"
 dependencies = [
  "bigdecimal",
  "derive_more",

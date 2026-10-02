@@ -1,7 +1,10 @@
 [package]
-name    = "database"
-version = "0.1.0"
-edition = "2021"
+name = "database"
+version.workspace = true
+edition = "2024"
+
+[lints]
+workspace = true
 
 [dependencies]
 # `bundled` ships SQLite source inside the binary, so users don't
