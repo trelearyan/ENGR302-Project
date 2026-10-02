@@ -58,12 +58,6 @@ impl ShowableWidget for ShoppingListData {
         ui.heading("Your shopping list");
 
         ui.horizontal(|ui| {
-            if ui.button("+ Add Item")
-                .on_hover_text("Add an item to your shopping list")
-                .clicked() {
-                self.add_item_modal = Some(Rc::new(RefCell::new(AddItemState::default())));
-                self.cleared_items = None;
-            }
 
             if ui.button("Load CSV")
                 .on_hover_text("Load in your own shopping list CSV file")
@@ -185,35 +179,27 @@ impl ShoppingListData {
     }
 
     fn show_add_item_search(&mut self, ui: &mut Ui) {
-        let Some(state_rc) = self.add_item_modal.clone() else {
-            return;
-        };
+        let state_rc = self
+            .add_item_modal
+            .get_or_insert_with(|| Rc::new(RefCell::new(AddItemState::default()))).clone();
+
         let now = ui.input(|i| i.time);
-        let mut close = false;
         let mut picked: Option<SantizedSearchResult> = None;
- 
+
         {
             let mut state = state_rc.borrow_mut();
- 
-            ui.horizontal(|ui| {
-                let response = ui.add(
-                    egui::TextEdit::singleline(&mut state.query)
-                        .hint_text("Enter Your Item Name (e.g. milk)"),
+
+            let response = ui.add(egui::TextEdit::singleline(&mut state.query).hint_text("Enter Your Item Name"),);
+
+            if response.changed() {
+                state.status = AddItemStatus::Idle;
+                state.suggestions.clear();
+                state.last_edit_time = Some(now);
+
+                ui.ctx().request_repaint_after(
+                    std::time::Duration::from_secs_f64(DEBOUNCE_SECONDS),
                 );
- 
-                if response.changed() {
-                    state.status = AddItemStatus::Idle;
-                    state.suggestions.clear();
-                    state.last_edit_time = Some(now);
-                    ui.ctx().request_repaint_after(std::time::Duration::from_secs_f64(
-                        DEBOUNCE_SECONDS,
-                    ));
-                }
- 
-                if ui.button("Finish!").clicked() {
-                    close = true;
-                }
-            });
+            }
  
             let should_fire = matches!(
                 state.last_edit_time,
@@ -279,10 +265,7 @@ impl ShoppingListData {
             state.suggestions.clear();
             state.status = AddItemStatus::Idle;
         }
- 
-        if close {
-            self.add_item_modal = None;
-        }
+
     }
 
 }
