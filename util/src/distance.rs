@@ -35,8 +35,8 @@ impl Distance {
     }
 
     #[must_use]
-    pub fn from_kilometres_f64(metres: f64) -> Self {
-        Self::from_metres(BigDecimal::from_f64(metres * 1000.).unwrap())
+    pub fn from_kilometres_f64(kilometres: f64) -> Self {
+        Self::from_metres(BigDecimal::from_f64(kilometres * 1000.).unwrap())
     }
 
     /// if metres is negative, it becomes positive
