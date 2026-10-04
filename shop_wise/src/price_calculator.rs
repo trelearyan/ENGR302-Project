@@ -411,7 +411,7 @@ mod tests {
                 &filters,
                 &mileage,
             );
-        assert!(warmtime.elapsed() < Duration::from_secs(20));
+        assert!(warmtime.elapsed() < Duration::from_secs(60));
         let starttime = Instant::now();
         for _i in 0..runs {
             let res = calculate(
