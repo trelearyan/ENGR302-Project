@@ -305,9 +305,7 @@ mod tests {
 
     use util::{coordinate::Coordinate, search::SearchUnits, store::StoreBrand};
 
-    use crate::gui::shopping_list;
-
-use super::*;
+    use super::*;
 
     #[test]
     fn test_cheapest_demo() {
