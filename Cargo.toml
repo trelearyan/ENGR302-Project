@@ -8,3 +8,6 @@ unsafe_code = "forbid"
 [workspace.lints.clippy]
 all = "warn"
 pedantic = "warn"
+
+[workspace.package]
+version = "0.7.0"
