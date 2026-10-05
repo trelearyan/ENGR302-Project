@@ -46,7 +46,9 @@ impl ShowableWidget for AppData {
         self.masthead(ui);
 
         if !self.filters_collapsed{
-            let panel = Panel::left("left_panel").show_inside(ui, |ui| {
+            let panel = Panel::left("left_panel")
+                .default_size(250.0)
+                .show_inside(ui, |ui| {
                 Panel::bottom("left_footer")
                     .resizable(false)
                     .show_inside(ui, |ui| {
