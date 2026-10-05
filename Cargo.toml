@@ -1,6 +1,7 @@
 [workspace]
 resolver = "3"
 members = ["database", "map", "shop_wise", "util"]
+default-members = ["shop_wise"]
 
 [workspace.lints.rust]
 unsafe_code = "forbid"
