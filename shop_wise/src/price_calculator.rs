@@ -161,7 +161,7 @@ pub fn calculate(
                     quantity: item.quantity,
                     unit: item.unit.clone(),
                     price: item.price.clone(),
-                    store: store.clone(),
+                    store: item.store.clone(),
                 };
                 item_lookup
                     .get_mut(item_key)

@@ -1,6 +1,27 @@
 # Official language image. Look for the different tagged releases at:
 # https://hub.docker.com/r/library/rust/tags/
 
+# Run merge request pipelines for MRs and branch pipelines otherwise, so a
+# branch with an open MR doesn't get two pipelines per push.
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS
+      when: never
+    - if: $CI_COMMIT_BRANCH
+    - if: $CI_COMMIT_TAG
+
+# NFR-15: merge requests must add a CHANGELOG.md entry
+# and release tags must have a matching CHANGELOG.md section.
+ensure-changelog-updated:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_TAG
+  variables:
+    GIT_DEPTH: "0"
+  script:
+    - bash scripts/check_changelog.sh
+
 ensure-compiles:
   script:
     - rustc --version && cargo --version
