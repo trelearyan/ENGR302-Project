@@ -25,6 +25,7 @@ Work on branches that are not yet merged into `main`.
 - Updated eframe to 0.36; routing data is stored with Git LFS (#75)
 - Redesigned logo and browser tab icon (#109)
 - Code documentation for the shopping list, stores and file handling (#103)
+- Tidied up the results panel code, with no change to how it looks or behaves
 
 ### Fixed
 - Travel distance and speed calculations (#110)

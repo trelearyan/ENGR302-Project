@@ -1,16 +1,14 @@
-use bigdecimal::{BigDecimal, Zero};
+use bigdecimal::BigDecimal;
 use serde::{Deserialize, Serialize};
 use util::cost::Cost;
 use util::distance::Distance;
 use util::store::StoreBrand;
 
-// TODO(FR-09):
-// use std::collections::HashMap;
-//use crate::price_calculator::StoreId;
 use crate::price_calculator::{Calculation, CalculationTotal};
 
 /// for data that has no output yet
 pub const UNAVAILABLE: &str = "not available";
+
 #[must_use]
 pub fn format_money(cost: &Cost) -> String {
     format!("${cost}")
@@ -31,8 +29,15 @@ pub fn format_duration(minutes: f32) -> String {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
+/// Formats `value` with `format`, or gives [`UNAVAILABLE`] when there is no value.
+#[must_use]
+pub fn format_or_unavailable<T>(value: Option<T>, format: impl FnOnce(T) -> String) -> String {
+    value.map_or_else(|| UNAVAILABLE.to_owned(), format)
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum ScenarioKind {
+    #[default]
     Best,
     Cheapest,
     Fastest,
@@ -99,6 +104,15 @@ pub struct StoreStop {
 }
 
 impl StoreStop {
+    /// The store's own name, or its chain's name when it has none.
+    #[must_use]
+    pub fn display_name(&self) -> &str {
+        self.store_name
+            .as_deref()
+            .unwrap_or(brand_label(self.chain))
+    }
+
+    #[must_use]
     pub fn subtotal(&self) -> Cost {
         self.items.iter().map(ItemLine::line_total).sum()
     }
@@ -108,13 +122,14 @@ impl StoreStop {
 pub struct Scenario {
     pub kind: ScenarioKind,
     pub stops: Vec<StoreStop>,
-    //missing
+    // `None` is shown as `UNAVAILABLE`.
     pub travel_cost: Option<Cost>,
     pub distance_km: Option<Distance>,
     pub duration_min: Option<f32>,
 }
 
 impl Scenario {
+    #[must_use]
     pub fn grocery_cost(&self) -> Cost {
         self.stops.iter().map(StoreStop::subtotal).sum()
     }
@@ -126,6 +141,7 @@ impl Scenario {
             None => self.grocery_cost(),
         }
     }
+
     #[must_use]
     pub fn item_count(&self) -> u32 {
         self.stops
@@ -142,55 +158,45 @@ impl Scenario {
         }
         self.stops
             .iter()
-            .map(|s| {
-                s.store_name
-                    .clone()
-                    .unwrap_or_else(|| brand_label(s.chain).to_owned())
-            })
+            .map(StoreStop::display_name)
             .collect::<Vec<_>>()
             .join(" + ")
     }
-    // TODO(FR-09):when Results::from_calculation works
 
     fn from_calculation(kind: ScenarioKind, calc: &Calculation) -> Self {
-        let store_plans = &calc.shopping_plan;
-        //store_ids.sort();
-
-        let stops = store_plans
+        let stops = calc
+            .shopping_plan
             .iter()
-            .filter_map(|infos| {
+            .map(|plan| StoreStop {
                 // TODO: shopping_plan store name
-                // TODO: fix match_sid_to_brand and calculate mapping
-                let brand = infos.store.brand;
-
-                let items = infos
+                store_name: None,
+                chain: plan.store.brand,
+                // TODO: no address in output.
+                address: None,
+                items: plan
                     .items
                     .iter()
                     .map(|info| ItemLine {
                         name: info.name.clone(),
-                        quantity: info.multiplier.to_string() + "x " + &info.quantity.to_string() + info.unit.to_str(),
+                        multiplier: info.multiplier,
+                        quantity: format!(
+                            "{}x {}{}",
+                            info.multiplier,
+                            info.quantity,
+                            info.unit.to_str()
+                        ),
                         unit_price: info.price.clone(),
                         // TODO: loyalty pricing
                         on_special: false,
                         needs_loyalty_card: false,
-                        multiplier: info.multiplier,
                     })
-                    .collect();
-
-                Some(StoreStop {
-                    store_name: None,
-                    chain: brand,
-                    // TODO: no address in output.
-                    address: None,
-                    items,
-                })
+                    .collect(),
             })
             .collect();
 
         Self {
             kind,
             stops,
-            // TODO: calc output has no travel, distance and driving time
             travel_cost: Some(calc.total_travel_cost.clone()),
             distance_km: Some(calc.total_dist.clone()),
             duration_min: Some((calc.total_time.as_secs() / 60) as f32),
@@ -242,14 +248,12 @@ impl Results {
     #[must_use]
     pub fn headline_saving(&self) -> Option<Cost> {
         let dearest = ScenarioKind::ALL
-            .iter()
-            .map(|k| self.scenario(*k).total_cost())
+            .into_iter()
+            .map(|kind| self.scenario(kind).total_cost())
             .max()?;
         let saving = dearest - self.cheapest.total_cost();
-        (saving.clone().inner() > BigDecimal::zero()).then_some(saving)
+        (saving > Cost::from_cents(0)).then_some(saving)
     }
-
-    // TODO(FR-09): once fields are pub
 
     #[must_use]
     pub fn from_calculation(calc: &CalculationTotal, origin_label: String) -> Self {
@@ -263,8 +267,10 @@ impl Results {
         }
     }
 }
-#[derive(Clone, Debug)]
+
+#[derive(Clone, Debug, Default)]
 pub enum ResultsState {
+    #[default]
     Idle,
     Loading,
     Ready(Box<Results>),
@@ -274,6 +280,36 @@ pub enum ResultsState {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn stop(store_name: Option<&str>, items: Vec<ItemLine>) -> StoreStop {
+        StoreStop {
+            store_name: store_name.map(str::to_owned),
+            chain: StoreBrand::Paknsave,
+            address: Some(String::new()),
+            items,
+        }
+    }
+
+    fn item(name: &str, multiplier: u32, quantity: &str, unit_cents: u32) -> ItemLine {
+        ItemLine {
+            name: name.to_owned(),
+            multiplier,
+            quantity: quantity.to_owned(),
+            unit_price: Cost::from_cents(unit_cents),
+            on_special: false,
+            needs_loyalty_card: false,
+        }
+    }
+
+    fn scenario(kind: ScenarioKind, stops: Vec<StoreStop>) -> Scenario {
+        Scenario {
+            kind,
+            stops,
+            travel_cost: Some(Cost::from_cents(380)),
+            distance_km: Some(Distance::from_kilometres_f64(8.6)),
+            duration_min: Some(19.0),
+        }
+    }
 
     #[test]
     fn money_formats_with_two_decimals() {
@@ -289,58 +325,60 @@ mod tests {
     }
 
     #[test]
+    fn missing_values_format_as_unavailable() {
+        assert_eq!(format_or_unavailable(None, format_duration), UNAVAILABLE);
+        assert_eq!(format_or_unavailable(Some(19.0), format_duration), "19 min");
+    }
+
+    #[test]
     fn total_is_groceries_plus_travel() {
-        let stop = StoreStop {
-            store_name: Some("Test".to_owned()),
-            chain: StoreBrand::Paknsave,
-            address: Some(String::new()),
-            items: vec![ItemLine {
-                name: "Milk 2L".to_owned(),
-                multiplier: 1,
-                quantity: "1x 2L".to_owned(),
-                unit_price: Cost::from_cents(898),
-                on_special: false,
-                needs_loyalty_card: false,
-            }],
-        };
-        let scenario = Scenario {
-            kind: ScenarioKind::Cheapest,
-            stops: vec![stop],
-            travel_cost: Some(Cost::from_cents(380)),
-            distance_km: Some(Distance::from_kilometres_f64(8.6)),
-            duration_min: Some(19.0),
-        };
+        let scenario = scenario(
+            ScenarioKind::Cheapest,
+            vec![stop(Some("Test"), vec![item("Milk 2L", 1, "1x 2L", 898)])],
+        );
         assert_eq!(scenario.grocery_cost(), Cost::from_cents(898));
         assert_eq!(scenario.total_cost(), Cost::from_cents(1278));
         assert_eq!(scenario.item_count(), 1);
     }
 
-    
-
     #[test]
-    fn total_is_groceries_plus_travel2() {
-        let stop = StoreStop {
-            store_name: Some("Test".to_owned()),
-            chain: StoreBrand::Paknsave,
-            address: Some(String::new()),
-            items: vec![ItemLine {
-                name: "Milk 1L".to_owned(),
-                multiplier: 2,
-                quantity: "2x 1L".to_owned(),
-                unit_price: Cost::from_cents(449),
-                on_special: false,
-                needs_loyalty_card: false,
-            }],
-        };
-        let scenario = Scenario {
-            kind: ScenarioKind::Cheapest,
-            stops: vec![stop],
-            travel_cost: Some(Cost::from_cents(380)),
-            distance_km: Some(Distance::from_kilometres_f64(8.6)),
-            duration_min: Some(19.0),
-        };
+    fn line_totals_use_the_pack_multiplier() {
+        let scenario = scenario(
+            ScenarioKind::Cheapest,
+            vec![stop(Some("Test"), vec![item("Milk 1L", 2, "2x 1L", 449)])],
+        );
         assert_eq!(scenario.grocery_cost(), Cost::from_cents(898));
         assert_eq!(scenario.total_cost(), Cost::from_cents(1278));
         assert_eq!(scenario.item_count(), 2);
+    }
+
+    #[test]
+    fn store_summary_falls_back_to_the_chain_name() {
+        let empty = scenario(ScenarioKind::Best, Vec::new());
+        assert_eq!(empty.store_summary(), "No store found");
+
+        let named_and_unnamed = scenario(
+            ScenarioKind::Best,
+            vec![stop(Some("Test"), Vec::new()), stop(None, Vec::new())],
+        );
+        assert_eq!(named_and_unnamed.store_summary(), "Test + Pak'nSave");
+    }
+
+    #[test]
+    fn headline_saving_is_the_gap_to_the_dearest_plan() {
+        let milk = |cents| vec![stop(None, vec![item("Milk 1L", 1, "1x 1L", cents)])];
+        let results = |best, cheapest, fastest| Results {
+            origin_label: String::new(),
+            best: scenario(ScenarioKind::Best, milk(best)),
+            cheapest: scenario(ScenarioKind::Cheapest, milk(cheapest)),
+            fastest: scenario(ScenarioKind::Fastest, milk(fastest)),
+            unresolved: Vec::new(),
+        };
+
+        assert_eq!(
+            results(500, 400, 700).headline_saving(),
+            Some(Cost::from_cents(300))
+        );
+        assert_eq!(results(400, 400, 400).headline_saving(), None);
     }
 }
