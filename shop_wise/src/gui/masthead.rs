@@ -68,6 +68,11 @@ impl AppData {
             "filters-expand-light",
             include_bytes!("../../assets/arrow-right-light.png")
         );
+        let logo_dark_mode = cached_texture!(
+            ui.ctx(),
+            "shopwise-logo-dark-mode",
+            include_bytes!("../../assets/logo-dark-mode.png")
+        );
 
         let panel = egui::Panel::top("masthead")
             .exact_size(MASTHEAD_HEIGHT)
@@ -178,6 +183,7 @@ impl AppData {
                     ui.ctx().open_url(egui::OpenUrl::new_tab(REPO_URL));
                 }
 
+                let logo = if ui.visuals().dark_mode {&logo_dark_mode} else { &logo };
                 if let Some(logo) = &logo {
                     let [width, height] = logo.size();
                     let logo_width = LOGO_HEIGHT * width as f32 / height as f32;
