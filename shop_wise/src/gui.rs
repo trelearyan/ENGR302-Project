@@ -24,6 +24,7 @@ pub mod masthead;
 pub mod footer;
 
 const SECTION_MAX_HEIGHT: f32 = 300.0;
+const LEFT_PANEL_WIDTH: f32 = 250.0;
 
 #[derive(Default, Clone)]
 pub struct AppData {
@@ -47,7 +48,7 @@ impl ShowableWidget for AppData {
 
         if !self.filters_collapsed{
             let panel = Panel::left("left_panel")
-                .default_size(250.0)
+                .default_size(LEFT_PANEL_WIDTH)
                 .show_inside(ui, |ui| {
                 Panel::bottom("left_footer")
                     .resizable(false)
