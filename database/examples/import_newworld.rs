@@ -16,7 +16,6 @@ fn main() {
         .as_array()
         .expect("expected a top-level \"products\" array");
 
-    // Ensure the New World row exists in `supermarkets`, then fetch its id.
     conn.execute(
         "INSERT OR IGNORE INTO supermarkets (chain) VALUES (?1)",
         params!["New World"],
@@ -31,8 +30,6 @@ fn main() {
         )
         .expect("could not find New World in supermarkets table");
 
-    // Wipe any previous New World products (including the old placeholder
-    // sample data) so re-running this doesn't create duplicates.
     let deleted = conn
         .execute(
             "DELETE FROM products WHERE supermarket_id = ?1",
@@ -61,11 +58,12 @@ fn main() {
             }
         };
         let volume_size = product["unit"].as_str();
+        let member_price = product["member_price"].as_f64();
 
         tx.execute(
-            "INSERT INTO products (supermarket_id, name, price, volume_size, image_url)
-             VALUES (?1, ?2, ?3, ?4, NULL)",
-            params![supermarket_id, name, price, volume_size],
+            "INSERT INTO products (supermarket_id, name, price, member_price, volume_size, image_url)
+             VALUES (?1, ?2, ?3, ?4, ?5, NULL)",
+            params![supermarket_id, name, price, member_price, volume_size],
         )
         .expect("failed to insert product");
 
@@ -84,4 +82,13 @@ fn main() {
         )
         .expect("count query failed");
     println!("Total New World products now in database: {}", total);
+
+    let with_member: i64 = conn
+        .query_row(
+            "SELECT COUNT(*) FROM products WHERE supermarket_id = ?1 AND member_price IS NOT NULL",
+            params![supermarket_id],
+            |row| row.get(0),
+        )
+        .expect("member price count failed");
+    println!("Of those, {} have a Clubcard price.", with_member);
 }
