@@ -58,15 +58,31 @@ impl AppData {
             "filters-expand",
             include_bytes!("../../assets/arrow-right.png")
         );
+        let menu_collapse_icon_light = cached_texture!(
+            ui.ctx(),
+            "filters-collapse-light",
+            include_bytes!("../../assets/arrow-left-light.png")
+        );
+        let menu_expand_icon_light = cached_texture!(
+            ui.ctx(),
+            "filters-expand-light",
+            include_bytes!("../../assets/arrow-right-light.png")
+        );
+        let logo_dark_mode = cached_texture!(
+            ui.ctx(),
+            "shopwise-logo-dark-mode",
+            include_bytes!("../../assets/logo-dark-mode.png")
+        );
 
         let panel = egui::Panel::top("masthead")
-            //.min_size(MASTHEAD_HEIGHT)
-            //.max_size(MASTHEAD_HEIGHT)
-            //.resizable(false)
             .exact_size(MASTHEAD_HEIGHT)
             .frame(
                 egui::Frame::default()
-                    .fill(FILL)
+                    .fill(if ui.visuals().dark_mode {
+                        ui.visuals().panel_fill
+                    } else {
+                        FILL
+                    })
                     .inner_margin(egui::Margin::symmetric(24, 0)),
             )
             .show_inside(ui, |ui| {
@@ -97,10 +113,12 @@ impl AppData {
                     .on_hover_text(menu_hover_text);
 
                 let menu_alpha = interact_alpha(&menu);
-                let menu_icon = if self.filters_collapsed {
-                    &menu_expand_icon
-                } else {
-                    &menu_collapse_icon
+                let dark_mode = ui.visuals().dark_mode;
+                let menu_icon = match (self.filters_collapsed, dark_mode) {
+                    (true, false) => &menu_expand_icon,
+                    (false, false) => &menu_collapse_icon,
+                    (true, true) => &menu_expand_icon_light,
+                    (false, true) => &menu_collapse_icon_light,
                 };
 
                 if let Some(icon) = menu_icon {
@@ -165,6 +183,7 @@ impl AppData {
                     ui.ctx().open_url(egui::OpenUrl::new_tab(REPO_URL));
                 }
 
+                let logo = if ui.visuals().dark_mode {&logo_dark_mode} else { &logo };
                 if let Some(logo) = &logo {
                     let [width, height] = logo.size();
                     let logo_width = LOGO_HEIGHT * width as f32 / height as f32;
