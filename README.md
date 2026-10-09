@@ -3,7 +3,7 @@
 ## Usage instructions
 
 ### Live Web version
-Visit https://gitlab-web.ecs.vuw.ac.nz/shopwise-0c4d83/
+Visit https://gitlab-web.ecs.vuw.ac.nz/course-work/engr301/2026/project1/team5/shopwise
 
 ### Desktop version
 1. Clone the repository:
