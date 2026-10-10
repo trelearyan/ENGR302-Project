@@ -30,9 +30,9 @@ struct StoreFile {
     stores: Vec<Store>,
 }
 
-const WOOLWORTHS_JSON: &str = include_str!("../../../../shopwise/data/woolworths_locations.json");
-const NEWWORLD_JSON: &str = include_str!("../../../../shopwise/data/newworld_locations.json");
-const PAKNSAVE_JSON: &str = include_str!("../../../../shopwise/data/paknsave_locations.json");
+const WOOLWORTHS_JSON: &str = include_str!("../../../data/woolworths_locations.json");
+const NEWWORLD_JSON: &str = include_str!("../../../data/newworld_locations.json");
+const PAKNSAVE_JSON: &str = include_str!("../../../data/paknsave_locations.json");
 
 fn all_stores() -> &'static [Store] {
     static STORES: OnceLock<Vec<Store>> = OnceLock::new();
