@@ -1,6 +1,6 @@
 [package]
 name = "shop_wise"
-version = "0.1.0"
+version.workspace = true
 edition = "2024"
 
 [lints]
@@ -31,6 +31,7 @@ csv = "1.4.0"
 rfd = "0.17.2"
 regex = "1.13.1"
 image = { version = "0.25", default-features = false, features = ["png"] }
+egui_extras = { version = "0.34.2", features = ["image"] }
 
 [dependencies.web-sys]
 version = "0.3"
@@ -55,5 +56,5 @@ features = [
 ]
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-pollster = "0.4"
+pollster = "1.0.1"
 
