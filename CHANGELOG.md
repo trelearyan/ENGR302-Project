@@ -11,27 +11,46 @@ as recommended by the Rust API guidelines
 
 Work on branches that are not yet merged into `main`.
 
+### [Unreleased]
+
+Work on branches that are not yet merged into `main`.
+
 ### Added
 - Map showing the planned route (#75)
 - Store locations loaded from the database (#110)
-- Store dropdown only lists stores within the maximum range (#85)
-- Clear error messages when the price calculator can't find a plan (#82)
-- Footer with privacy and data source information (#109)
-- CI checks that failed merge requests that don't add a changelog entry, and keeps the Cargo.toml version in sync with the changelog (NFR-15)
-- Masthead and filters panel switch to dark colours in dark mode, with light arrow icons (#113)
 
 ### Changed
 - Price calculator uses the real scraped product database instead of demo data, with caching (#110)
 - Distances follow real roads between stops, using OpenStreetMap routing data instead of straight lines (#81)
-- Updated eframe to 0.36; routing data is stored with Git LFS (#75)
-- Redesigned logo and browser tab icon (#109)
-- Code documentation for the shopping list, stores and file handling (#103)
+- Updated eframe to 0.36 (#75)
 
 ### Fixed
 - Travel distance and speed calculations (#110)
 - Very large mileage values now show a proper error instead of failing (#110)
 - Items were removed from the results for a whole brand instead of a single store (#110)
-- Web (WASM) build failed to compile (#81)
+
+## [0.9.0] - 2026-10-08
+
+### Added
+- Dark mode for the masthead: it uses the same dark background as the rest of the app, with light arrow icons and a light version of the logo (#113)
+
+### Changed
+- Browser tab icon uses the 40px logo, the unused 80px icon was removed (#113)
+
+### Fixed
+- Filters panel opened too narrow and squashed its text, it now starts 250px wide (#113)
+
+## [0.8.0] - 2026-10-02
+
+### Added
+- Store dropdown only lists stores within the maximum range (#85)
+- Clear error messages when the price calculator can't find a plan (#82)
+- Footer with privacy and data source information (#109)
+- CI checks that failed merge requests that don't add a changelog entry, and keeps the Cargo.toml version in sync with the changelog (NFR-15)
+
+### Changed
+- Redesigned logo and browser tab icon (#109)
+- The item search field is always visible in the shopping list, replacing the Add Item button (#112)
 
 ## [0.7.0] - 2026-09-30
 
@@ -41,7 +60,7 @@ Work on branches that are not yet merged into `main`.
 - Product search when adding an item: the Add Item button opens a search box with a scrollable list of matching products from the database (#78)
 
 ### Changed
-- Shopping list rows are read-only, with the remove button at the start of each row; items are added through product search (#78)
+- Shopping list rows are read-only, with the remove button at the start of each row, items are added through product search (#78)
 - The filters panel and the output panel scroll, and the shopping list and supermarket sections have a fixed maximum height (#76)
 - Results show the pack size of each item, e.g. "2x 1L", and line totals use the number of packs (#86)
 
@@ -59,7 +78,7 @@ Work on branches that are not yet merged into `main`.
 
 ### Changed
 - Item resolver works from the selected item instead of a raw search term (#73)
-- Refactored the GUI and moved the location input to the side panel; applied Clippy lint fixes and removed dead code (#73)
+- Refactored the GUI and moved the location input to the side panel, applied Clippy lint fixes and removed dead code (#73)
 
 ### Fixed
 - Black screen caused by overflowing panels: the shopping list and location dropdown now scroll
@@ -71,11 +90,11 @@ Work on branches that are not yet merged into `main`.
 - FR-13: load and save the shopping list as a CSV file
 - FR-01: remove items from and clear the shopping list
 - Live address autocomplete and "use current location" with timeout and error handling (#53)
-- Distance and travel duration in the results; travel time calculated from mileage speed (#66)
+- Distance and travel duration in the results, travel time calculated from mileage speed (#66)
 - Hover text explaining the controls on every input panel
 
 ### Changed
-- Refactored the price calculator to take the transit mileage into account; added `RoutePlan` and `RoutePath` (#66)
+- Refactored the price calculator to take the transit mileage into account, added `RoutePlan` and `RoutePath` (#66)
 - Search button stays disabled until the shopping list and location are valid (#53)
 - Location input moved to the right-hand panel (#75)
 
@@ -114,7 +133,7 @@ Note: the price calculation merge was reverted on 2026-08-23 and merged again on
 
 ### Changed
 - RACI matrix updated with new requirements after stakeholder validation (#32)
-- "ea" is the default unit; the "None" unit was removed (#26)
+- "ea" is the default unit, the "None" unit was removed (#26)
 
 ### Fixed
 - Items with the same name sharing one widget id (#26)
