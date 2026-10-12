@@ -1,4 +1,4 @@
-use eframe::egui::{Align, Button, Frame, Key, Layout, RichText, TextEdit, Ui, vec2};
+use eframe::egui::{Align, Button, Frame, Key, Layout, TextEdit, Ui, vec2};
 use serde::{Deserialize, Serialize};
 use util::coordinate::Coordinate;
 use std::cell::RefCell;
@@ -68,16 +68,14 @@ impl From<LocationData> for Coordinate {
 impl LocationData {
 
     /// The search bar: address field, current-location and search buttons in one row.
-    /// Returns true when "Find my shop" was clicked.
+    /// Returns true when "Search" was clicked.
     pub fn show(this: &Rc<RefCell<LocationData>>, ui: &mut Ui, has_items: bool) -> bool {
         let now = ui.input(|i| i.time);
         let mut state = this.borrow_mut();
         let mut locate_clicked = false;
-        let mut find_clicked = false;
+        let mut search_clicked = false;
 
         let button_size = vec2(0.0, 32.0);
-        let primary_fill = ui.visuals().strong_text_color();
-        let primary_text = ui.visuals().panel_fill;
 
         let response = Frame::group(ui.style())
             .corner_radius(8)
@@ -89,14 +87,10 @@ impl LocationData {
                             state.status,
                             LocationStatus::Resolved | LocationStatus::Success
                         );
-                        find_clicked = ui
+                        search_clicked = ui
                             .add_enabled(
                                 has_items && location_ready,
-                                Button::new(
-                                    RichText::new("Find my shop").strong().color(primary_text),
-                                )
-                                .fill(primary_fill)
-                                .min_size(button_size),
+                                Button::new("Search").min_size(button_size),
                             )
                             .on_hover_text("I am ready to search")
                             .on_disabled_hover_text(
@@ -234,7 +228,7 @@ impl LocationData {
             #[cfg(target_arch = "wasm32")]
             Self::get_current_location(this.clone(), ui.ctx().clone());
         }
-        find_clicked
+        search_clicked
     }
 
     /*
