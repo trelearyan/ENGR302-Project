@@ -19,6 +19,7 @@ Work on branches that are not yet merged into `main`.
 - Footer with privacy and data source information (#109)
 - CI checks that failed merge requests that don't add a changelog entry, and keeps the Cargo.toml version in sync with the changelog (NFR-15)
 - Masthead and filters panel switch to dark colours in dark mode, with light arrow icons (#113)
+- Ubuntu Bold font for bold text, used for the item table headers
 
 ### Changed
 - Price calculator uses the real scraped product database instead of demo data, with caching (#110)
@@ -26,12 +27,19 @@ Work on branches that are not yet merged into `main`.
 - Updated eframe to 0.36; routing data is stored with Git LFS (#75)
 - Redesigned logo and browser tab icon (#109)
 - Code documentation for the shopping list, stores and file handling (#103)
+- Redesigned results panel: a card for each plan (Best value, Cheapest, Fastest) with the total, groceries, travel, distance and time; the selected card has an orange border and a tick, and the others show how much more or less they cost
+- Plan details show a summary (groceries, total, items, travel, distance, driving time), numbered stops side by side, and each stop's items with Qty, Unit and Line total
+- Search bar puts the address, "Use my location" and Search in one row
+- Supermarkets list shows each chain's loyalty card on the same row, with more space between chains
 
 ### Fixed
 - Travel distance and speed calculations (#110)
 - Very large mileage values now show a proper error instead of failing (#110)
 - Items were removed from the results for a whole brand instead of a single store (#110)
 - Web (WASM) build failed to compile (#81)
+- Price calculator only ever chose Pak'nSave, because stores were identified by their location and the placeholder stores share one
+- Prices were compared rounded to whole dollars, so the cheapest plan wasn't always the cheapest
+- Travel cost was charged per metre instead of per kilometre
 
 ## [0.7.0] - 2026-09-30
 
