@@ -259,9 +259,19 @@ impl OutputRoutesData {
     fn plan_detail(ui: &mut egui::Ui, results: &Results, kind: ScenarioKind) {
         let scenario = results.scenario(kind);
         ui.vertical_centered(|ui| {
-            ui.heading(format!("{} plan, stop by stop", kind.label()));
+            let heading = ui.label(
+                egui::RichText::new(format!("{} plan", kind.label()))
+                    .size(26.0)
+                    .strong(),
+            );
+            // short underline in the selected card's orange ties the heading to that card
+            let underline = egui::Rect::from_min_size(
+                heading.rect.left_bottom() + egui::vec2(0.0, 2.0),
+                egui::vec2(heading.rect.width(), 3.0),
+            );
+            ui.painter().rect_filled(underline, 1.5, SELECTED_COLOUR);
         });
-        ui.add_space(8.0);
+        ui.add_space(14.0);
 
         let stats = [
             ("Groceries", format_money(&scenario.grocery_cost())),
