@@ -19,6 +19,7 @@ impl ShowableWidget for OutputRoutesData {
 const STACK_BELOW_WIDTH: f32 = 760.0;
 const CARD_MIN_HEIGHT: f32 = 140.0;
 const MONEY_COLUMN_WIDTH: f32 = 72.0;
+const BADGE_SIZE: f32 = 22.0;
 // orange from the logo
 const SELECTED_COLOUR: egui::Color32 = egui::Color32::from_rgb(0xFF, 0x7A, 0x3D);
 
@@ -333,18 +334,18 @@ impl OutputRoutesData {
         let badge_text = ui.visuals().panel_fill;
 
         ui.horizontal(|ui| {
-            egui::Frame::new()
-                .fill(badge_fill)
-                .corner_radius(255)
-                .inner_margin(egui::Margin::symmetric(7, 2))
-                .show(ui, |ui| {
-                    ui.label(
-                        egui::RichText::new(stop_number.to_string())
-                            .small()
-                            .strong()
-                            .color(badge_text),
-                    );
-                });
+            // the default proportional font is light; monospace (Hack) reads heavier
+            let (badge, _) =
+                ui.allocate_exact_size(egui::vec2(BADGE_SIZE, BADGE_SIZE), egui::Sense::hover());
+            ui.painter()
+                .circle_filled(badge.center(), BADGE_SIZE / 2.0, badge_fill);
+            ui.painter().text(
+                badge.center(),
+                egui::Align2::CENTER_CENTER,
+                stop_number.to_string(),
+                egui::FontId::monospace(14.0),
+                badge_text,
+            );
             ui.label(egui::RichText::new(stop_name(stop)).strong());
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                 ui.label(egui::RichText::new(format_money(&stop.subtotal())).strong());
