@@ -257,7 +257,9 @@ impl OutputRoutesData {
 
     fn plan_detail(ui: &mut egui::Ui, results: &Results, kind: ScenarioKind) {
         let scenario = results.scenario(kind);
-        ui.heading(format!("{} plan, stop by stop", kind.label()));
+        ui.vertical_centered(|ui| {
+            ui.heading(format!("{} plan, stop by stop", kind.label()));
+        });
         ui.add_space(8.0);
 
         let stats = [
@@ -281,8 +283,10 @@ impl OutputRoutesData {
                 for row in stats.chunks(per_row) {
                     ui.columns(per_row, |columns| {
                         for (column, (label, value)) in columns.iter_mut().zip(row) {
-                            column.label(*label);
-                            column.label(egui::RichText::new(value).size(20.0).strong());
+                            column.vertical_centered(|ui| {
+                                ui.label(*label);
+                                ui.label(egui::RichText::new(value).size(20.0).strong());
+                            });
                         }
                     });
                 }
@@ -290,10 +294,12 @@ impl OutputRoutesData {
         ui.add_space(12.0);
 
         if scenario.stops.is_empty() {
-            ui.label(
-                egui::RichText::new("No combination of stores in range can supply this list.")
-                    .color(ui.visuals().warn_fg_color),
-            );
+            ui.vertical_centered(|ui| {
+                ui.label(
+                    egui::RichText::new("No combination of stores in range can supply this list.")
+                        .color(ui.visuals().warn_fg_color),
+                );
+            });
             return;
         }
 
@@ -317,7 +323,7 @@ impl OutputRoutesData {
                 .corner_radius(6)
                 .show(ui, |ui| {
                     ui.set_width(ui.available_width());
-                    ui.label(note);
+                    ui.vertical_centered(|ui| ui.label(note));
                 });
         }
     }
