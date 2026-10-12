@@ -8,6 +8,9 @@ use util::store::StoreBrand;
 use crate::gui::ShowableWidget;
 use crate::price_calculator::results::brand_label;
 
+/// Vertical gap between one chain and the next in the Supermarkets list.
+const CHAIN_GAP: f32 = 8.0;
+
 #[derive(Clone, Debug, Deserialize)]
 pub struct Store {
     pub address: String,
@@ -162,70 +165,81 @@ impl SupermarketsData {
 
         let mut clubcard: Option<bool> = None;
 
-        for chain in &mut self.chains {
-            let name = brand_label(chain.brand);
-            let card = loyalty_label(chain.brand);
-            let nearby = stores_in_range(chain.brand, origin, max_range);
+        ui.scope(|ui| {
+            // unticked boxes get a visible border (egui's light theme draws them borderless),
+            // and the indent under each chain drops its vertical guide line
+            let border = ui.visuals().widgets.noninteractive.bg_stroke;
+            ui.visuals_mut().widgets.inactive.bg_stroke = border;
+            ui.visuals_mut().indent_has_left_vline = false;
 
-            // one row: chain on the left, its loyalty card ("Clubcard [ ]") on the right
-            ui.horizontal(|ui| {
-                ui.checkbox(&mut chain.checked, name)
-                    .on_hover_text(format!("Include {name} stores in the search"));
-                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                    ui.add_enabled_ui(chain.checked, |ui| {
-                        let hover = format!("Do you have {name}'s loyalty card?");
-                        let ticked = ui
-                            .add(egui::Checkbox::without_text(&mut chain.has_loyalty_card))
-                            .on_hover_text(&hover)
-                            .changed();
-                        // the label toggles the box too, like a checkbox's own text would
-                        let label_clicked = ui
-                            .add(egui::Label::new(card).sense(egui::Sense::click()))
-                            .on_hover_text(&hover)
-                            .clicked();
-                        if label_clicked {
-                            chain.has_loyalty_card = !chain.has_loyalty_card;
-                        }
-                        if (ticked || label_clicked)
-                            && matches!(chain.brand, StoreBrand::Paknsave | StoreBrand::Newworld)
-                        {
-                            clubcard = Some(chain.has_loyalty_card);
-                        }
+            for (index, chain) in self.chains.iter_mut().enumerate() {
+                if index > 0 {
+                    ui.add_space(CHAIN_GAP);
+                }
+                let name = brand_label(chain.brand);
+                let card = loyalty_label(chain.brand);
+                let nearby = stores_in_range(chain.brand, origin, max_range);
+
+                // one row: chain on the left, its loyalty card ("Clubcard [ ]") on the right
+                ui.horizontal(|ui| {
+                    ui.checkbox(&mut chain.checked, name)
+                        .on_hover_text(format!("Include {name} stores in the search"));
+                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                        ui.add_enabled_ui(chain.checked, |ui| {
+                            let hover = format!("Do you have {name}'s loyalty card?");
+                            let ticked = ui
+                                .add(egui::Checkbox::without_text(&mut chain.has_loyalty_card))
+                                .on_hover_text(&hover)
+                                .changed();
+                            // the label toggles the box too, like a checkbox's own text would
+                            let label_clicked = ui
+                                .add(egui::Label::new(card).sense(egui::Sense::click()))
+                                .on_hover_text(&hover)
+                                .clicked();
+                            if label_clicked {
+                                chain.has_loyalty_card = !chain.has_loyalty_card;
+                            }
+                            if (ticked || label_clicked)
+                                && matches!(chain.brand, StoreBrand::Paknsave | StoreBrand::Newworld)
+                            {
+                                clubcard = Some(chain.has_loyalty_card);
+                            }
+                        });
                     });
                 });
-            });
 
-            if !chain.checked {
-                continue;
-            }
+                if !chain.checked {
+                    continue;
+                }
 
-            ui.indent(name, |ui| {
-                egui::CollapsingHeader::new("Choose locations")
-                    .id_salt(name)
-                    .show(ui, |ui| {
-                        if nearby.is_empty() {
-                            let message = if origin.is_none() {
-                                "Set your location first"
-                            } else {
-                                "No stores in range. Try to increase your radius."
-                            };
-                            ui.label(egui::RichText::new(message).small().weak());
-                            return;
-                        }
-
-                        for store in nearby {
-                            let mut included = !chain.is_blacklist(&store.id);
-                            if ui
-                                .checkbox(&mut included, &store.name)
-                                .on_hover_text(store.address.as_str())
-                                .changed()
-                            {
-                                chain.set_blacklist(&store.id, !included);
+                ui.indent(name, |ui| {
+                    egui::CollapsingHeader::new(egui::RichText::new("Choose locations").small())
+                        .id_salt(name)
+                        .show(ui, |ui| {
+                            if nearby.is_empty() {
+                                let message = if origin.is_none() {
+                                    "Set your location first"
+                                } else {
+                                    "No stores in range. Try to increase your radius."
+                                };
+                                ui.label(egui::RichText::new(message).small().weak());
+                                return;
                             }
-                        }
-                    });
-            });
-        }
+
+                            for store in nearby {
+                                let mut included = !chain.is_blacklist(&store.id);
+                                if ui
+                                    .checkbox(&mut included, &store.name)
+                                    .on_hover_text(store.address.as_str())
+                                    .changed()
+                                {
+                                    chain.set_blacklist(&store.id, !included);
+                                }
+                            }
+                        });
+                });
+            }
+        });
 
         if let Some(value) = clubcard {
             for chain in &mut self.chains {
