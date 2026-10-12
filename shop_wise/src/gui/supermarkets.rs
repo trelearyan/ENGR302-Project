@@ -107,8 +107,8 @@ impl ChainPreference {
 
 fn loyalty_label(brand: StoreBrand) -> &'static str {
     match brand {
-        StoreBrand::Paknsave | StoreBrand::Newworld => "I have a Clubcard",
-        StoreBrand::Woolworths => "I have an Everyday Rewards Card",
+        StoreBrand::Paknsave | StoreBrand::Newworld => "Clubcard",
+        StoreBrand::Woolworths => "Everyday Rewards",
     }
 }
 
@@ -167,23 +167,39 @@ impl SupermarketsData {
             let card = loyalty_label(chain.brand);
             let nearby = stores_in_range(chain.brand, origin, max_range);
 
-            ui.checkbox(&mut chain.checked, name)
-                .on_hover_text(format!("Include {name} stores in the search"));
+            // one row: chain on the left, its loyalty card ("Clubcard [ ]") on the right
+            ui.horizontal(|ui| {
+                ui.checkbox(&mut chain.checked, name)
+                    .on_hover_text(format!("Include {name} stores in the search"));
+                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                    ui.add_enabled_ui(chain.checked, |ui| {
+                        let hover = format!("Do you have {name}'s loyalty card?");
+                        let ticked = ui
+                            .add(egui::Checkbox::without_text(&mut chain.has_loyalty_card))
+                            .on_hover_text(&hover)
+                            .changed();
+                        // the label toggles the box too, like a checkbox's own text would
+                        let label_clicked = ui
+                            .add(egui::Label::new(card).sense(egui::Sense::click()))
+                            .on_hover_text(&hover)
+                            .clicked();
+                        if label_clicked {
+                            chain.has_loyalty_card = !chain.has_loyalty_card;
+                        }
+                        if (ticked || label_clicked)
+                            && matches!(chain.brand, StoreBrand::Paknsave | StoreBrand::Newworld)
+                        {
+                            clubcard = Some(chain.has_loyalty_card);
+                        }
+                    });
+                });
+            });
 
             if !chain.checked {
                 continue;
             }
 
             ui.indent(name, |ui| {
-                if ui
-                    .checkbox(&mut chain.has_loyalty_card, card)
-                    .on_hover_text(format!("Do you have {name}'s loyalty card?"))
-                    .changed()
-                    && matches!(chain.brand, StoreBrand::Paknsave | StoreBrand::Newworld)
-                {
-                    clubcard = Some(chain.has_loyalty_card);
-                }
-
                 egui::CollapsingHeader::new("Choose locations")
                     .id_salt(name)
                     .show(ui, |ui| {
