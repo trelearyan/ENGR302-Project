@@ -3,7 +3,7 @@ use eframe::egui;
 use egui_extras::{Column, TableBuilder};
 
 use crate::{
-    gui::ShowableWidget,
+    gui::{ShowableWidget, bold},
     price_calculator::results::{
         Results, ResultsState, Scenario, ScenarioKind, StoreStop, UNAVAILABLE, UnresolvedItem, brand_label,
         format_delta, format_distance, format_duration, format_money,
@@ -378,12 +378,13 @@ impl OutputRoutesData {
                     .column(Column::remainder().clip(true))
                     .columns(Column::exact(MONEY_COLUMN_WIDTH), 3)
                     .header(row_height, |mut header| {
+                        let title = |text| egui::RichText::new(text).family(bold()).strong();
                         header.col(|ui| {
-                            ui.strong("Item");
+                            ui.label(title("Item"));
                         });
-                        for title in ["Qty", "Unit", "Line total"] {
+                        for text in ["Qty", "Unit", "Line total"] {
                             header.col(|ui| {
-                                ui.with_layout(right, |ui| ui.strong(title));
+                                ui.with_layout(right, |ui| ui.label(title(text)));
                             });
                         }
                     })

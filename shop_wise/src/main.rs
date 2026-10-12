@@ -24,7 +24,10 @@ fn main() -> eframe::Result {
     eframe::run_native(
         "ShopWise",
         options,
-        Box::new(|_| Ok(Box::new(AppData::default()))),
+        Box::new(|cc| {
+            gui::setup_fonts(&cc.egui_ctx);
+            Ok(Box::new(AppData::default()))
+        }),
     )
 }
 
@@ -49,7 +52,10 @@ fn main() {
             .start(
                 canvas,
                 eframe::WebOptions::default(),
-                Box::new(|_| Ok(Box::new(AppData::default()))),
+                Box::new(|cc| {
+                    gui::setup_fonts(&cc.egui_ctx);
+                    Ok(Box::new(AppData::default()))
+                }),
             )
             .await
             .unwrap();

@@ -1,6 +1,7 @@
-use eframe::egui::{CentralPanel, Color32, Panel, ScrollArea, Stroke, Ui};
+use eframe::egui::{self, CentralPanel, Color32, Panel, ScrollArea, Stroke, Ui};
 use std::cell::RefCell;
 use std::rc::Rc;
+use std::sync::Arc;
 use util::coordinate::Coordinate;
 
 
@@ -24,6 +25,7 @@ pub mod masthead;
 pub mod footer;
 
 const SECTION_MAX_HEIGHT: f32 = 300.0;
+const BOLD_FAMILY: &str = "bold";
 const LEFT_PANEL_WIDTH: f32 = 250.0;
 
 #[derive(Default, Clone)]
@@ -36,6 +38,31 @@ pub struct AppData {
     output_routes: OutputRoutesData,
     footer: footer::FooterData,
     pub(crate) filters_collapsed: bool,
+}
+
+/// Registers the bundled Ubuntu Bold (Latin subset) as the "bold" font family;
+/// egui's default proportional font only has a light weight.
+pub fn setup_fonts(ctx: &egui::Context) {
+    let mut fonts = egui::FontDefinitions::default();
+    fonts.font_data.insert(
+        "Ubuntu-Bold".to_owned(),
+        Arc::new(egui::FontData::from_static(include_bytes!(
+            "../assets/Ubuntu-Bold.ttf"
+        ))),
+    );
+    // fall back to the default fonts for anything outside the subset (emoji, symbols)
+    let mut family = vec!["Ubuntu-Bold".to_owned()];
+    family.extend(fonts.families[&egui::FontFamily::Proportional].iter().cloned());
+    fonts
+        .families
+        .insert(egui::FontFamily::Name(BOLD_FAMILY.into()), family);
+    ctx.set_fonts(fonts);
+}
+
+/// The bold font family registered by [`setup_fonts`].
+#[must_use]
+pub fn bold() -> egui::FontFamily {
+    egui::FontFamily::Name(BOLD_FAMILY.into())
 }
 
 pub trait ShowableWidget {
