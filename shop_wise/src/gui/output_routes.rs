@@ -19,6 +19,8 @@ impl ShowableWidget for OutputRoutesData {
 const STACK_BELOW_WIDTH: f32 = 760.0;
 const CARD_MIN_HEIGHT: f32 = 140.0;
 const MONEY_COLUMN_WIDTH: f32 = 72.0;
+// orange from the logo
+const SELECTED_COLOUR: egui::Color32 = egui::Color32::from_rgb(0xFF, 0x7A, 0x3D);
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum PanelLayout {
@@ -171,16 +173,27 @@ impl OutputRoutesData {
         let scenario = results.scenario(kind);
         let is_selected = kind == selected;
 
-        let border = if is_selected {
-            egui::Stroke::new(2.0f32, ui.visuals().strong_text_color())
+        // the stroke counts towards the frame's padding, so the selected card's thicker
+        // border takes 2px from its margin to keep content aligned with the other cards
+        let (border, fill, margin) = if is_selected {
+            (
+                egui::Stroke::new(3.0f32, SELECTED_COLOUR),
+                SELECTED_COLOUR.gamma_multiply(0.12),
+                10,
+            )
         } else {
-            ui.visuals().widgets.noninteractive.bg_stroke
+            (
+                ui.visuals().widgets.noninteractive.bg_stroke,
+                egui::Color32::TRANSPARENT,
+                12,
+            )
         };
 
         let card = egui::Frame::group(ui.style())
             .stroke(border)
+            .fill(fill)
             .corner_radius(8)
-            .inner_margin(12)
+            .inner_margin(margin)
             .show(ui, |ui| {
                 ui.set_width(ui.available_width());
                 ui.set_min_height(CARD_MIN_HEIGHT);
