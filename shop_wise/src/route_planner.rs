@@ -1,3 +1,4 @@
+use bigdecimal::BigDecimal;
 use itertools::Itertools;
 use std::{
     fmt::Debug,
@@ -13,10 +14,7 @@ use util::{
     store::{Store, StoreBrand},
 };
 
-use crate::{
-    gui::transit::MileageOptions,
-    route_planner::filters::{StoreFilters, filter_stores},
-};
+use crate::{gui::transit::MileageOptions, route_planner::filters::StoreFilters};
 
 pub mod filters;
 
@@ -60,7 +58,9 @@ impl RoutePlan {
 
         let travel_time: Duration = travel_distance.clone() / self.mileage.average_speed();
 
-        let travel_cost = Cost::from(self.mileage.clone()) * travel_distance.inner();
+        // the mileage rate is per kilometre; Distance::inner() is in metres
+        let travel_cost = Cost::from(self.mileage.clone())
+            * (travel_distance.inner() / BigDecimal::from(1000));
 
         RoutePath {
             ordered_stops,
@@ -97,26 +97,83 @@ pub fn all_stores() -> Box<[Store]> {
     ])
 }
 
-// Returns every possible route the user could take between supermarkets based
-// on their filters.
+/// Returns every route the user could take between `stores` (already filtered), visiting
+/// up to `filters.max_store_visits` of them. Each route is paired with the indices into
+/// `stores` of the stores it visits, so callers know which store is which without
+/// matching locations (several stores can share a location).
 #[must_use]
-pub fn all_possible_routes(filters: &StoreFilters, mileage: &MileageOptions) -> Box<[RoutePath]> {
-    let stores = filter_stores(&all_stores(), filters);
-
+pub fn all_possible_routes(
+    stores: &[Store],
+    filters: &StoreFilters,
+    mileage: &MileageOptions,
+) -> Vec<(Vec<usize>, RoutePath)> {
     (1..=filters.max_store_visits)
-        .flat_map(|store_visits| stores.iter().cloned().combinations(store_visits))
-        .map(|stores| RoutePlan {
-            unordered_stops: stores
-                .iter()
-                .map(|a| a.location.clone())
-                .collect_vec()
-                .as_slice()
-                .into(),
-            start_stop: filters.location.clone(),
-            end_stop: filters.location.clone(),
-            mileage: mileage.clone(),
+        .flat_map(|store_visits| (0..stores.len()).combinations(store_visits))
+        .map(|visited| {
+            let path = RoutePlan {
+                unordered_stops: visited
+                    .iter()
+                    .map(|&i| stores[i].location.clone())
+                    .collect_vec()
+                    .as_slice()
+                    .into(),
+                start_stop: filters.location.clone(),
+                end_stop: filters.location.clone(),
+                mileage: mileage.clone(),
+            }
+            .calculate();
+            (visited, path)
         })
-        .map(|plan| plan.calculate())
-        .collect_vec()
-        .into_boxed_slice()
+        .collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::route_planner::filters::StoreFilters;
+
+    fn store(brand: StoreBrand) -> Store {
+        Store {
+            brand,
+            location: Coordinate::default(),
+        }
+    }
+
+    #[test]
+    fn routes_know_their_stores_even_at_one_location() {
+        let stores = [
+            store(StoreBrand::Paknsave),
+            store(StoreBrand::Newworld),
+            store(StoreBrand::Woolworths),
+        ];
+        let filters = StoreFilters::builder()
+            .location(Coordinate::default())
+            .range(Distance::from_kilometres_f64(25.0))
+            .max_store_visits(3)
+            .build();
+        let visits: Vec<Vec<usize>> = all_possible_routes(&stores, &filters, &MileageOptions::Petrol)
+            .into_iter()
+            .map(|(visited, _)| visited)
+            .collect();
+        assert_eq!(
+            visits,
+            [vec![0], vec![1], vec![2], vec![0, 1], vec![0, 2], vec![1, 2], vec![0, 1, 2]]
+        );
+    }
+
+    #[test]
+    fn travel_cost_is_charged_per_kilometre() {
+        let start = Coordinate::default();
+        let path = RoutePlan {
+            unordered_stops: [start.clone()].as_slice().into(),
+            start_stop: start.clone(),
+            end_stop: Coordinate::from_lat_long_f64(-41.289_848_883_193 + 0.009, 174.767_827_737_626_22),
+            mileage: MileageOptions::Petrol,
+        }
+        .calculate();
+        // about 1 km at $0.37/km is about 37 cents, not hundreds of dollars
+        let cost = path.travel_cost.inner();
+        assert!(cost > BigDecimal::from(30) / BigDecimal::from(100), "{cost}");
+        assert!(cost < BigDecimal::from(45) / BigDecimal::from(100), "{cost}");
+    }
 }

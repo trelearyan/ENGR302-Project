@@ -3,7 +3,7 @@ use std::time::Duration;
 use itertools::Itertools;
 use util::distance::Distance;
 use util::{cost::Cost, store::{Store, StoreBrand}};
-use bigdecimal::ToPrimitive;
+use bigdecimal::{BigDecimal, RoundingMode, ToPrimitive};
 use util::{search::{ShoppingItem, ShoppingItemQuery}};
 use crate::{
     gui::transit::MileageOptions,
@@ -119,42 +119,21 @@ pub fn calculate(
         .iter()
         .map(|a: &Store| -> Store { a.to_owned() })
         .collect();
-    // Fetch all (2^n-1) routes for the n stores in range
-    let routes: Box<[RoutePath]> = all_possible_routes(filters, mileage);
-    let mut local_routes: Vec<LocalRoute> = Vec::new();
-    for route_id in 0..routes.len() {
-        let route: &RoutePath = routes.get(route_id).unwrap();
-        // Calculate set of StoreIds for visited stores
-        let mut visited: Vec<RouteId> = Vec::new();
-        for stop in route.ordered_stops.iter() {
-            let mut found_id: Option<StoreId> = None;
-            for i in 0..stores.len() {
-                let store = &stores[i];
-                if store.location == *stop {
-                    found_id = Some(i);
-                    break;
-                }
-            }
-            if found_id.is_none() {
-                continue;
-            }
-            visited.push(found_id.unwrap());
-        }
-        // Encode route into LocalRoute
-        local_routes.push(LocalRoute {
-            shops: visited,
-            route_travel_cost: route
-                .travel_cost
-                .clone()
-                .round()
-                .inner()
-                .with_scale(2)
-                .to_u32()
-                .unwrap(),
+    // Fetch every route over the stores in range. Each route comes with the StoreIds it
+    // visits, so stores are never identified by location (stores can share a location).
+    let (visits, routes): (Vec<Vec<StoreId>>, Vec<RoutePath>) =
+        all_possible_routes(&stores, filters, mileage).into_iter().unzip();
+    let local_routes: Vec<LocalRoute> = visits
+        .into_iter()
+        .zip(&routes)
+        .enumerate()
+        .map(|(route_id, (shops, route))| LocalRoute {
+            shops,
+            route_travel_cost: to_cents(&route.travel_cost),
             route_time: route.travel_time.as_secs(),
             route_id,
-        });
-    }
+        })
+        .collect();
     // Encode necessary data into a short_database Price indexed by ItemId, indexed by StoreId
     let mut short_database: Vec<Vec<Option<u32>>> = Vec::new();
     for _i in 0..stores.len() {
@@ -188,14 +167,7 @@ pub fn calculate(
                 err_msg: "Could not find item ".to_owned() + &shop_list.get(item_key).unwrap().name,
             })};
                 // Convert to cents for efficient copying
-                let price = item
-                    .price
-                    .clone()
-                    .round()
-                    .inner()
-                    .with_scale(2)
-                    .to_u32()
-                    .unwrap()*item.multiplier;
+                let price = to_cents(&item.price) * item.multiplier;
                 // Add item to item lookup table
                 item_lookup.get_mut(item_key).unwrap().insert(store_id, item);
                 // Add price to short database
@@ -256,11 +228,20 @@ pub fn calculate(
     })
 }
 
+/// Whole cents, rounded to the nearest cent. Prices and travel costs are compared in
+/// cents, so this must keep the cents (not round to dollars or significant figures).
+fn to_cents(cost: &Cost) -> u32 {
+    (cost.clone().inner() * BigDecimal::from(100))
+        .with_scale_round(0, RoundingMode::HalfUp)
+        .to_u32()
+        .expect("prices and travel costs are positive and fit in u32 cents")
+}
+
 fn delocalise(
     plan: (BestPlan, Vec<Message>),
     item_lookup: &Vec<HashMap<StoreId, ShoppingItem>>,
     stores: &Vec<Store>,
-    routes: &Box<[RoutePath]>,
+    routes: &[RoutePath],
 ) -> Calculation {
     // Compile shopping plan into Vec<StorePlan>
     let mut shopping_plan: Vec<StorePlan> = Vec::new();
@@ -424,6 +405,16 @@ fn calculate_minimised(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn to_cents_keeps_the_cents() {
+        assert_eq!(to_cents(&Cost::from_cents(99)), 99);
+        assert_eq!(to_cents(&Cost::from_cents(169)), 169);
+        assert_eq!(to_cents(&Cost::from_cents(18437)), 18437);
+        // travel costs have fractions of a cent: $0.481 -> 48c, $0.485 -> 49c
+        assert_eq!(to_cents(&Cost::new(BigDecimal::new(481.into(), 3))), 48);
+        assert_eq!(to_cents(&Cost::new(BigDecimal::new(485.into(), 3))), 49);
+    }
 
     #[test]
     fn test_cheapest_demo() {
