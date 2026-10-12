@@ -20,6 +20,7 @@ const STACK_BELOW_WIDTH: f32 = 760.0;
 const CARD_MIN_HEIGHT: f32 = 140.0;
 const MONEY_COLUMN_WIDTH: f32 = 72.0;
 const BADGE_SIZE: f32 = 22.0;
+const TICK_SIZE: f32 = 18.0;
 // orange from the logo
 const SELECTED_COLOUR: egui::Color32 = egui::Color32::from_rgb(0xFF, 0x7A, 0x3D);
 
@@ -205,15 +206,15 @@ impl OutputRoutesData {
                         .button(egui::RichText::new(kind.label()).strong())
                         .clicked();
                     ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                        let note = if is_selected {
-                            "Selected".to_owned()
-                        } else {
-                            format_delta(
-                                &scenario.total_cost(),
-                                &results.scenario(selected).total_cost(),
-                            )
-                        };
-                        ui.label(egui::RichText::new(note).weak());
+                        if is_selected {
+                            selected_tick(ui);
+                        } else if let Some(delta) = format_delta(
+                            &scenario.total_cost(),
+                            &results.scenario(selected).total_cost(),
+                        ) {
+                            // format_delta gives nothing when this plan costs the same
+                            ui.label(egui::RichText::new(delta).weak());
+                        }
                     });
                 });
 
@@ -479,6 +480,22 @@ fn time_text(scenario: &Scenario) -> String {
     scenario
         .duration_min
         .map_or_else(|| UNAVAILABLE.to_owned(), format_duration)
+}
+
+/// A filled rounded square with a white tick, like ✅, in the selected card's orange.
+/// Painted rather than an emoji because egui draws emoji in a single colour.
+fn selected_tick(ui: &mut egui::Ui) {
+    let (rect, response) =
+        ui.allocate_exact_size(egui::vec2(TICK_SIZE, TICK_SIZE), egui::Sense::hover());
+    let painter = ui.painter();
+    painter.rect_filled(rect, 4.0, SELECTED_COLOUR);
+    let point = |x: f32, y: f32| rect.left_top() + egui::vec2(x, y) * TICK_SIZE;
+    painter.add(egui::Shape::line(
+        vec![point(0.25, 0.52), point(0.43, 0.70), point(0.76, 0.32)],
+        egui::Stroke::new(2.0f32, egui::Color32::WHITE),
+    ));
+    response.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Label, true, "Selected"));
+    response.on_hover_text("Selected");
 }
 
 fn card_row(ui: &mut egui::Ui, label: &str, value: String) {

@@ -17,13 +17,16 @@ pub fn format_money(cost: &Cost) -> String {
 }
 
 /// Signed difference of `cost` from `base`, e.g. "+$7.50" or "-$1.80".
+/// `None` when it rounds to $0.00, so there is nothing worth showing.
 #[must_use]
-pub fn format_delta(cost: &Cost, base: &Cost) -> String {
-    if cost < base {
-        format!("-{}", format_money(&(base.clone() - cost.clone())))
+pub fn format_delta(cost: &Cost, base: &Cost) -> Option<String> {
+    let (sign, difference) = if cost < base {
+        ('-', base.clone() - cost.clone())
     } else {
-        format!("+{}", format_money(&(cost.clone() - base.clone())))
-    }
+        ('+', cost.clone() - base.clone())
+    };
+    let amount = format_money(&difference);
+    (amount != "$0.00").then(|| format!("{sign}{amount}"))
 }
 
 #[must_use]
@@ -323,9 +326,12 @@ mod tests {
     #[test]
     fn delta_is_signed() {
         let base = Cost::from_cents(6140);
-        assert_eq!(format_delta(&Cost::from_cents(6890), &base), "+$7.50");
-        assert_eq!(format_delta(&Cost::from_cents(5960), &base), "-$1.80");
-        assert_eq!(format_delta(&base, &base), "+$0.00");
+        assert_eq!(format_delta(&Cost::from_cents(6890), &base).as_deref(), Some("+$7.50"));
+        assert_eq!(format_delta(&Cost::from_cents(5960), &base).as_deref(), Some("-$1.80"));
+        assert_eq!(format_delta(&base, &base), None);
+        // differs by a fraction of a cent: still shows as $0.00, so hidden
+        let fraction_more = Cost::new(BigDecimal::new(61_403.into(), 3)); // $61.403
+        assert_eq!(format_delta(&fraction_more, &base), None);
     }
 
     #[test]
