@@ -1,11 +1,12 @@
 use std::ops::Deref;
 use eframe::egui;
+use egui_extras::{Column, TableBuilder};
 
 use crate::{
     gui::ShowableWidget,
     price_calculator::results::{
-        Results, ResultsState, Scenario, ScenarioKind, StoreStop, UNAVAILABLE, UnresolvedItem,
-        brand_label, format_distance, format_duration, format_money,
+        Results, ResultsState, Scenario, ScenarioKind, StoreStop, UNAVAILABLE, UnresolvedItem, brand_label,
+        format_delta, format_distance, format_duration, format_money,
     },
 };
 
@@ -16,7 +17,12 @@ impl ShowableWidget for OutputRoutesData {
 }
 
 const STACK_BELOW_WIDTH: f32 = 760.0;
-const CARD_MIN_HEIGHT: f32 = 170.0;
+const CARD_MIN_HEIGHT: f32 = 140.0;
+const MONEY_COLUMN_WIDTH: f32 = 72.0;
+const BADGE_SIZE: f32 = 22.0;
+const TICK_SIZE: f32 = 18.0;
+const ORANGE: egui::Color32 = egui::Color32::from_rgb(0xFF, 0x7A, 0x3D);
+
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum PanelLayout {
@@ -92,7 +98,7 @@ impl OutputRoutesData {
 
     fn ready(&mut self, ui: &mut egui::Ui, results: &Results) {
         ui.horizontal_wrapped(|ui| {
-            ui.label(egui::RichText::new("Starting from").small().weak());
+            ui.label(egui::RichText::new("Starting from:").small().strong());
             ui.label(
                 egui::RichText::new(results.origin_label.as_str())
                     .small()
@@ -115,7 +121,7 @@ impl OutputRoutesData {
         ui.separator();
         ui.add_space(8.0);
 
-        Self::plan_detail(ui, results.scenario(self.selected));
+        Self::plan_detail(ui, results, self.selected);
     }
 
     fn scenario_cards(&mut self, ui: &mut egui::Ui, results: &Results) {
@@ -124,7 +130,7 @@ impl OutputRoutesData {
 
         if ui.available_width() < STACK_BELOW_WIDTH {
             for kind in ScenarioKind::ALL {
-                if Self::scenario_card(ui, results, kind, kind == selected) {
+                if Self::scenario_card(ui, results, kind, selected) {
                     clicked = Some(kind);
                 }
                 ui.add_space(8.0);
@@ -132,7 +138,7 @@ impl OutputRoutesData {
         } else {
             ui.columns(ScenarioKind::ALL.len(), |columns| {
                 for (column, kind) in columns.iter_mut().zip(ScenarioKind::ALL) {
-                    if Self::scenario_card(column, results, kind, kind == selected) {
+                    if Self::scenario_card(column, results, kind, selected) {
                         clicked = Some(kind);
                     }
                 }
@@ -164,142 +170,120 @@ impl OutputRoutesData {
         ui: &mut egui::Ui,
         results: &Results,
         kind: ScenarioKind,
-        selected: bool,
+        selected: ScenarioKind,
     ) -> bool {
         let scenario = results.scenario(kind);
+        let is_selected = kind == selected;
 
-        let accent = ui.visuals().selection.stroke.color;
-        let faint = ui.visuals().faint_bg_color;
-        let positive = positive_color(ui);
+        let border = if is_selected {
+            egui::Stroke::new(3.0f32, egui::Color32::from_rgb(0xFF, 0x7A, 0x3D))
+        } else {
+            ui.visuals().widgets.noninteractive.bg_stroke
+        };
 
-        let mut frame = egui::Frame::group(ui.style());
-        if selected {
-            frame = frame.fill(faint).stroke(egui::Stroke::new(2.0f32, accent));
-        }
+        let card = egui::Frame::group(ui.style())
+            .stroke(border)
+            .corner_radius(8)
+            .inner_margin(10)
+            .show(ui, |ui| {
+                ui.set_width(ui.available_width());
+                ui.set_min_height(CARD_MIN_HEIGHT);
 
-        let card = frame.show(ui, |ui| {
-            ui.set_width(ui.available_width());
-            ui.set_min_height(CARD_MIN_HEIGHT);
-            ui.vertical(|ui| {
-                ui.horizontal_wrapped(|ui| {
-                    ui.label(egui::RichText::new(kind.label()).heading());
-                    if kind == ScenarioKind::Cheapest
-                        && let Some(saving) = results.headline_saving()
-                    {
-                        ui.label(
-                            egui::RichText::new(format!("saves {}", format_money(&saving)))
-                                .small()
-                                .strong()
-                                .color(positive),
-                        );
-                    }
+                let mut clicked = false;
+                ui.horizontal(|ui| {
+                    clicked = ui
+                        .button(egui::RichText::new(format!("{} {}", kind.icon(), kind.label())).strong())
+                        .clicked();
+                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                        if is_selected {
+                            selected_tick(ui);
+                        } else if let Some(delta) = format_delta(
+                            &scenario.total_cost(),
+                            &results.scenario(selected).total_cost(),
+                        ) {
+                            ui.label(egui::RichText::new(delta).weak());
+                        }
+                    });
                 });
-                ui.label(egui::RichText::new(kind.blurb()).small().weak());
 
-                ui.add_space(6.0);
                 ui.label(
                     egui::RichText::new(format_money(&scenario.total_cost()))
-                        .size(26.0)
+                        .size(30.0)
                         .strong(),
                 );
-                ui.label(egui::RichText::new("groceries plus petrol").small().weak());
+                ui.add_space(4.0);
 
-                ui.add_space(8.0);
-                egui::Grid::new(kind.label())
-                    .num_columns(2)
-                    .spacing([12.0, 3.0])
-                    .show(ui, |ui| {
-                        ui.label(egui::RichText::new("Groceries").small().weak());
-                        ui.label(
-                            egui::RichText::new(format_money(&scenario.grocery_cost())).small(),
-                        );
-                        ui.end_row();
-
-                        ui.label(egui::RichText::new("Travel").small().weak());
-                        ui.label(
-                            egui::RichText::new(match &scenario.travel_cost {
-                                Some(c) => format_money(c),
-                                None => UNAVAILABLE.to_owned(),
-                            })
-                            .small()
-                            .weak(),
-                        );
-                        ui.end_row();
-
-                        ui.label(egui::RichText::new("Distance").small().weak());
-                        ui.label(
-                            egui::RichText::new(
-                                match (&scenario.distance_km, scenario.duration_min) {
-                                    (Some(d), Some(m)) => {
-                                        format!("{} ({})", format_distance(d), format_duration(m))
-                                    }
-                                    _ => UNAVAILABLE.to_owned(),
-                                },
-                            )
-                            .small()
-                            .weak(),
-                        );
-                        ui.end_row();
-                    });
-
-                ui.add_space(8.0);
-                ui.label(egui::RichText::new(scenario.store_summary()).strong());
+                card_row(ui, "Groceries", format_money(&scenario.grocery_cost()));
+                card_row(ui, "Travel", travel_text(scenario));
+                card_row(ui, "Distance", distance_text(scenario));
+                card_row(ui, "Time", time_text(scenario));
 
                 ui.add_space(6.0);
-                let label = if selected {
-                    "Showing this plan"
-                } else {
-                    "Show this plan"
-                };
-                ui.selectable_label(selected, label).clicked()
-            })
-            .inner
-        });
+                let chip_stroke = ui.visuals().widgets.noninteractive.bg_stroke;
+                ui.horizontal_wrapped(|ui| {
+                    for stop in &scenario.stops {
+                        egui::Frame::new()
+                            .stroke(chip_stroke)
+                            .corner_radius(8)
+                            .inner_margin(egui::Margin::symmetric(6, 2))
+                            .show(ui, |ui| {
+                                ui.label(stop_name(stop));
+                            });
+                    }
+                });
+
+                clicked
+            });
 
         let clicked_card = card
             .response
             .interact(egui::Sense::click())
             .on_hover_cursor(egui::CursorIcon::PointingHand)
+            .on_hover_text(kind.blurb())
             .clicked();
 
         card.inner || clicked_card
     }
 
-    fn plan_detail(ui: &mut egui::Ui, scenario: &Scenario) {
-        ui.heading(format!("{} plan", scenario.kind.label()));
-        ui.add_space(6.0);
+    fn plan_detail(ui: &mut egui::Ui, results: &Results, kind: ScenarioKind) {
+        let scenario = results.scenario(kind);
+        let _heading = ui.label(
+            egui::RichText::new(format!("{} plan", kind.label()))
+            .size(20.0)
+            .strong(),
+        );
+        ui.add_space(12.0);
 
-        ui.horizontal_wrapped(|ui| {
-            Self::stat(ui, "Groceries", &format_money(&scenario.grocery_cost()));
-            Self::stat(ui, "Total", &format_money(&scenario.total_cost()));
-            Self::stat(ui, "Items", &scenario.item_count().to_string());
-            Self::stat(
-                ui,
-                "Petrol",
-                &match &scenario.travel_cost {
-                    Some(c) => format_money(c),
-                    None => UNAVAILABLE.to_owned(),
-                },
-            );
-            Self::stat(
-                ui,
-                "Distance",
-                &match &scenario.distance_km {
-                    Some(d) => format_distance(d),
-                    None => UNAVAILABLE.to_owned(),
-                },
-            );
-            Self::stat(
-                ui,
-                "Driving time",
-                &match scenario.duration_min {
-                    Some(m) => format_duration(m),
-                    None => UNAVAILABLE.to_owned(),
-                },
-            );
-        });
-
-        ui.add_space(10.0);
+        let stats = [
+            ("Groceries", format_money(&scenario.grocery_cost())),
+            ("Travel", travel_text(scenario)),
+            ("Total", format_money(&scenario.total_cost())),
+            ("Items", scenario.item_count().to_string()),
+            ("Distance", distance_text(scenario)),
+            ("Driving time", time_text(scenario)),
+        ];
+        egui::Frame::group(ui.style())
+            .corner_radius(8)
+            .inner_margin(4)
+            .show(ui, |ui| {
+                ui.set_width(ui.available_width());
+                let per_row = if ui.available_width() < STACK_BELOW_WIDTH {
+                    3
+                } else {
+                    stats.len()
+                };
+                for row in stats.chunks(per_row) {
+                    ui.columns(per_row, |columns| {
+                        for (column, (label, value)) in columns.iter_mut().zip(row) {
+                            column.vertical_centered(|ui| {
+                                ui.label(*label);
+                                ui.label(egui::RichText::new(value).size(16.0).strong());
+                            });
+                        }
+                    });
+                }
+            });
+        ui.add_space(12.0);
 
         if scenario.stops.is_empty() {
             ui.label(
@@ -309,80 +293,104 @@ impl OutputRoutesData {
             return;
         }
 
-        for (index, stop) in scenario.stops.iter().enumerate() {
-            ui.push_id(index, |ui| {
-                Self::store_card(ui, index + 1, stop);
+        let per_row = if ui.available_width() < STACK_BELOW_WIDTH {
+            1
+        } else {
+            scenario.stops.len().min(2)
+        };
+        for (row, stops) in scenario.stops.chunks(per_row).enumerate() {
+            ui.columns(per_row, |columns| {
+                for (offset, (column, stop)) in columns.iter_mut().zip(stops).enumerate() {
+                    let number = row * per_row + offset + 1;
+                    column.push_id(number, |ui| Self::store_card(ui, number, stop));
+                }
             });
-            ui.add_space(8.0);
+            ui.add_space(12.0);
+        }
+
+        if let Some(note) = results.trade_off(kind) {
+            egui::Frame::group(ui.style())
+                .corner_radius(6)
+                .show(ui, |ui| {
+                    ui.set_width(ui.available_width());
+                    ui.vertical_centered(|ui| ui.label(note));
+                });
         }
     }
 
     fn store_card(ui: &mut egui::Ui, stop_number: usize, stop: &StoreStop) {
-        let positive = positive_color(ui);
+        let badge_fill = ui.visuals().strong_text_color();
+        let badge_text = ui.visuals().panel_fill;
 
-        egui::Frame::group(ui.style()).show(ui, |ui| {
-            ui.set_width(ui.available_width());
-
-            ui.horizontal_wrapped(|ui| {
-                ui.label(
-                    egui::RichText::new(format!("Stop {stop_number}"))
-                        .small()
-                        .weak(),
-                );
-                ui.label(
-                    egui::RichText::new(
-                        stop.store_name
-                            .as_deref()
-                            .unwrap_or(brand_label(stop.chain)),
-                    )
-                    .strong(),
-                );
-                ui.label(egui::RichText::new(brand_label(stop.chain)).small().weak());
-                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                    ui.label(egui::RichText::new(format_money(&stop.subtotal())).strong());
-                });
+        ui.horizontal(|ui| {
+            let (badge, _) =
+                ui.allocate_exact_size(egui::vec2(BADGE_SIZE, BADGE_SIZE), egui::Sense::hover());
+            ui.painter()
+                .circle_filled(badge.center(), BADGE_SIZE / 2.0, badge_fill);
+            ui.painter().text(
+                badge.center(),
+                egui::Align2::CENTER_CENTER,
+                stop_number.to_string(),
+                egui::FontId::monospace(14.0),
+                badge_text,
+            );
+            ui.label(egui::RichText::new(stop_name(stop)).strong());
+            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                ui.label(egui::RichText::new(format_money(&stop.subtotal())).strong());
             });
-            if let Some(address) = &stop.address {
-                ui.label(egui::RichText::new(address.as_str()).small().weak());
-            }
-            ui.add_space(6.0);
+        });
+        if let Some(address) = &stop.address {
+            ui.label(egui::RichText::new(address.as_str()).small().weak());
+        }
+        ui.add_space(4.0);
 
-            egui::Grid::new("items")
-                .num_columns(4)
-                .striped(true)
-                .spacing([14.0, 4.0])
-                .show(ui, |ui| {
-                    ui.label(egui::RichText::new("Item").small().weak());
-                    ui.label(egui::RichText::new("Qty").small().weak());
-                    ui.label(egui::RichText::new("Unit").small().weak());
-                    ui.label(egui::RichText::new("Line total").small().weak());
-                    ui.end_row();
-
-                    for item in &stop.items {
-                        ui.horizontal(|ui| {
-                            ui.label(item.name.as_str());
+        let row_height = ui.text_style_height(&egui::TextStyle::Body) + 8.0;
+        let right = egui::Layout::right_to_left(egui::Align::Center);
+        egui::Frame::group(ui.style())
+            .corner_radius(6)
+            .show(ui, |ui| {
+                TableBuilder::new(ui)
+                    .striped(true)
+                    .vscroll(false)
+                    .cell_layout(egui::Layout::left_to_right(egui::Align::Center))
+                    .column(Column::remainder().clip(true))
+                    .columns(Column::exact(MONEY_COLUMN_WIDTH), 3)
+                    .header(row_height, |mut header| {
+                        header.col(|ui| {
+                            ui.strong("Item");
+                        });
+                        for title in ["Qty", "Unit", "Line total"] {
+                            header.col(|ui| {
+                                ui.with_layout(right, |ui| ui.strong(title));
+                            });
+                        }
+                    })
+                    .body(|mut body| {
+                        for item in &stop.items {
+                            let mut name = item.name.clone();
                             if item.on_special {
-                                ui.label(egui::RichText::new("Special").small().color(positive));
+                                name.push_str(" · special");
                             }
                             if item.needs_loyalty_card {
-                                ui.label(egui::RichText::new("Club price").small().weak());
+                                name.push_str(" · club price");
                             }
-                        });
-                        ui.label(item.quantity.to_string());
-                        ui.label(format_money(&item.unit_price));
-                        ui.label(format_money(&item.line_total()));
-                        ui.end_row();
-                    }
-                });
-        });
-    }
-
-    fn stat(ui: &mut egui::Ui, label: &str, value: &str) {
-        ui.vertical(|ui| {
-            ui.label(egui::RichText::new(label).small().weak());
-            ui.label(egui::RichText::new(value).size(17.0).strong());
-        });
-        ui.add_space(22.0);
+                            body.row(row_height, |mut row| {
+                                row.col(|ui| {
+                                    ui.add(egui::Label::new(name).truncate());
+                                });
+                                for value in [
+                                    item.quantity.clone(),
+                                    format_money(&item.unit_price),
+                                    format_money(&item.line_total()),
+                                ] {
+                                    row.col(|ui| {
+                                        ui.with_layout(right, |ui| ui.label(value));
+                                    });
+                                }
+                            });
+                        }
+                    });
+            });
     }
 
     fn unresolved_banner(ui: &mut egui::Ui, items: &[UnresolvedItem]) {
@@ -430,10 +438,49 @@ impl OutputRoutesData {
     }
 }
 
-fn positive_color(ui: &egui::Ui) -> egui::Color32 {
-    if ui.visuals().dark_mode {
-        egui::Color32::from_rgb(0x7d, 0xd3, 0x87)
-    } else {
-        egui::Color32::from_rgb(0x1b, 0x5e, 0x20)
-    }
+fn travel_text(scenario: &Scenario) -> String {
+    scenario
+        .travel_cost
+        .as_ref()
+        .map_or_else(|| UNAVAILABLE.to_owned(), format_money)
+}
+
+fn distance_text(scenario: &Scenario) -> String {
+    scenario
+        .distance_km
+        .as_ref()
+        .map_or_else(|| UNAVAILABLE.to_owned(), format_distance)
+}
+
+fn time_text(scenario: &Scenario) -> String {
+    scenario
+        .duration_min
+        .map_or_else(|| UNAVAILABLE.to_owned(), format_duration)
+}
+fn selected_tick(ui: &mut egui::Ui) {
+    let (rect, response) =
+        ui.allocate_exact_size(egui::vec2(TICK_SIZE, TICK_SIZE), egui::Sense::hover());
+    let painter = ui.painter();
+    painter.rect_filled(rect, 4.0, ORANGE);
+    let point = |x: f32, y: f32| rect.left_top() + egui::vec2(x, y) * TICK_SIZE;
+    painter.add(egui::Shape::line(
+        vec![point(0.25, 0.52), point(0.43, 0.70), point(0.76, 0.32)],
+        egui::Stroke::new(2.0f32, egui::Color32::WHITE),
+    ));
+    response.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Label, true, "Selected"));
+    response.on_hover_text("Selected");
+}
+fn card_row(ui: &mut egui::Ui, label: &str, value: String) {
+    ui.horizontal(|ui| {
+        ui.label(label);
+        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+            ui.label(egui::RichText::new(value).strong());
+        });
+    });
+}
+
+fn stop_name(stop: &StoreStop) -> &str {
+    stop.store_name
+        .as_deref()
+        .unwrap_or(brand_label(stop.chain))
 }
