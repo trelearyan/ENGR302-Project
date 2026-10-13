@@ -1,4 +1,4 @@
-use eframe::egui::{Color32, Frame, Key, TextEdit, Ui};
+use eframe::egui::{Align, Button, Color32, Frame, Key, Layout, RichText, Stroke, TextEdit, Ui, vec2};
 use serde::{Deserialize, Serialize};
 use util::coordinate::Coordinate;
 use std::cell::RefCell;
@@ -6,6 +6,7 @@ use std::rc::Rc;
 
 const DEBOUNCE_SECONDS: f64 = 0.4;
 const MIN_QUERY_LEN: usize = 3;
+const ORANGE: Color32 = Color32::from_rgb(0xFF, 0x7A, 0x3D);
 
 #[derive(Default, Clone, Serialize, Deserialize, Debug)]
 pub struct LocationData {
@@ -66,26 +67,68 @@ impl From<LocationData> for Coordinate {
     }
 }
 impl LocationData {
-
-    pub fn show(this: &Rc<RefCell<LocationData>>, ui: &mut Ui) {
-        ui.heading("Location")
-            .on_hover_text("Where do you want your trip to starts from");
-        if ui.button("Use Current Location")
-            .on_hover_text("Use your current location as your start point")
-            .clicked() {
-                log::info!("Requesting location...");
-                #[cfg(target_arch = "wasm32")]
-                Self::get_current_location(this.clone(), ui.ctx().clone());
-        }
-
+    /// The search bar: address field, current-location and search buttons in one row.
+    /// Returns true when "Search" was clicked.
+    pub fn show(this: &Rc<RefCell<LocationData>>, ui: &mut Ui, has_items: bool) -> bool {
         let now = ui.input(|i| i.time);
         let mut state = this.borrow_mut();
+        let mut locate_clicked = false;
+        let mut search_clicked = false;
 
-        let response = ui.add(
-            TextEdit::singleline(&mut state.address)
-                .hint_text("e.g. 12 Example Street, Suburb, City"),
-                )
-                .on_hover_text("Enter your starting point address here. New Zealand addresses only.");
+        let button_size = vec2(0.0, 32.0);
+
+        let response = Frame::group(ui.style())
+            .corner_radius(8)
+            .inner_margin(6)
+            .show(ui, |ui| {
+                ui.horizontal(|ui| {
+                    ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
+                        let location_ready = matches!(
+                            state.status,
+                            LocationStatus::Resolved | LocationStatus::Success
+                        );
+                        let can_search = has_items && location_ready;
+                        let search = if can_search {
+                            Button::new(RichText::new("🔍 Search").strong())
+                                .fill(ORANGE)
+                            }else{
+                            Button::new(RichText::new("🔍 Search").color(ui.visuals().strong_text_color()))
+                                .fill(ORANGE.gamma_multiply(0.12))
+                                .stroke(Stroke::new(1.5f32, ORANGE))
+                        }
+                            .min_size(vec2(104.0, 32.0))
+                            .corner_radius(8);
+
+                        search_clicked = ui
+                            .scope(|ui| {
+                                ui.style_mut().visuals.disabled_alpha = 1.0;
+                                ui.add_enabled(can_search, search)
+                                    .on_hover_text("I am ready to search")
+                                    .on_disabled_hover_text(
+                                        "Check if you have added an item to shopping list and entered a location",
+                                    )
+                            })
+                            .inner
+                            .clicked();
+                        locate_clicked = ui
+                            .add(Button::new("⌖ Use my location").min_size(button_size).corner_radius(8),)
+                            .on_hover_text("Use your current location as your start point")
+                            .clicked();
+                        ui.add(
+                            TextEdit::singleline(&mut state.address)
+                                .frame(Frame::NONE)
+                                .desired_width(f32::INFINITY)
+                                .hint_text("e.g. 12 Example Street, Suburb, City"),
+                        )
+                        .on_hover_text(
+                            "Enter your starting point address here. New Zealand addresses only.",
+                        )
+                    })
+                    .inner
+                })
+                .inner
+            })
+            .inner;
 
         let enter_pressed = response.lost_focus() && ui.input(|i| i.key_pressed(Key::Enter));
 
@@ -156,7 +199,7 @@ impl LocationData {
             }
             LocationStatus::NotFound => {
                 ui.colored_label(
-                    Color32::from_rgb(200, 60, 60),
+                    ui.visuals().error_fg_color,
                     "No matching address found — try adding your suburb or city.",
                 );
             }
@@ -167,7 +210,7 @@ impl LocationData {
                 ui.label("Finding your current location…");
             }
             LocationStatus::Error(message) => {
-                ui.colored_label(Color32::from_rgb(200, 60, 60), message.clone());
+                ui.colored_label(ui.visuals().error_fg_color, message.clone());
             }
             LocationStatus::Idle | LocationStatus::Suggesting => {}
         }
@@ -190,6 +233,15 @@ impl LocationData {
                 }
             });
         }
+        drop(state);
+
+        // after the borrow ends: the lookup writes its status back into `this`
+        if locate_clicked {
+            log::info!("Requesting location...");
+            #[cfg(target_arch = "wasm32")]
+            Self::get_current_location(this.clone(), ui.ctx().clone());
+        }
+        search_clicked
     }
 
     /*
