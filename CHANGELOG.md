@@ -40,6 +40,7 @@ Work on branches that are not yet merged into `main`.
 - Price calculator only ever chose Pak'nSave, because stores were identified by their location and the placeholder stores share one
 - Prices were compared rounded to whole dollars, so the cheapest plan wasn't always the cheapest
 - Travel cost was charged per metre instead of per kilometre
+- Driving time always showed "0 min"; it now shows "not available" until the speed conversion fix (#110) is merged
 
 ## [0.7.0] - 2026-09-30
 

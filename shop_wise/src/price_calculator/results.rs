@@ -203,10 +203,11 @@ impl Scenario {
         Self {
             kind,
             stops,
-            // TODO: calc output has no travel, distance and driving time
             travel_cost: Some(calc.total_travel_cost.clone()),
             distance_km: Some(calc.total_dist.clone()),
-            duration_min: Some((calc.total_time.as_secs() / 60) as f32),
+            // TODO: use calc.total_time once util's km/h conversion is fixed (#110). Until then
+            // it comes out about 1000x too short, so show "not available" rather than "0 min".
+            duration_min: None,
         }
     }
 }
