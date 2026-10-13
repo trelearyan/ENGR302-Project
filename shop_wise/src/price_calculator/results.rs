@@ -3,17 +3,24 @@ use serde::{Deserialize, Serialize};
 use util::cost::Cost;
 use util::distance::Distance;
 use util::store::StoreBrand;
-
-// TODO(FR-09):
-// use std::collections::HashMap;
-//use crate::price_calculator::StoreId;
 use crate::price_calculator::{Calculation, CalculationTotal};
 
-/// for data that has no output yet
+//TODO: remove once all have values
 pub const UNAVAILABLE: &str = "not available";
 #[must_use]
 pub fn format_money(cost: &Cost) -> String {
     format!("${cost}")
+}
+
+#[must_use]
+pub fn format_delta(cost: &Cost, base: &Cost) -> Option<String> {
+    let (sign, difference) = if cost < base {
+        ('-', base.clone() - cost.clone())
+    } else {
+        ('+', cost.clone() - base.clone())
+    };
+    let amount = format_money(&difference);
+    (amount != "$0.00").then(|| format!("{sign}{amount}"))
 }
 
 #[must_use]
@@ -48,9 +55,17 @@ impl ScenarioKind {
     #[must_use]
     pub fn label(self) -> &'static str {
         match self {
-            ScenarioKind::Best => "Best value",
+            ScenarioKind::Best => "Best Value",
             ScenarioKind::Cheapest => "Cheapest",
             ScenarioKind::Fastest => "Fastest",
+        }
+    }
+    #[must_use]
+    pub fn icon(self) -> &'static str {
+        match self {
+            ScenarioKind::Cheapest => "🏷",
+            ScenarioKind::Fastest => "⚡",
+            ScenarioKind::Best => "☆",
         }
     }
 
@@ -58,8 +73,8 @@ impl ScenarioKind {
     pub fn blurb(self) -> &'static str {
         match self {
             ScenarioKind::Best => "Balances money saved against time spent",
-            ScenarioKind::Cheapest => "Lowest groceries plus petrol",
-            ScenarioKind::Fastest => "Shortest trip that still gets everything",
+            ScenarioKind::Cheapest => "Lowest total cost",
+            ScenarioKind::Fastest => "Shortest trip",
         }
     }
 }
@@ -150,7 +165,6 @@ impl Scenario {
             .collect::<Vec<_>>()
             .join(" + ")
     }
-    // TODO(FR-09):when Results::from_calculation works
 
     fn from_calculation(kind: ScenarioKind, calc: &Calculation) -> Self {
         let store_plans = &calc.shopping_plan;
@@ -159,8 +173,6 @@ impl Scenario {
         let stops = store_plans
             .iter()
             .filter_map(|infos| {
-                // TODO: shopping_plan store name
-                // TODO: fix match_sid_to_brand and calculate mapping
                 let brand = infos.store.brand;
 
                 let items = infos
@@ -170,7 +182,6 @@ impl Scenario {
                         name: info.name.clone(),
                         quantity: info.multiplier.to_string() + "x " + &info.quantity.to_string() + info.unit.to_str(),
                         unit_price: info.price.clone(),
-                        // TODO: loyalty pricing
                         on_special: false,
                         needs_loyalty_card: false,
                         multiplier: info.multiplier,
@@ -180,7 +191,6 @@ impl Scenario {
                 Some(StoreStop {
                     store_name: None,
                     chain: brand,
-                    // TODO: no address in output.
                     address: None,
                     items,
                 })
@@ -190,10 +200,11 @@ impl Scenario {
         Self {
             kind,
             stops,
-            // TODO: calc output has no travel, distance and driving time
             travel_cost: Some(calc.total_travel_cost.clone()),
             distance_km: Some(calc.total_dist.clone()),
-            duration_min: Some((calc.total_time.as_secs() / 60) as f32),
+            //TODO: once available, change
+            //duration_min: Some((calc.total_time.as_secs() / 60) as f32),
+            duration_min: None,
         }
     }
 }
@@ -249,7 +260,33 @@ impl Results {
         (saving.clone().inner() > BigDecimal::zero()).then_some(saving)
     }
 
-    // TODO(FR-09): once fields are pub
+    /// One line weighing `kind` against the fastest plan (or the cheapest, for the fastest
+    /// plan itself). `None` when there is no real money-for-time trade-off.
+    #[must_use]
+    pub fn trade_off(&self, kind: ScenarioKind) -> Option<String> {
+        let chosen = self.scenario(kind);
+        if kind == ScenarioKind::Fastest {
+            let extra = chosen.total_cost() - self.cheapest.total_cost();
+            let faster = self.cheapest.duration_min? - chosen.duration_min?;
+            (extra > Cost::default() && faster >= 1.0).then(|| {
+                format!(
+                    "{} faster than the cheapest plan, for an extra {}.",
+                    format_duration(faster),
+                    format_money(&extra)
+                )
+            })
+        } else {
+            let saving = self.fastest.total_cost() - chosen.total_cost();
+            let slower = chosen.duration_min? - self.fastest.duration_min?;
+            (saving > Cost::default() && slower >= 1.0).then(|| {
+                format!(
+                    "{} cheaper than the fastest plan, for an extra {}.",
+                    format_money(&saving),
+                    format_duration(slower)
+                )
+            })
+        }
+    }
 
     #[must_use]
     pub fn from_calculation(calc: &CalculationTotal, origin_label: String) -> Self {
@@ -258,7 +295,6 @@ impl Results {
             best: Scenario::from_calculation(ScenarioKind::Best, &calc.best),
             cheapest: Scenario::from_calculation(ScenarioKind::Cheapest, &calc.cheapest),
             fastest: Scenario::from_calculation(ScenarioKind::Fastest, &calc.fastest),
-            // TODO: resolve() failures
             unresolved: Vec::new(),
         }
     }
@@ -280,6 +316,45 @@ mod tests {
         assert_eq!(format_money(&Cost::from_cents(0)), "$0.00");
         assert_eq!(format_money(&Cost::from_cents(5)), "$0.05");
         assert_eq!(format_money(&Cost::from_cents(1234)), "$12.34");
+    }
+
+    #[test]
+    fn delta_is_signed() {
+        let base = Cost::from_cents(6140);
+        assert_eq!(format_delta(&Cost::from_cents(6890), &base), "+$7.50");
+        assert_eq!(format_delta(&Cost::from_cents(5960), &base), "-$1.80");
+        assert_eq!(format_delta(&base, &base), "+$0.00");
+    }
+
+    #[test]
+    fn trade_off_compares_money_and_time() {
+        let plan = |kind, cents, minutes| Scenario {
+            kind,
+            stops: Vec::new(),
+            travel_cost: Some(Cost::from_cents(cents)),
+            distance_km: None,
+            duration_min: Some(minutes),
+        };
+        let mut results = Results {
+            origin_label: String::new(),
+            best: plan(ScenarioKind::Best, 6320, 22.0),
+            cheapest: plan(ScenarioKind::Cheapest, 6140, 38.0),
+            fastest: plan(ScenarioKind::Fastest, 6890, 14.0),
+            unresolved: Vec::new(),
+        };
+        assert_eq!(
+            results.trade_off(ScenarioKind::Cheapest).as_deref(),
+            Some("$7.50 cheaper than the fastest plan, for an extra 24 min.")
+        );
+        assert_eq!(
+            results.trade_off(ScenarioKind::Fastest).as_deref(),
+            Some("24 min faster than the cheapest plan, for an extra $7.50.")
+        );
+
+        // same plan everywhere: nothing to weigh up
+        results.fastest = plan(ScenarioKind::Fastest, 6140, 38.0);
+        assert_eq!(results.trade_off(ScenarioKind::Cheapest), None);
+        assert_eq!(results.trade_off(ScenarioKind::Fastest), None);
     }
 
     #[test]
