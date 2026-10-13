@@ -321,9 +321,9 @@ mod tests {
     #[test]
     fn delta_is_signed() {
         let base = Cost::from_cents(6140);
-        assert_eq!(format_delta(&Cost::from_cents(6890), &base), "+$7.50");
-        assert_eq!(format_delta(&Cost::from_cents(5960), &base), "-$1.80");
-        assert_eq!(format_delta(&base, &base), "+$0.00");
+        assert_eq!(format_delta(&Cost::from_cents(6890), &base).as_deref(), Some("+$7.50"));
+        assert_eq!(format_delta(&Cost::from_cents(5960), &base).as_deref(), Some("-$1.80"));
+        assert_eq!(format_delta(&base, &base), None);
     }
 
     #[test]
