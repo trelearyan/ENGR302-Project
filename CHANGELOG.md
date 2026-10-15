@@ -23,6 +23,9 @@ Work on branches that are not yet merged into `main`.
 - Price calculator uses the real scraped product database instead of demo data, with caching (#110)
 - Distances follow real roads between stops, using OpenStreetMap routing data instead of straight lines (#81)
 - Updated eframe to 0.36 (#75)
+- Redesigned results panel: a card for each plan (Best value, Cheapest, Fastest) with the total, groceries, travel, distance and time; the selected card has an orange border and a tick, and the others show +/- cost ()
+- Plan details show a summary (groceries, total, items, travel, distance, driving time), numbered stops side by side, and each stop's items with Qty, Unit and Line total ()
+- Search bar puts the address, "Use my location", and Search in one row ()
 
 ### Fixed
 - Travel distance and speed calculations (#110)
