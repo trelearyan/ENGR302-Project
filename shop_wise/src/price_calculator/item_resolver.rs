@@ -183,7 +183,10 @@ fn score_item(terms: &[&str], item: &&SearchResult, price: u32) -> i32 {
         let mut tscore = 1;
         let term: &str = *terms.get(j).unwrap();
         let _ = &item.name.split(' ').for_each(|x: &str| {
-            tscore += if x.to_lowercase().contains(&term.to_lowercase()) {
+            if x.len() == 0 {
+                return;
+            }
+            tscore += if x.to_lowercase().starts_with(&term.to_lowercase()) {
                 10
             } else {
                 -1
