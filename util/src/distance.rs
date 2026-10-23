@@ -68,7 +68,7 @@ impl Div<Speed> for Distance {
     type Output = Duration;
 
     fn div(self, rhs: Speed) -> Self::Output {
-        Duration::from_millis((self.base_value_metres / rhs.inner()).to_u64().unwrap())
+        Duration::from_secs((self.base_value_metres / rhs.inner()).to_u64().unwrap())
     }
 }
 
@@ -103,5 +103,28 @@ mod tests {
         test(0.);
         test(0.001);
         test(899_999.);
+    }
+
+    #[test]
+    fn test_div_by_speed() {
+        assert_eq!(Duration::from_secs(100), Distance::from_metres(1000) / Speed::from_metres_per_second(10));
+        assert_eq!(Duration::from_secs(10), Distance::from_metres(1000) / Speed::from_metres_per_second(100));
+        assert_eq!(Duration::from_secs(10), Distance::from_metres(100) / Speed::from_metres_per_second(10));
+        assert_eq!(Duration::from_secs(1000), Distance::from_metres(1000) / Speed::from_metres_per_second(1));
+
+        assert_eq!(Duration::from_secs(100), Distance::from_metres(1000) / Speed::from_kilometres_per_hour(36));
+        assert_eq!(Duration::from_secs(1), Distance::from_metres(1000) / Speed::from_kilometres_per_hour(3600));
+        assert_eq!(Duration::from_secs(1), Distance::from_metres(100) / Speed::from_kilometres_per_hour(360));
+        assert_eq!(Duration::from_secs(1000), Distance::from_metres(10000) / Speed::from_kilometres_per_hour(36));
+
+        assert_eq!(Duration::from_secs(100), Distance::from_kilometres_f64(1.0) / Speed::from_metres_per_second(10));
+        assert_eq!(Duration::from_secs(10), Distance::from_kilometres_f64(1.0) / Speed::from_metres_per_second(100));
+        assert_eq!(Duration::from_secs(10), Distance::from_kilometres_f64(0.1) / Speed::from_metres_per_second(10));
+        assert_eq!(Duration::from_secs(1000), Distance::from_kilometres_f64(1.0) / Speed::from_metres_per_second(1));
+
+        assert_eq!(Duration::from_mins(1), Distance::from_metres(5400) / Speed::from_metres_per_second(90));
+        assert_eq!(Duration::from_mins(10), Distance::from_metres(54000) / Speed::from_metres_per_second(90));
+        assert_eq!(Duration::from_mins(10), Distance::from_metres(5400) / Speed::from_metres_per_second(9));
+        assert_eq!(Duration::from_mins(1), Distance::from_metres(54000) / Speed::from_metres_per_second(900));
     }
 }

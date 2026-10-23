@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::time::Duration;
 use itertools::Itertools;
 use util::distance::Distance;
-use util::{cost::Cost, store::{Store, StoreBrand}};
+use util::{cost::Cost, store::Store};
 use bigdecimal::ToPrimitive;
 use util::{search::{ShoppingItem, ShoppingItemQuery}};
 use crate::{
@@ -40,6 +40,7 @@ pub struct Message {
 #[derive(Debug, PartialEq)]
 pub enum CalculationErrorType {
     InternalError,
+    RouteError,
     CouldNotResolveItem,
     NoPlanFound,
     CommonItemFailure,
@@ -56,6 +57,7 @@ impl CalculationError {
     pub fn pretty(&self) -> String {
         match self.err_type {
             CalculationErrorType::InternalError => "Unknown Error",
+            CalculationErrorType::RouteError => "Route Error",
             CalculationErrorType::CouldNotResolveItem => "Item Resolution Error: ",
             CalculationErrorType::NoPlanFound => "No Complete Shopping Route Found: ",
             CalculationErrorType::CommonItemFailure => "No Shopping Route Found - Common Item cause of Failure: ",
@@ -150,7 +152,11 @@ pub fn calculate(
                 .inner()
                 .with_scale(2)
                 .to_u32()
-                .unwrap(),
+                .ok_or_else(||CalculationError {
+                        err_type: CalculationErrorType::RouteError,
+                        err_msg: "Route cost was not able to be represented in cents".to_owned(),
+                    }
+                )?,
             route_time: route.travel_time.as_secs(),
             route_id,
         });
@@ -166,7 +172,7 @@ pub fn calculate(
         item_lookup.push(HashMap::new());
         // Resolve query
         let query: &ShoppingItemQuery = shop_list.get(item_key).unwrap();
-        let Some(mut res) = resolve(query) else {
+        let Some(res) = resolve(query) else {
             return Err(CalculationError {
                 err_type: CalculationErrorType::CouldNotResolveItem,
                 err_msg: "Could not find item ".to_owned() + &query.name,
@@ -175,29 +181,32 @@ pub fn calculate(
         for store_id in 0..stores.len() {
             // Mock store specific availability by just assuming same
             // among all stores within a brand
-            let global_store_key = match stores.get(store_id).unwrap().brand {
-                StoreBrand::Paknsave => 1,
-                StoreBrand::Woolworths => 2,
-                StoreBrand::Newworld => 3,
-            };
+            let store   = stores.get(store_id).unwrap();
             // If this store has an entry for the item add it
-            if res.contains_key(&global_store_key) {
-                let Some(item) = res.remove(&global_store_key) else {
-            return Err(CalculationError {
-                err_type: CalculationErrorType::CouldNotResolveItem,
-                err_msg: "Could not find item ".to_owned() + &shop_list.get(item_key).unwrap().name,
-            })};
+            if res.contains_key(&store.brand) {
+                let Some(item) = res.get(&store.brand) else {
+                return Err(CalculationError {
+                    err_type: CalculationErrorType::CouldNotResolveItem,
+                    err_msg: "Could not find item ".to_owned() + &shop_list.get(item_key).unwrap().name,
+                })};
                 // Convert to cents for efficient copying
-                let price = item
+                let price = (item
                     .price
                     .clone()
-                    .round()
+                    .round()*100)
                     .inner()
-                    .with_scale(2)
                     .to_u32()
                     .unwrap()*item.multiplier;
-                // Add item to item lookup table
-                item_lookup.get_mut(item_key).unwrap().insert(store_id, item);
+                // Create item to add to item lookup table
+                let real_item = ShoppingItem {
+                    name: item.name.clone(),
+                    multiplier: item.multiplier,
+                    quantity: item.quantity,
+                    unit: item.unit.clone(),
+                    price: item.price.clone(),
+                    store: store.clone(),
+                };
+                item_lookup.get_mut(item_key).unwrap().insert(store_id, real_item);
                 // Add price to short database
                 short_database.get_mut(store_id).unwrap().push(Some(price));
             } else {
@@ -206,6 +215,7 @@ pub fn calculate(
             }
         }
     }
+    log::debug!("Local Routes:\n{:?}\n\n\nShort Database:\n{:?}\n\n\nItem Lookup:\n{:?}", local_routes, short_database, item_lookup);
     // Calculate minimising for combined item and travel cost
     let cheap = delocalise(
         calculate_minimised(
@@ -248,6 +258,7 @@ pub fn calculate(
         &stores,
         &routes,
     );
+    log::debug!("Cheapest Plan:\n{:?}\n\n\nFastest Plan:\n{:?}\n\n\nBest Plan:\n{:?}", cheap, fast, best);
     // Return the result
     Ok(CalculationTotal {
         cheapest: cheap,
@@ -427,25 +438,24 @@ mod tests {
 
     #[test]
     fn test_cheapest_demo() {
-        assert_eq!(3, 1 + 2);
         let items = [0, 1, 2];
         let mut routes: Vec<LocalRoute> = Vec::new();
         routes.push(LocalRoute {
             shops: [0].to_vec(),
             route_travel_cost: 196,
-            route_time: 0,
+            route_time: 196,
             route_id: 0,
         });
         routes.push(LocalRoute {
             shops: [1].to_vec(),
             route_travel_cost: 190,
-            route_time: 0,
+            route_time: 190,
             route_id: 1,
         });
         routes.push(LocalRoute {
             shops: [0, 1].to_vec(),
             route_travel_cost: 295,
-            route_time: 0,
+            route_time: 295,
             route_id: 2,
         });
         let mut database: Vec<Vec<Option<u32>>> = Vec::new();
@@ -474,10 +484,131 @@ mod tests {
             total_item_cost: 2618,
             total_travel_cost: 295,
             total_shop_cost: 2913,
-            total_time: 0,
+            total_time: 295,
             route_id: 2,
         };
         assert!(result.is_ok());
         assert_eq!(correct_result, result.unwrap().0);
+    }
+    
+    #[test]
+    fn test_fastest_demo() {
+        let items = [0, 1, 2];
+        let mut routes: Vec<LocalRoute> = Vec::new();
+        routes.push(LocalRoute {
+            shops: [0].to_vec(),
+            route_travel_cost: 196,
+            route_time: 196,
+            route_id: 0,
+        });
+        routes.push(LocalRoute {
+            shops: [1].to_vec(),
+            route_travel_cost: 190,
+            route_time: 190,
+            route_id: 1,
+        });
+        routes.push(LocalRoute {
+            shops: [0, 1].to_vec(),
+            route_travel_cost: 295,
+            route_time: 295,
+            route_id: 2,
+        });
+        let mut database: Vec<Vec<Option<u32>>> = Vec::new();
+        let mut store0: Vec<Option<u32>> = Vec::new();
+        store0.push(Some(599));
+        store0.push(Some(720));
+        store0.push(Some(1450));
+        database.push(store0);
+        let mut store1: Vec<Option<u32>> = Vec::new();
+        store1.push(Some(620));
+        store1.push(Some(899));
+        store1.push(Some(1299));
+        database.push(store1);
+        let result = calculate_minimised(
+            items.len(),
+            routes.as_ref(),
+            &database,
+            |_a: &u32, b: &LocalRoute| -> u32 {
+                return b.route_time as u32;
+            },
+            &Vec::new(),
+        );
+        let correct_result= BestPlan {
+            best_shop_plan: vec![1, 1, 1],
+            best_cost: 190,
+            total_item_cost: 2818,
+            total_travel_cost: 190,
+            total_shop_cost: 3008,
+            total_time: 190,
+            route_id: 1,
+        };
+        assert!(result.is_ok());
+        assert_eq!(correct_result, result.unwrap().0);
+    }
+
+    
+    #[test]
+    fn test_best_demo() {
+        let items = [0, 1, 2];
+        let mut routes: Vec<LocalRoute> = Vec::new();
+        routes.push(LocalRoute {
+            shops: [0].to_vec(),
+            route_travel_cost: 196,
+            route_time: 196,
+            route_id: 0,
+        });
+        routes.push(LocalRoute {
+            shops: [1].to_vec(),
+            route_travel_cost: 190,
+            route_time: 190,
+            route_id: 1,
+        });
+        routes.push(LocalRoute {
+            shops: [0, 1].to_vec(),
+            route_travel_cost: 295,
+            route_time: 295,
+            route_id: 2,
+        });
+        let mut database: Vec<Vec<Option<u32>>> = Vec::new();
+        let mut store0: Vec<Option<u32>> = Vec::new();
+        store0.push(Some(599));
+        store0.push(Some(720));
+        store0.push(Some(1450));
+        database.push(store0);
+        let mut store1: Vec<Option<u32>> = Vec::new();
+        store1.push(Some(620));
+        store1.push(Some(899));
+        store1.push(Some(1299));
+        database.push(store1);
+        let result = calculate_minimised(
+            items.len(),
+            routes.as_ref(),
+            &database,
+            |a: &u32, b: &LocalRoute| -> u32 {
+                return a + b.route_travel_cost + ((5 * b.route_time) / 6) as u32;
+            },
+            &Vec::new(),
+        );
+        let correct_result= BestPlan {
+            best_shop_plan: vec![0, 0, 0],
+            best_cost: 3128,
+            total_item_cost: 2769,
+            total_travel_cost: 196,
+            total_shop_cost: 2965,
+            total_time: 196,
+            route_id: 0,
+        };
+        assert!(result.is_ok());
+        assert_eq!(correct_result, result.unwrap().0);
+    }
+
+    #[test]
+    fn test_assumptions() {
+        assert_eq!(11230, (Cost::from_cents(11231)
+                    .clone()
+                    .round()*100)
+                    .inner()
+                    .to_u32()
+                    .unwrap());
     }
 }
