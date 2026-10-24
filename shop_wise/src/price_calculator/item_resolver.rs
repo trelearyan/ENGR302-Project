@@ -62,7 +62,7 @@ pub fn search(item_query: &str, num_options: u32) -> Option<Vec<SantizedSearchRe
         .collect::<Vec<_>>();
     // Sort descending
     list.sort_by(|arg0: &(&SearchResult, f32), arg1: &(&SearchResult, f32)| f32::total_cmp(&arg1.1, &arg0.1));
-    if list.len() >= num_options as usize {
+    if list.len() >= 1 {
         Some(list.iter()
             .take(num_options as usize)
             .map(|f|->SantizedSearchResult {
