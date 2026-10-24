@@ -59,7 +59,7 @@ pub fn search(item_query: &str, num_options: u32) -> Option<Vec<SantizedSearchRe
         .flat_map(|store_map: (&u32, &Vec<SearchResult>)|->
             VecIter<'_, SearchResult> {store_map.1.iter()})
         .map(|search_result: &SearchResult|->
-            (&SearchResult, f32) {(search_result, score_item(&terms, &search_result, search_result.price))})
+            (&SearchResult, f32) {(search_result, score_item(&terms, &search_result))})
         .collect::<Vec<_>>();
     // Sort descending
     list.sort_by(|arg0: &(&SearchResult, f32), arg1: &(&SearchResult, f32)| f32::total_cmp(&arg0.1, &arg1.1));
@@ -122,6 +122,7 @@ pub fn resolve(item_query: &ShoppingItemQuery) -> Option<HashMap<StoreBrand, Res
         let mut best_key: Option<i32> = None;
         let mut best_score = f32::MIN;
         let mut best_mul: Option<u32> = None;
+        let mut best_price: u32 = u32::MAX;
         for key in itemlist.keys() {
             let item: &&SearchResult = &itemlist.get(key).unwrap();
             let mul: Option<u32> = search_unit
@@ -130,11 +131,13 @@ pub fn resolve(item_query: &ShoppingItemQuery) -> Option<HashMap<StoreBrand, Res
                 continue;
             }
             let price: u32 = item.price * mul.unwrap();
-            let score: f32 = score_item(&terms, item, price);
+            let score: f32 = score_item(&terms, item);
             // Return best match per store
-            if score > best_score {
+            if score > best_score * 1.1 ||
+                (score > best_score * 0.91 && price < best_price) {
                 best_key = Some(*key as i32);
                 best_score = score;
+                best_price = price;
                 best_mul = mul;
             }
         }
@@ -177,7 +180,7 @@ pub fn resolve(item_query: &ShoppingItemQuery) -> Option<HashMap<StoreBrand, Res
     // vs "Vanilla Coke Zero Sugar"
 }
 
-fn score_item(terms: &[&str], item: &&SearchResult, price: u32) -> f32 {
+fn score_item(terms: &[&str], item: &&SearchResult) -> f32 {
     let mut score: f32 = 0.0;
     //println!("---");
     // Score name based on search term matches and minimalism (might punish certain items - future)
