@@ -59,10 +59,10 @@ pub fn search(item_query: &str, num_options: u32) -> Option<Vec<SantizedSearchRe
         .flat_map(|store_map: (&u32, &Vec<SearchResult>)|->
             VecIter<'_, SearchResult> {store_map.1.iter()})
         .map(|search_result: &SearchResult|->
-            (&SearchResult, i32) {(search_result, score_item(&terms, &search_result, search_result.price))})
+            (&SearchResult, f32) {(search_result, score_item(&terms, &search_result, search_result.price))})
         .collect::<Vec<_>>();
     // Sort descending
-    list.sort_by(|a , b|->Ordering {b.1.cmp(&a.1)});
+    list.sort_by(|arg0: &(&SearchResult, f32), arg1: &(&SearchResult, f32)| f32::total_cmp(&arg0.1, &arg1.1));
     if list.len() >= num_options as usize {
         Some(list.iter()
             .take(num_options as usize)
@@ -91,7 +91,9 @@ pub fn search(item_query: &str, num_options: u32) -> Option<Vec<SantizedSearchRe
 #[must_use]
 pub fn resolve(item_query: &ShoppingItemQuery) -> Option<HashMap<StoreBrand, ResolvedItem>> {
     // Split item_query into search terms
-    let terms: Vec<&str> = item_query.name.split(' ').filter(|f|->bool{f.len()>=1}).collect();
+    let binding: String = item_query.name.to_lowercase().trim().to_string();
+    let terms: Vec<&str> = binding.split(' ').filter(|f|->bool{f.len()>=1}).collect();
+    println!("{:?}", terms);
     let mut result: HashMap<StoreBrand, ResolvedItem> = HashMap::new();
     let mut search: HashMap<usize, HashMap<u32, Vec<SearchResult>>> = query_db(&terms).unwrap();
     let search_unit = SearchUnits::match_to_unit(&item_query.unit).unwrap();
@@ -118,7 +120,7 @@ pub fn resolve(item_query: &ShoppingItemQuery) -> Option<HashMap<StoreBrand, Res
         // over "Brand Pasta Single Snack Chicken Curry Pasta & Sauce" and
         // "Brand Wet Cat Food Chicken Breast and Herb"
         let mut best_key: Option<i32> = None;
-        let mut best_score = i32::MIN;
+        let mut best_score = f32::MIN;
         let mut best_mul: Option<u32> = None;
         for key in itemlist.keys() {
             let item: &&SearchResult = &itemlist.get(key).unwrap();
@@ -128,7 +130,7 @@ pub fn resolve(item_query: &ShoppingItemQuery) -> Option<HashMap<StoreBrand, Res
                 continue;
             }
             let price: u32 = item.price * mul.unwrap();
-            let score: i32 = score_item(&terms, item, price);
+            let score: f32 = score_item(&terms, item, price);
             // Return best match per store
             if score > best_score {
                 best_key = Some(*key as i32);
@@ -175,30 +177,54 @@ pub fn resolve(item_query: &ShoppingItemQuery) -> Option<HashMap<StoreBrand, Res
     // vs "Vanilla Coke Zero Sugar"
 }
 
-fn score_item(terms: &[&str], item: &&SearchResult, price: u32) -> i32 {
-
-    let mut score: i32 = 1;
+fn score_item(terms: &[&str], item: &&SearchResult, price: u32) -> f32 {
+    let mut score: f32 = 0.0;
+    //println!("---");
     // Score name based on search term matches and minimalism (might punish certain items - future)
-    for j in 0..terms.len() {
-        let mut tscore = 1;
-        let term: &str = *terms.get(j).unwrap();
-        let _ = &item.name.split(' ').for_each(|x: &str| {
-            if x.len() == 0 {
-                return;
-            }
-            tscore += if x.to_lowercase().starts_with(&term.to_lowercase()) {
-                10
+    // density
+    let parts: Vec<&str> = item.name.split(' ').collect();
+    for j in 0..parts.len() {
+        let mut tscore: f32 = 1.0;
+        let part: &str = *parts.get(j).unwrap();
+        let _ = &terms.into_iter().for_each(|term: &&str| {
+            tscore *= if part.to_lowercase().contains(&term.to_lowercase()) {
+                10.0
             } else {
-                -1
+                0.8
             };
         });
-        score *= tscore;
+        //print!(" {:?} = {:?}, ", part, tscore);
+        score += tscore / (parts.len() as f32);
     }
-    score *= 1000;
+    // coverage
+    let mut cover = 0;
+    for j in 0..terms.len() {
+        let mut tscore: f32 = 1.0;
+        let term: &str = *terms.get(j).unwrap();
+        let _ = &item.name.split(' ').for_each(|part: &str| {
+            if part.is_empty() {
+                return;
+            }
+            tscore *= if term.to_lowercase().contains(&part.to_lowercase()) {
+                10.0
+            } else {
+                0.8
+            };
+        });
+        if tscore > 1.0 {
+            cover += 1
+        }
+        //print!(" {:?} = {:?}, ", part, tscore);
+        //score += tscore / (terms.len() as f32);
+    }
+    let coverage: f32 = (cover as f32) / (terms.len() as f32);
+    score *= coverage * coverage;
     // Score based on most popular category of high scoring items (narrow top results - need good already)
     // category not available at the moment
     // Grade on price & quantity matching
-    score - (price as i32) - (item.name.len() as i32)
+    //score - (price as i32) - (item.name.len() as i32)
+    //print!(" / {:?} = {:?}", item.name, score);
+    score
 }
 
 fn query_cache(search_term: &str) -> Option<HashMap<u32, Vec<SearchResult>>> {
@@ -392,7 +418,7 @@ mod tests {
         clear_cache();
         let res = resolve(&ShoppingItemQuery {
             name: String::from("Onion Soup"),
-            quantity: 1,
+            quantity: 400,
             unit: SearchUnits::GRAM.to_str().to_owned(),
         })
         .unwrap(); //Maggi Onion Soup
@@ -404,7 +430,7 @@ mod tests {
         })
         .unwrap();
         assert_eq!("Reduced Cream", res.get(&StoreBrand::Paknsave).unwrap().name);
-        assert_eq!("nestlé reduced cream original kiwi dip", res.get(&StoreBrand::Woolworths).unwrap().name);
+        assert_eq!("Nestle Reduced Cream Tear Tab Can 230mL", res.get(&StoreBrand::Woolworths).unwrap().name);
     }
 
     #[test]
@@ -424,7 +450,7 @@ mod tests {
         })
         .unwrap();
         assert_eq!("Reduced Cream", res.get(&StoreBrand::Paknsave).unwrap().name);
-        assert_eq!("nestlé reduced cream original kiwi dip", res.get(&StoreBrand::Woolworths).unwrap().name);
+        assert_eq!("Nestle Reduced Cream Tear Tab Can 230mL", res.get(&StoreBrand::Woolworths).unwrap().name);
         // Repeat test to ensure that works both times
         let res = resolve(&ShoppingItemQuery {
             name: String::from("Onion Soup"),
@@ -435,12 +461,12 @@ mod tests {
         assert_eq!("Onion Soup Mix Sachet", res.get(&StoreBrand::Paknsave).unwrap().name);
         let res = resolve(&ShoppingItemQuery {
             name: String::from("Reduced Cream"),
-            quantity: 1,
+            quantity: 400,
             unit: SearchUnits::MILLILITRE.to_str().to_owned(),
         })
         .unwrap();
         assert_eq!("Reduced Cream", res.get(&StoreBrand::Paknsave).unwrap().name);
-        assert_eq!("nestlé reduced cream original kiwi dip", res.get(&StoreBrand::Woolworths).unwrap().name);
+        assert_eq!("Nestle Reduced Cream Tear Tab Can 230mL", res.get(&StoreBrand::Woolworths).unwrap().name);
     }
 
     #[test]
