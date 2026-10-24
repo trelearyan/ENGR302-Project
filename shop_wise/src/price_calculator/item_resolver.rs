@@ -50,7 +50,7 @@ static ref QUERY_CACHE: RwLock<HashMap<String, HashMap<u32, Vec<SearchResult>>>>
 /// None if the string could not be resolved
 pub fn search(item_query: &str, num_options: u32) -> Option<Vec<SantizedSearchResult>> {
     let terms: Vec<&str> = item_query.split(' ').collect();
-    let res = query_db(&terms).unwrap();
+    let res = query_db(&terms).ok()?;
     // Flatten and collect returned items with their scores
     let mut list = res.iter()
         .flat_map(|search_map: (&usize, &HashMap<u32, Vec<SearchResult>>)|->
@@ -491,21 +491,5 @@ mod tests {
         simple_query("SELECT volume_size FROM products").into_iter()
             .take(500)
             .for_each(|x|->(){get_unit(x);});
-    }
-
-    
-    #[test]
-    fn test_eggs() {
-        simple_query("SELECT name
-                    FROM products p
-                    WHERE LOWER(p.name) LIKE '%eggs%'").into_iter()
-            .take(500)
-            .for_each(|x|->(){println!("{:?}", x)});
-    }
-
-    
-    #[test]
-    fn test_search_eggs() {
-        println!("{:?}", search("Eggs", 10));
     }
 }
