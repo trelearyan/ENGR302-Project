@@ -1,4 +1,3 @@
-use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::collections::hash_map::Iter as HashIter;
 use std::slice::Iter as VecIter;
