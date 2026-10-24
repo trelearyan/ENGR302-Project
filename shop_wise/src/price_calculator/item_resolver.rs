@@ -61,7 +61,7 @@ pub fn search(item_query: &str, num_options: u32) -> Option<Vec<SantizedSearchRe
             (&SearchResult, f32) {(search_result, score_item(&terms, &search_result))})
         .collect::<Vec<_>>();
     // Sort descending
-    list.sort_by(|arg0: &(&SearchResult, f32), arg1: &(&SearchResult, f32)| f32::total_cmp(&arg0.1, &arg1.1));
+    list.sort_by(|arg0: &(&SearchResult, f32), arg1: &(&SearchResult, f32)| f32::total_cmp(&arg1.1, &arg0.1));
     if list.len() >= num_options as usize {
         Some(list.iter()
             .take(num_options as usize)
@@ -207,7 +207,7 @@ fn score_item(terms: &[&str], item: &&SearchResult) -> f32 {
             if part.is_empty() {
                 return;
             }
-            tscore *= if term.to_lowercase().contains(&part.to_lowercase()) {
+            tscore *= if term.to_lowercase().starts_with(&part.to_lowercase()) {
                 10.0
             } else {
                 0.8
@@ -261,7 +261,7 @@ fn query_db(search_terms: &[&str]) -> Result<HashMap<usize, HashMap<u32, Vec<Sea
                     WHERE p.supermarket_id = ?1
                     AND LOWER(p.name) LIKE ?2
                 ";
-                let search_pattern = format!("%{}%", search_term.to_lowercase());
+                let search_pattern = format!("%{}%", search_term.trim().to_lowercase());    
                 let mut stm = conn.prepare(sql_query)?;
                 let res = stm.query_map( 
                     rusqlite::params! {i, search_pattern,},
@@ -491,5 +491,21 @@ mod tests {
         simple_query("SELECT volume_size FROM products").into_iter()
             .take(500)
             .for_each(|x|->(){get_unit(x);});
+    }
+
+    
+    #[test]
+    fn test_eggs() {
+        simple_query("SELECT name
+                    FROM products p
+                    WHERE LOWER(p.name) LIKE '%eggs%'").into_iter()
+            .take(500)
+            .for_each(|x|->(){println!("{:?}", x)});
+    }
+
+    
+    #[test]
+    fn test_search_eggs() {
+        println!("{:?}", search("Eggs", 10));
     }
 }
