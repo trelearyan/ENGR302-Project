@@ -118,8 +118,8 @@ pub fn resolve(item_query: &ShoppingItemQuery) -> Option<HashMap<StoreBrand, Res
         // minimal other content. This should reward "Brand Free Range Chicken Breast"
         // over "Brand Pasta Single Snack Chicken Curry Pasta & Sauce" and
         // "Brand Wet Cat Food Chicken Breast and Herb"
+        let mut top_score = f32::MIN;
         let mut best_key: Option<i32> = None;
-        let mut best_score = f32::MIN;
         let mut best_mul: Option<u32> = None;
         let mut best_price: u32 = u32::MAX;
         for key in itemlist.keys() {
@@ -131,13 +131,15 @@ pub fn resolve(item_query: &ShoppingItemQuery) -> Option<HashMap<StoreBrand, Res
             }
             let price: u32 = item.price * mul.unwrap();
             let score: f32 = score_item(&terms, item);
-            // Return best match per store
-            if score > best_score * 1.1 ||
-                (score > best_score * 0.91 && price < best_price) {
+            // Find the cheapest item within a 10% match of the best matching item
+            if score > top_score * 1.1 ||
+                (score > top_score * 0.91 && price < best_price) {
                 best_key = Some(*key as i32);
-                best_score = score;
                 best_price = price;
                 best_mul = mul;
+            }
+            if score > top_score {
+                top_score = score;
             }
         }
         if best_key.is_none() {
