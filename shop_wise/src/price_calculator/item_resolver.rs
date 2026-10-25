@@ -276,7 +276,7 @@ fn query_db(search_terms: &[&str]) -> Result<HashMap<usize, HashMap<u32, Vec<Sea
             for i in 1..=3 {
                 let _shop_id = &i.to_string();
                 let sql_query = "
-                    SELECT id, supermarket_id, name, price, volume_size, member_price, image_url
+                    SELECT id, supermarket_id, name, price, volume_size
                     FROM products p
                     WHERE p.supermarket_id = ?1
                     AND LOWER(p.name) LIKE ?2
@@ -291,11 +291,11 @@ fn query_db(search_terms: &[&str]) -> Result<HashMap<usize, HashMap<u32, Vec<Sea
                             item_id: row.get(0)?,
                             name: row.get(2)?,
                             price: (row.get::<usize,f32>(3)? * 100.0) as u32,
-                            member_price: (row.get::<usize,f32>(5)? * 100.00) as u32,
+                            member_price: 1,//(row.get::<usize,f32>(5)? * 100.00) as u32,
                             store: match_sid_to_brand(row.get(1)?).unwrap(),
                             quantity: amt.0,
                             unit: amt.1,
-                            image_url: row.get(6)?,
+                            image_url: "nada".to_owned(),
                         })
                 })?;
                 let shop_results: Vec<SearchResult> = res.map(|f: std::prelude::v1::Result<SearchResult, Error>|->SearchResult{f.unwrap()}).collect();
