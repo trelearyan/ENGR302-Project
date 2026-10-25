@@ -115,6 +115,8 @@ pub fn calculate(
     shop_list: &[ShoppingItemQuery],
     filters: &StoreFilters,
     mileage: &MileageOptions,
+    edr: bool,
+    club: bool,
 ) -> Result<CalculationTotal, CalculationError> {
     // Get all visitable stores, position in Vec is local ID (StoreId)
     let stores: Vec<Store> = filter_stores(&all_stores(), filters)
@@ -172,7 +174,7 @@ pub fn calculate(
         item_lookup.push(HashMap::new());
         // Resolve query
         let query: &ShoppingItemQuery = shop_list.get(item_key).unwrap();
-        let Some(res) = resolve(query) else {
+        let Some(res) = resolve(query, edr, club) else {
             return Err(CalculationError {
                 err_type: CalculationErrorType::CouldNotResolveItem,
                 err_msg: "Could not find item ".to_owned() + &query.name,

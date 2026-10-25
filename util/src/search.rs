@@ -146,6 +146,15 @@ pub fn match_sid_to_brand(sid: u32) -> Option<StoreBrand> {
     }
 }
 
+#[must_use]
+pub fn match_brand_to_sid(sid: StoreBrand) -> u32 {
+    match sid  {
+        Paknsave => 1,
+        Woolworths => 2,
+        Newworld => 3,
+    }
+}
+
 #[derive(Debug, Eq, PartialEq, Clone, Serialize, Deserialize)]
 pub struct ShoppingItemQuery {
     pub name: String,
