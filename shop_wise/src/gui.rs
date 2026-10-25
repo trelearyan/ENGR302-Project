@@ -1,7 +1,8 @@
-use eframe::egui::{self, CentralPanel, Panel, ScrollArea, Ui};
+use eframe::egui::{self, CentralPanel, Color32, Panel, ScrollArea, Stroke, Ui};
 use std::cell::RefCell;
 use std::rc::Rc;
 use util::coordinate::Coordinate;
+use util::store::StoreBrand;
 
 
 use crate::gui::location_search::{LocationData, LocationStatus};
@@ -20,8 +21,13 @@ pub mod preferences;
 pub mod shopping_list;
 pub mod supermarkets;
 pub mod transit;
+pub mod masthead;
+pub mod footer;
 
-#[derive(Default, Clone, Debug)]
+const SECTION_MAX_HEIGHT: f32 = 300.0;
+const LEFT_PANEL_WIDTH: f32 = 250.0;
+
+#[derive(Default, Clone)]
 pub struct AppData {
     shopping_list: ShoppingListData,
     preferences: PreferencesData,
@@ -29,6 +35,8 @@ pub struct AppData {
     transit: TransitData,
     location_search: Rc<RefCell<LocationData>>,
     output_routes: OutputRoutesData,
+    footer: footer::FooterData,
+    pub(crate) filters_collapsed: bool,
 }
 
 pub trait ShowableWidget {
@@ -37,38 +45,72 @@ pub trait ShowableWidget {
 
 impl ShowableWidget for AppData {
     fn show(&mut self, ui: &mut Ui) {
-        //ScrollArea::both().show(ui, |ui| {
-            Panel::left("left_panel").show_inside(ui, |ui| {
-                let list_height = ui.available_height().min(300.0);
-                ScrollArea::vertical()
-                    .id_salt("shopping_list_scroll")
-                    .max_height(list_height)
-                    .auto_shrink([false, true])
-                    .show(ui, |ui| {
-                        self.shopping_list.show(ui);
-                    });
-                ui.separator();
-                self.preferences.show(ui);
-                ui.separator();
-                ScrollArea::vertical()
-                    .id_salt("supermarkets_scroll")
-                    .max_height(list_height)
-                    .auto_shrink([false, true])
-                    .show(ui, |ui| {
-                        self.supermarkets.show(ui);
-                    });
-                ui.separator();
-                self.transit.show(ui);
-                ui.separator();
-            });
+        self.masthead(ui);
 
-            CentralPanel::default().show_inside(ui, |ui| {
-                LocationData::show(&self.location_search, ui);
-                ui.separator();
-                self.search_button(ui);
-                self.output_routes.show(ui);
+        if !self.filters_collapsed{
+            let panel = Panel::left("left_panel")
+                .default_size(LEFT_PANEL_WIDTH)
+                .show_inside(ui, |ui| {
+                Panel::bottom("left_footer")
+                    .resizable(false)
+                    .show_inside(ui, |ui| {
+                      self.footer.show(ui);
+                    });
+                ScrollArea::vertical()
+                    .id_salt("left panel scroll")
+                    .auto_shrink([false; 2])
+                    .show(ui, |ui|{
+                        ScrollArea::vertical()
+                            .id_salt("shopping_list_scroll")
+                            .max_height(SECTION_MAX_HEIGHT)
+                            .auto_shrink([false, true])
+                            .show(ui, |ui| {
+                                self.shopping_list.show(ui);
+                            });
+                        ui.separator();
+                        self.preferences.show(ui);
+                        ui.separator();
+                        ScrollArea::vertical()
+                            .id_salt("supermarkets_scroll")
+                            .max_height(SECTION_MAX_HEIGHT)
+                            .auto_shrink([false, true])
+                            .show(ui, |ui| {
+                                let origin = {
+                                    let loc = self.location_search.borrow();
+                                    match (loc.latitude, loc.longitude) {
+                                        (Some(lat), Some(lon)) => {
+                                            Some(Coordinate::from_lat_long_f64(lat, lon))
+                                        }
+                                        _ => None,
+                                    }
+                                };
+                                self.supermarkets.show_in_range(
+                                    ui,
+                                    origin.as_ref(),
+                                    &self.preferences.max_range,
+                                );
+                            });
+                        ui.separator();
+                        self.transit.show(ui);
+                        ui.separator();
+                    });
             });
-        //});
+            let line_width = 1.0_f32;
+            let bar = panel.response.rect;
+            ui.painter().vline(bar.right(), bar.y_range(), Stroke::new(line_width, Color32::BLACK));
+        }
+
+        CentralPanel::default().show_inside(ui, |ui| {
+            ScrollArea::vertical()
+                .id_salt("central panel scroll")
+                .auto_shrink([false; 2])
+                .show(ui, |ui| {
+                    LocationData::show(&self.location_search, ui);
+                    ui.separator();
+                    self.search_button(ui);
+                    self.output_routes.show(ui);
+                })
+        });
     }
 }
 
@@ -127,20 +169,24 @@ impl AppData {
                 let _origin_label = self.location_search.borrow().address.clone();
 
                 // Sam
+                let edr: bool = self.supermarkets.has_loyalty_card(StoreBrand::Woolworths);
+                let club: bool = self.supermarkets.has_loyalty_card(StoreBrand::Newworld);
                 let res = price_calculator::calculate(
                     &self.shopping_list.shopping_items,
                     &filters,
                     &self.transit.mileage_option,
+                    edr,
+                    club
                 );
                 log::info!("{res:?}");
 
                 let origin_label = self.location_search.borrow().address.clone();
                 self.output_routes.results = match res {
-                    Some(calc) => ResultsState::Ready(Box::new(
+                    Ok(calc) => ResultsState::Ready(Box::new(
                         price_calculator::results::Results::from_calculation(&calc, origin_label),
                     )),
-                    None => ResultsState::Failed(
-                        "No combination of stores in range can supply this list".to_owned(),
+                    _ => ResultsState::Failed(
+                        res.unwrap_err().pretty(),
                     ),
                 };
             }

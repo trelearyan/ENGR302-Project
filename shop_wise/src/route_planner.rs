@@ -10,7 +10,7 @@ use util::{
     coordinate::Coordinate,
     cost::Cost,
     distance::Distance,
-    store::{Store, StoreBrand},
+    store::Store,
 };
 
 use crate::{
@@ -19,6 +19,7 @@ use crate::{
 };
 
 pub mod filters;
+pub mod loc_resolver;
 
 #[derive(Debug, PartialEq)]
 /// An incomplete shopping plan. Note that the stop order should only include
@@ -81,20 +82,8 @@ impl RoutePlan {
 // on their filters.
 #[must_use]
 pub fn all_stores() -> Box<[Store]> {
-    Box::new([
-        Store {
-            brand: StoreBrand::Paknsave,
-            location: Coordinate::default(),
-        },
-        Store {
-            brand: StoreBrand::Newworld,
-            location: Coordinate::default(),
-        },
-        Store {
-            brand: StoreBrand::Woolworths,
-            location: Coordinate::default(),
-        },
-    ])
+    let stores = loc_resolver::load_store_locations().unwrap();
+    stores.into_boxed_slice()
 }
 
 // Returns every possible route the user could take between supermarkets based
