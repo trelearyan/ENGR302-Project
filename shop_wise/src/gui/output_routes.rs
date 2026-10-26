@@ -1,6 +1,5 @@
 use eframe::egui;
 use egui_extras::{Column, TableBuilder};
-use log::logger;
 use routx::{Graph, KDTree, osm::Options};
 use std::ops::Deref;
 
@@ -42,8 +41,8 @@ pub struct OutputRoutesData {
 
 impl Default for OutputRoutesData {
     fn default() -> Self {
-        log::debug!("test");
-        std::thread::spawn(|| {
+        log::debug!("route graph initialization dispatch");
+        std::thread::spawn(move || {
             log::debug!("route graph initialization begin");
 
             let graph = make_graph(&OPTIONS);
@@ -52,6 +51,7 @@ impl Default for OutputRoutesData {
 
             log::debug!("route graph initialized");
         });
+        log::debug!("route graph initialization dispatch complete");
 
         Self {
             selected: ScenarioKind::Best,
