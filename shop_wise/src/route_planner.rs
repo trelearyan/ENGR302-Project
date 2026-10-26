@@ -161,6 +161,7 @@ impl OptimisedRoutePlan {
             .map(|(a, b)| a.distance_to(b))
             .sum::<Distance>();
         log::debug!("exact travel distance call results in {result:?}");
+        log::debug!("number of nodes {:?}", self.path().iter().count());
         result
     }
 }
