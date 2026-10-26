@@ -339,7 +339,7 @@ fn get_unit(unit_text: String) -> (u32, SearchUnits) {
         return DEFAULT_UNIT;
     }
     let mut quantity: f32 = *values.get(0).unwrap();
-    let mulre = Regex::new(r"[0-9]+ x [0-9]+.*").unwrap();
+    let mulre = Regex::new(r"[0-9]+.*x.*[0-9]+.*").unwrap();
     // If follows the 2 x 4pk pattern, multiply the two numbers together
     if mulre.is_match(sanitised.as_ref()) {
         let temp: f32 = *values.get(1).unwrap();
@@ -514,6 +514,11 @@ mod tests {
         simple_query("SELECT volume_size FROM products").into_iter()
             .take(500)
             .for_each(|x|->(){get_unit(x);});
+    }
+
+    #[test]
+    fn test_unit_bad() {
+        println!("{:?}", get_unit("24x600mL".to_owned()));
     }
 
     // #[test]
