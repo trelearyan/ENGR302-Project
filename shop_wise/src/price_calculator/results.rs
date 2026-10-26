@@ -299,6 +299,74 @@ impl Results {
         }
     }
 }
+impl Results {
+    /// Made-up results for checking the plan layout by eye, since a real search rarely
+    /// gives several stops. Best has a long first stop, Cheapest a long middle stop and
+    /// Fastest a single stop. Open them with `SHOPWISE_PREVIEW_STOPS=1 cargo run`.
+    #[must_use]
+    pub fn preview() -> Self {
+        let stop = |chain: StoreBrand, names: &[&str]| StoreStop {
+            store_name: None,
+            chain,
+            address: None,
+            items: names
+                .iter()
+                .map(|name| ItemLine {
+                    name: (*name).to_owned(),
+                    multiplier: 1,
+                    quantity: "1x 1ea".to_owned(),
+                    unit_price: Cost::from_cents(199),
+                    on_special: false,
+                    needs_loyalty_card: false,
+                })
+                .collect(),
+        };
+        let long = [
+            "Chantal Organics Organic Chopped Tomatoes Peeled In Tomato Juice",
+            "Best Foods Real Mayonnaise",
+            "Pams Rose Large 58 x 71cm Easy Tie Extra Strength Kitchen Tidy Liners 58 x 71cm",
+            "Vegemite Spread",
+            "Champion High Grade White Flour",
+            "Diamond Roast Beef Rice Risotto Rice & Flavour Mix",
+            "Big Black Sacks Medium With Handles & 4 Ties to Close Kitchen Tidy Bags 51 x 67cm",
+            "Act II Sweet & Salty Kettle Corn Microwave Popcorn",
+            "Griffin's Toffee Pops Original Chocolate Biscuits",
+            "Indian Chicken Tonight Meal Base Butter Chicken Sauce",
+            "Dine Cuts In Gravy Cat Food With Beef & Liver",
+        ];
+        let short = ["Chelsea White Sugar 1.5kg", "Coca-Cola Classic 1.5L", "Pams Tomato Paste 140g"];
+        let scenario = |kind, stops| Scenario {
+            kind,
+            stops,
+            travel_cost: Some(Cost::from_cents(850)),
+            distance_km: Some(Distance::from_kilometres_f64(12.0)),
+            duration_min: Some(25.0),
+        };
+
+        Self {
+            origin_label: "Preview".to_owned(),
+            best: scenario(
+                ScenarioKind::Best,
+                vec![
+                    stop(StoreBrand::Paknsave, &long),
+                    stop(StoreBrand::Newworld, &short),
+                    stop(StoreBrand::Woolworths, &short),
+                ],
+            ),
+            cheapest: scenario(
+                ScenarioKind::Cheapest,
+                vec![
+                    stop(StoreBrand::Paknsave, &short),
+                    stop(StoreBrand::Newworld, &long),
+                    stop(StoreBrand::Woolworths, &short),
+                ],
+            ),
+            fastest: scenario(ScenarioKind::Fastest, vec![stop(StoreBrand::Paknsave, &long)]),
+            unresolved: Vec::new(),
+        }
+    }
+}
+
 #[derive(Clone, Debug)]
 pub enum ResultsState {
     Idle,

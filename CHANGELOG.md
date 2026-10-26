@@ -13,6 +13,7 @@ Work on branches that are not yet merged into `main`.
 
 ### Added
 - "Search all stores" option that ignores the max range
+- `SHOPWISE_PREVIEW_STOPS=1 cargo run` opens the desktop app with made-up multi-stop results, for checking the plan layout
 - WCAG compliance reports (#94)
 - Map showing the planned route (#75)
 - Store locations loaded from the database (#110)

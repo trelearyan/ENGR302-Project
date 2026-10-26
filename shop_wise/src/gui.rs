@@ -119,6 +119,14 @@ impl ShowableWidget for AppData {
 }
 
 impl AppData {
+    /// Start with made-up multi-stop results, see `Results::preview`.
+    #[must_use]
+    pub fn with_preview_results(mut self) -> Self {
+        self.output_routes.results =
+            ResultsState::Ready(Box::new(price_calculator::results::Results::preview()));
+        self
+    }
+
     pub fn search(&mut self) {
         log::debug!("button clicked");
         // Alex

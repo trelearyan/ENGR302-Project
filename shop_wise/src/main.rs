@@ -24,7 +24,15 @@ fn main() -> eframe::Result {
     eframe::run_native(
         "ShopWise",
         options,
-        Box::new(|_| Ok(Box::new(AppData::default()))),
+        Box::new(|_| {
+            let app = AppData::default();
+            // `SHOPWISE_PREVIEW_STOPS=1 cargo run` opens with made-up multi-stop results.
+            Ok(Box::new(if std::env::var_os("SHOPWISE_PREVIEW_STOPS").is_some() {
+                app.with_preview_results()
+            } else {
+                app
+            }))
+        }),
     )
 }
 
