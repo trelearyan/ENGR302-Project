@@ -39,66 +39,14 @@ pub struct OutputRoutesData {
     pub results: ResultsState,
 }
 
-#[cfg(not(target_arch = "wasm32"))]
 impl Default for OutputRoutesData {
     fn default() -> Self {
-        log::debug!("route graph initialization dispatch");
-        std::thread::spawn(move || {
-            log::debug!("route graph initialization begin");
-
-            let graph = make_graph(&OPTIONS);
-            let tree = KDTree::build_from_graph(&graph).unwrap();
-            let _ = &GRAPH.set((graph, tree));
-
-            log::debug!("route graph initialized");
-        });
-        log::debug!("route graph initialization dispatch complete");
-
-        log::debug!("route graph has {:?} nodes", GRAPH.wait().0.len());
-
         Self {
             selected: ScenarioKind::Best,
             layout: PanelLayout::Cards,
             results: ResultsState::Idle,
         }
     }
-}
-
-#[cfg(target_arch = "wasm32")]
-impl Default for OutputRoutesData {
-    fn default() -> Self {
-        log::debug!("route graph initialization dispatch");
-        wasm_bindgen_futures::spawn_local(async move {
-            log::debug!("route graph initialization begin");
-
-            let graph = make_graph(&OPTIONS);
-            let tree = KDTree::build_from_graph(&graph).unwrap();
-            let _ = &GRAPH.set((graph, tree));
-
-            log::debug!("route graph initialized");
-        });
-        log::debug!("route graph initialization dispatch complete");
-
-        log::debug!("route graph has {:?} nodes", GRAPH.wait().0.len());
-
-        Self {
-            selected: ScenarioKind::Best,
-            layout: PanelLayout::Cards,
-            results: ResultsState::Idle,
-        }
-    }
-}
-
-fn make_graph(options: &Options) -> Graph {
-    let mut graph = routx::Graph::new();
-    println!("adding features");
-    routx::osm::add_features_from_buffer(
-        &mut graph,
-        &options,
-        include_bytes!("../../../nz2-pruned.osm.pbf"),
-    )
-    .expect("failed to load nz2-pruned.osm.pbf");
-    graph
 }
 
 impl OutputRoutesData {

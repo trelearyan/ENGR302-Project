@@ -1,15 +1,16 @@
 use bigdecimal::ToPrimitive;
 use itertools::Itertools;
-use log::logger;
 use routx::{
     DEFAULT_STEP_LIMIT, Graph, KDTree, find_route_without_turn_around,
     osm::{CAR_PROFILE, FileFormat, Options},
 };
 use std::{
+    cell::{OnceCell, RefCell},
     fmt::Debug,
     iter,
+    ops::Deref,
     rc::Rc,
-    sync::{Arc, OnceLock},
+    sync::{Arc, LazyLock, OnceLock},
     time::Duration,
 };
 
@@ -30,7 +31,34 @@ pub static OPTIONS: Options = routx::osm::Options {
     file_format: FileFormat::Pbf,
     bbox: [166.086_32, -47.447_61, 178.679_81, -32.975_4], // tightly bound around nz north and south islands
 };
-pub static GRAPH: OnceLock<(Graph, KDTree)> = OnceLock::new();
+
+pub static GRAPH: LazyLock<(Graph, KDTree)> = LazyLock::new(|| {
+    log::debug!("route graph initialization dispatch");
+    std::thread::spawn(move || {
+        log::debug!("route graph initialization begin");
+
+        let graph = make_graph(&OPTIONS);
+        let tree = KDTree::build_from_graph(&graph).unwrap();
+        log::debug!("route graph initialized");
+        (graph, tree)
+    })
+    .join()
+    .unwrap()
+    // log::debug!("route graph initialization dispatch complete");
+    // log::debug!("route graph has {:?} nodes", graph.len());
+});
+
+fn make_graph(options: &Options) -> Graph {
+    let mut graph = routx::Graph::new();
+    println!("adding features");
+    routx::osm::add_features_from_buffer(
+        &mut graph,
+        options,
+        include_bytes!("../../nz2-pruned.osm.pbf"),
+    )
+    .expect("failed to load nz2-pruned.osm.pbf");
+    graph
+}
 
 pub mod filters;
 
@@ -133,23 +161,18 @@ impl OptimisedRoutePlan {
                     self.ordered_stops
                         .iter()
                         .map(|a| {
-                            GRAPH.wait().1.find_nearest_node(
+                            GRAPH.1.find_nearest_node(
                                 a.location.latitude.to_f32().unwrap(),
                                 a.location.longitude.to_f32().unwrap(),
                             )
                         })
                         .tuple_windows::<(_, _)>()
                         .flat_map(|(a, b)| {
-                            find_route_without_turn_around(
-                                &GRAPH.wait().0,
-                                a.id,
-                                b.id,
-                                DEFAULT_STEP_LIMIT,
-                            )
-                            .unwrap()
+                            find_route_without_turn_around(&GRAPH.0, a.id, b.id, DEFAULT_STEP_LIMIT)
+                                .unwrap()
                         })
                         .map(|id| {
-                            let node = GRAPH.wait().0.get_node(id).unwrap();
+                            let node = GRAPH.0.get_node(id).unwrap();
                             Coordinate::from_lat_long_f32(node.lat, node.lon)
                         })
                         .collect_vec(),
