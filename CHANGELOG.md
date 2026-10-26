@@ -7,23 +7,18 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 as recommended by the Rust API guidelines
 ([C-RELNOTES](https://rust-lang.github.io/api-guidelines/documentation.html#release-notes-document-all-significant-changes-c-relnotes)).
 
-### [Unreleased] - 2026-10-27
-
-Work on branches that are not yet merged into `main`.
+### [1.0.0] - 2026-10-27
 
 ### Added
-- Map showing the planned route (#75)
 - Store locations loaded from the database (#110)
 
 ### Changed
-- Price calculator uses the real scraped product database instead of demo data, with caching (#110)
-- Distances follow real roads between stops, using OpenStreetMap routing data instead of straight lines (#81)
-- Updated eframe to 0.36 (#75)
-- Redesigned results panel: a card for each plan (Best value, Cheapest, Fastest) with the total, groceries, travel, distance and time; the selected card has an orange border and a tick, and the others show +/- cost ()
-- Plan details show a summary (groceries, total, items, travel, distance, driving time), numbered stops side by side, and each stop's items with Qty, Unit and Line total ()
-- Search bar puts the address, "Use my location", and Search in one row ()
+- Distances follow real roads between stops, using OpenStreetMap routing data instead of straight lines; the routing data is stored with Git LFS (#81)
+- Travel cost, distance and driving time are worked out along the actual route (#81)
 
 ### Fixed
+- Driving time showed speeds in km/h were converted to m/s incorrectly (#118)
+- The start and end of the trip were left out of the travel distance and time (#81)
 - Travel distance and speed calculations (#110)
 - Very large mileage values now show a proper error instead of failing (#110)
 - Items were removed from the results for a whole brand instead of a single store (#110)
