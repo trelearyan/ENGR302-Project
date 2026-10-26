@@ -276,7 +276,7 @@ fn query_db(search_terms: &[&str]) -> Result<HashMap<usize, HashMap<u32, Vec<Sea
             for i in 1..=3 {
                 let _shop_id = &i.to_string();
                 let sql_query = "
-                    SELECT id, supermarket_id, name, price, volume_size
+                    SELECT id, supermarket_id, name, price, volume_size, member_price
                     FROM products p
                     WHERE p.supermarket_id = ?1
                     AND LOWER(p.name) LIKE ?2
@@ -287,11 +287,13 @@ fn query_db(search_terms: &[&str]) -> Result<HashMap<usize, HashMap<u32, Vec<Sea
                     rusqlite::params! {i, search_pattern,},
                     |row: &rusqlite::Row<'_>|->Result<SearchResult, Error>{
                         let amt = get_unit(row.get(4).unwrap_or("ea".to_owned()));
+                        let p: u32 = (row.get::<usize,f32>(3)? * 100.0) as u32;
+                        let mp: Option<f32> = row.get::<usize,f32>(5).ok();
                         Ok(SearchResult {
                             item_id: row.get(0)?,
                             name: row.get(2)?,
-                            price: (row.get::<usize,f32>(3)? * 100.0) as u32,
-                            member_price: 1,//(row.get::<usize,f32>(5)? * 100.00) as u32,
+                            price: p,
+                            member_price: if mp.is_some() {(mp.unwrap() * 100.00) as u32} else {p},
                             store: match_sid_to_brand(row.get(1)?).unwrap(),
                             quantity: amt.0,
                             unit: amt.1,
