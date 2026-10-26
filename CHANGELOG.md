@@ -7,11 +7,7 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 as recommended by the Rust API guidelines
 ([C-RELNOTES](https://rust-lang.github.io/api-guidelines/documentation.html#release-notes-document-all-significant-changes-c-relnotes)).
 
-## [Unreleased]
-
-Work on branches that are not yet merged into `main`.
-
-### [Unreleased]
+### [Unreleased] - 2026-10-27
 
 Work on branches that are not yet merged into `main`.
 
@@ -32,6 +28,22 @@ Work on branches that are not yet merged into `main`.
 - Very large mileage values now show a proper error instead of failing (#110)
 - Items were removed from the results for a whole brand instead of a single store (#110)
 
+## [0.10.0] - 2026-10-15
+
+### Added
+- FR-04: product database with Pak'nSave, New World and Woolworths products, including product photos and loyalty card prices (New World Clubcard, Woolworths Everyday Rewards) (#71)
+- Scrapers and import tools for each chain's products and its Wellington store locations (#71)
+- WCAG compliance report for version 0.7.0 in `docs/WCAG/`, as Markdown and PDF (#94)
+
+### Changed
+- Redesigned results panel: a card for each plan (Best value, Cheapest, Fastest) with the total, groceries, travel, distance and driving time; the selected card has an orange border and a tick, and the others show how much more or less they cost (!77)
+- Plan details show a summary (groceries, total, items, travel, distance, driving time), numbered stops side by side, and a table of each stop's items with Qty, Unit and Line total (!77)
+- Search bar puts the address, "Use my location" and Search in one row (!77)
+- Filters panel starts 300px wide instead of 250px (!77)
+
+### Fixed
+- README link to the live site pointed to an old address (!75)
+
 ## [0.9.0] - 2026-10-08
 
 ### Added
@@ -41,7 +53,7 @@ Work on branches that are not yet merged into `main`.
 - Browser tab icon uses the 40px logo, the unused 80px icon was removed (#113)
 
 ### Fixed
-- Filters panel opened too narrow and squashed its text, it now starts 250px wide (#113)
+- Filters panel opened too narrow and squashed its text, it now starts at 250px wide (#113)
 
 ## [0.8.0] - 2026-10-02
 
