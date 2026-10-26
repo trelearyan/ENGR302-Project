@@ -1,5 +1,6 @@
 use bigdecimal::ToPrimitive;
 use itertools::Itertools;
+use log::logger;
 use routx::{
     DEFAULT_STEP_LIMIT, Graph, KDTree, find_route_without_turn_around,
     osm::{CAR_PROFILE, FileFormat, Options},
@@ -55,7 +56,7 @@ impl RoutePlan {
     pub fn optimise(&self) -> Option<OptimisedRoutePlan> {
         // let ordered_stops = iter::onceself.start_stopself.optimise_order();
 
-        let ordered_stops = self
+        let ordered_stops: Box<[Rc<Store>]> = self
             .unordered_stops
             .clone()
             .into_iter()
@@ -74,6 +75,8 @@ impl RoutePlan {
             .min_by(|(_a_store, a_score), (_b_store, b_score)| a_score.cmp(b_score))
             .map(|(stores, _score)| stores)?
             .into();
+
+        log::debug!(target: "route", "optimise called, stop count = {:?}", ordered_stops.len());
 
         Some(OptimisedRoutePlan {
             start_position: self.start_position.clone(),
@@ -116,6 +119,7 @@ impl OptimisedRoutePlan {
     }
 
     pub fn path(&self) -> Arc<[Coordinate]> {
+        log::debug!(target: "route", "path called, ordered stops count = {:?}", self.ordered_stops.len());
         self.expensive_calculated_route
             .get_or_init(|| {
                 Arc::<[Coordinate]>::from(
