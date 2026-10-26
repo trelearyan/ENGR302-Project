@@ -2,13 +2,18 @@ use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::collections::hash_map::Iter as HashIter;
 use std::slice::Iter as VecIter;
-use util::coordinate::Coordinate;
+use std::sync::RwLock;
+use lazy_static::lazy_static;
 use util::cost::Cost;
 use util::search::{SearchUnits, ShoppingItem, ShoppingItemQuery, match_sid_to_brand};
 use util::store::{Store, StoreBrand};
 
-use regex::Regex;
 use rusqlite::{Connection, Error, Result};
+use regex::Regex;
+
+use crate::database::db_access;
+
+// Public facing types
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct SantizedSearchResult {
@@ -18,7 +23,9 @@ pub struct SantizedSearchResult {
     pub image_url: String,
 }
 
-#[derive(Debug, PartialEq)]
+// Private/Internal types
+
+#[derive(Debug, PartialEq, Clone)]
 struct SearchResult {
     item_id: u32,
     name: String,
@@ -27,6 +34,9 @@ struct SearchResult {
     quantity: u32,
     unit: SearchUnits,
     image_url: String,
+}
+lazy_static!{
+static ref QUERY_CACHE: RwLock<HashMap<String, HashMap<u32, Vec<SearchResult>>>> = RwLock::new(HashMap::new());
 }
 
 /// Return a list of the best matching items for the given search
@@ -96,7 +106,7 @@ pub fn resolve(item_query: &ShoppingItemQuery) -> Option<HashMap<u32, ShoppingIt
         for j in 0..terms.len() {
             let _term = *terms.get(j).unwrap();
             let found = search.get_mut(&j)?.remove(&i);
-            if found.is_none() {
+            if found.is_none()  {
                 continue;
             }
             // Only add item if it wasn't already in the map
@@ -114,12 +124,8 @@ pub fn resolve(item_query: &ShoppingItemQuery) -> Option<HashMap<u32, ShoppingIt
         let mut best_mul: Option<u32> = None;
         for key in itemlist.keys() {
             let item: &&SearchResult = &itemlist.get(key).unwrap();
-            let mul: Option<u32> = search_unit.scale_to_match(
-                item_query.quantity,
-                &item.unit,
-                item.quantity,
-                item.price,
-            );
+            let mul: Option<u32> = search_unit
+                .scale_to_match(item_query.quantity, &item.unit, item.quantity, item.price);
             if mul.is_none() {
                 continue;
             }
@@ -137,8 +143,8 @@ pub fn resolve(item_query: &ShoppingItemQuery) -> Option<HashMap<u32, ShoppingIt
         }
         let best = itemlist.get(&(best_key.unwrap() as u32)).unwrap();
         result.insert(
-            i,
-            ShoppingItem {
+            best.store,
+            ResolvedItem {
                 name: best.name.clone(),
                 multiplier: best_mul.unwrap(),
                 quantity: best.quantity,
@@ -197,22 +203,18 @@ fn score_item(terms: &[&str], item: &&SearchResult, price: u32) -> i32 {
     score - (price as i32) - (item.name.len() as i32)
 }
 
-const DB: &[u8] = include_bytes!(concat!(
-    env!("CARGO_MANIFEST_DIR"),
-    "/src/demo_db/shopwise.db"
-));
-
-fn open_database() -> Result<Connection> {
-    let mut conn = Connection::open_in_memory()?;
-    conn.deserialize_bytes("main", DB)?;
-    Ok(conn)
+fn query_cache(search_term: &str) -> Option<HashMap<u32, Vec<SearchResult>>> {
+    Some(QUERY_CACHE.read().ok()?.get(search_term)?.clone())
 }
 
-/// Mock the sqlite database by using a python version and some jank commands
-fn demo_db(search_terms: &[&str]) -> Result<HashMap<usize, HashMap<u32, Vec<SearchResult>>>> {
-    let conn = open_database()?;
-    // Check Database is loaded correctly
+fn write_cache(search_term: &str, result: HashMap<u32, Vec<SearchResult>>) -> () {
+    let Ok(mut map) = QUERY_CACHE.write() else {return;};
+    map.insert(search_term.to_owned(), result);
+}
 
+fn query_db(search_terms: &[&str]) -> Result<HashMap<usize, HashMap<u32, Vec<SearchResult>>>> {
+    // Get the database connection
+    let conn: Connection = db_access::open_database()?;
     let mut result: HashMap<usize, HashMap<u32, Vec<SearchResult>>> = HashMap::new();
     for term_i in 0..search_terms.len() {
         let search_term = search_terms.get(term_i).unwrap();
@@ -251,7 +253,6 @@ fn demo_db(search_terms: &[&str]) -> Result<HashMap<usize, HashMap<u32, Vec<Sear
                 .collect();
             term_results.insert(i, shop_results);
         }
-        result.insert(term_i, term_results);
     }
     Ok(result)
 }
@@ -276,10 +277,9 @@ fn get_unit(unit_text: String) -> (u32, SearchUnits) {
     let sanitised: String = unit_text.trim().to_lowercase();
     // Seperate the number if it begins with one, or the two numbers if in the form 2 x 4pk
     let re = Regex::new(r"[0-9]+(?:\.[0-9]+)?").unwrap();
-    let values: Vec<f32> = re
-        .find_iter(sanitised.as_ref())
+    let values: Vec<f32> = re.find_iter(sanitised.as_ref())
         .take(2)
-        .map(|x| -> f32 { x.as_str().parse::<f32>().unwrap_or(f32::NAN) })
+        .map(|x|-> f32 {x.as_str().parse::<f32>().unwrap_or(f32::NAN)})
         .collect::<Vec<f32>>();
     if values.is_empty() || !values.get(0).unwrap().is_finite() {
         return DEFAULT_UNIT;
@@ -299,14 +299,11 @@ fn get_unit(unit_text: String) -> (u32, SearchUnits) {
     }
     // Replace all the digits with whitespace, then lower and strip again
     let rep_re = Regex::new(r"[0-9]+(?:[0-9]+)?").unwrap();
-    let stripped = rep_re
-        .replace_all(sanitised.as_ref(), " ")
-        .trim()
-        .to_lowercase();
+    let stripped = rep_re.replace_all(sanitised.as_ref(), " ").trim().to_lowercase();
     // Search for unit names, taking care to do 'kg' before 'g' and 'ml' before 'l'
     let text_bits = stripped.split(" ").collect::<Vec<&str>>();
     // kg
-    if text_bits.clone().into_iter().any(|x| -> bool { x == "kg" }) {
+    if text_bits.clone().into_iter().any(|x|->bool{x == "kg"}) {
         // If significant remainder do grams
         if quantity % 1.0 > 0.05 {
             let new_quantity = (quantity * 1000.0) as u32;
@@ -318,15 +315,15 @@ fn get_unit(unit_text: String) -> (u32, SearchUnits) {
         return (quantity as u32, SearchUnits::KILOGRAM);
     }
     // ml
-    if text_bits.clone().into_iter().any(|x| -> bool { x == "ml" }) {
+    if text_bits.clone().into_iter().any(|x|->bool{x == "ml"}) {
         return (quantity as u32, SearchUnits::MILLILITRE);
     }
     // g
-    if text_bits.clone().into_iter().any(|x| -> bool { x == "g" }) {
+    if text_bits.clone().into_iter().any(|x|->bool{x == "g"}) {
         return (quantity as u32, SearchUnits::GRAM);
     }
     // l
-    if text_bits.into_iter().any(|x| -> bool { x == "l" }) {
+    if text_bits.into_iter().any(|x|->bool{x == "l"}) {
         // If significant remainder do grams
         if quantity % 1.0 > 0.05 {
             let new_quantity = (quantity * 1000.0) as u32;
@@ -345,8 +342,14 @@ fn get_unit(unit_text: String) -> (u32, SearchUnits) {
 mod tests {
     use super::*;
 
+    fn clear_cache() {
+        let Ok(mut map) = QUERY_CACHE.write() else {return;};
+        map.clear();
+    }
+
     #[test]
     fn test_result() {
+        clear_cache();
         let _ = resolve(&ShoppingItemQuery {
             name: String::from("Eggs"),
             quantity: 1,
@@ -356,6 +359,7 @@ mod tests {
 
     #[test]
     fn test_weetbix() {
+        clear_cache();
         {
             let res = resolve(&ShoppingItemQuery {
                 name: String::from("Weetbix"),
@@ -363,9 +367,9 @@ mod tests {
                 unit: SearchUnits::GRAM.to_str().to_owned(),
             })
             .unwrap();
-            assert_eq!(true, res.contains_key(&2));
-            assert_eq!(false, res.contains_key(&1));
-            assert_eq!(false, res.contains_key(&3));
+            assert_eq!(false, res.contains_key(&StoreBrand::Paknsave));
+            assert_eq!(false, res.contains_key(&StoreBrand::Woolworths));
+            assert_eq!(false, res.contains_key(&StoreBrand::Newworld));
         }
         {
             let res = resolve(&ShoppingItemQuery {
@@ -374,21 +378,22 @@ mod tests {
                 unit: SearchUnits::GRAM.to_str().to_owned(),
             })
             .unwrap();
-            assert_eq!(false, res.contains_key(&2));
-            assert_eq!(true, res.contains_key(&1));
-            assert_eq!(true, res.contains_key(&3));
+            assert_eq!(false, res.contains_key(&StoreBrand::Paknsave));
+            assert_eq!(true, res.contains_key(&StoreBrand::Woolworths));
+            assert_eq!(false, res.contains_key(&StoreBrand::Newworld));
         }
     }
 
     #[test]
     fn test_dip() {
+        clear_cache();
         let res = resolve(&ShoppingItemQuery {
             name: String::from("Onion Soup"),
             quantity: 1,
             unit: SearchUnits::GRAM.to_str().to_owned(),
         })
         .unwrap(); //Maggi Onion Soup
-        assert_eq!("Maggi Onion Soup", res.get(&1).unwrap().name);
+        assert_eq!("Onion Soup Mix Sachet", res.get(&StoreBrand::Paknsave).unwrap().name);
         let res = resolve(&ShoppingItemQuery {
             name: String::from("Reduced Cream"),
             quantity: 1,
@@ -405,23 +410,19 @@ mod tests {
     }
 
     fn simple_query(sql_query: &str) -> Vec<String> {
-        let conn = open_database().unwrap();
+        let conn: Connection = db_access::open_database().unwrap();
         let mut stm = conn.prepare(sql_query).unwrap();
-        stm.query_map([], |row: &rusqlite::Row<'_>| -> Result<String, Error> {
-            Ok(row.get(0)?)
-        })
-        .unwrap()
-        .map(|f| -> String { f.unwrap_or("empty".to_owned()) })
-        .collect::<Vec<String>>()
+        stm.query_map([], |row: &rusqlite::Row<'_>| -> Result<String, Error>{
+                Ok(row.get(0)?)
+            }).unwrap()
+            .map(|f|->String{f.unwrap_or("empty".to_owned())})
+            .collect::<Vec<String>>()
     }
 
     #[test]
     fn test_units() {
-        simple_query("SELECT volume_size FROM products")
-            .into_iter()
+        simple_query("SELECT volume_size FROM products").into_iter()
             .take(500)
-            .for_each(|x| -> () {
-                get_unit(x);
-            });
+            .for_each(|x|->(){get_unit(x);});
     }
 }

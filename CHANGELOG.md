@@ -22,7 +22,6 @@ Work on branches that are not yet merged into `main`.
 - Masthead and filters panel switch to dark colours in dark mode, with light arrow icons (#113)
 
 ### Changed
-- Improved accuracy of route calculations, travel cost (#81)
 - Redesigned results panel: a card for each plan (Best value, Cheapest, Fastest) with the total, groceries, travel, distance and time; the selected card has an orange border and a tick, and the others show +/- cost ()
 - Plan details show a summary (groceries, total, items, travel, distance, driving time), numbered stops side by side, and each stop's items with Qty, Unit and Line total ()
 - Search bar puts the address, "Use my location", and Search in one row ()
@@ -33,6 +32,21 @@ Work on branches that are not yet merged into `main`.
 - Code documentation for the shopping list, stores and file handling (#103)
 
 ### Fixed
+- Web (WASM) build failed to compile (#81)
+
+
+## [0.8.0] - 2026-09-30
+
+### Added
+- Store locations loaded from the database (#110)
+- Real database items loaded (#110)
+
+### Changed
+
+- Store locations loaded from the database (#110)
+
+### Fixed
+- Travel distance and speed calculations (#110)
 - Very large mileage values now show a proper error instead of failing (#110)
 - Items were removed from the results for a whole brand instead of a single store (#110)
 - Web (WASM) build failed to compile (#81)

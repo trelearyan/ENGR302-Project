@@ -9,7 +9,7 @@ use std::fmt;
 use std::str::FromStr;
 
 use bigdecimal::BigDecimal;
-use rusqlite::{Connection, Result, params_from_iter};
+use rusqlite::{params_from_iter, Connection, Result};
 use util::cost::Cost;
 use util::store::{Store, StoreBrand};
 
@@ -65,10 +65,7 @@ impl ProductQuantity {
 
         let lower = raw.to_lowercase();
         if lower == "kg" || lower.starts_with("per kg") {
-            return Some(Self {
-                amount: 1.0,
-                unit: Unit::Kilogram,
-            });
+            return Some(Self { amount: 1.0, unit: Unit::Kilogram });
         }
 
         let digit_end = raw
@@ -177,14 +174,7 @@ fn row_to_product_price(
         .and_then(|m| BigDecimal::from_str(&format!("{m:.2}")).ok())
         .map(Cost::new);
 
-    Some(ProductPrice {
-        chain,
-        name,
-        price,
-        volume_size,
-        image_url,
-        member_price,
-    })
+    Some(ProductPrice { chain, name, price, volume_size, image_url, member_price })
 }
 
 /// Handle to an open SQLite database connection.
@@ -211,9 +201,7 @@ impl Database {
              ORDER BY s.id",
         )?;
         let rows = stmt
-            .query_map([], |row| {
-                Ok((row.get::<_, String>(0)?, row.get::<_, i64>(1)?))
-            })?
+            .query_map([], |row| Ok((row.get::<_, String>(0)?, row.get::<_, i64>(1)?)))?
             .collect::<Result<Vec<_>>>()?;
         Ok(rows)
     }
@@ -371,6 +359,15 @@ impl Database {
 mod tests {
     use super::*;
 
+    const TEST_DB: &str = "../data/shopwise.db";
+
+    #[test]
+    fn opens_database() {
+        let db = Database::open(TEST_DB).expect("database file should be readable");
+        let summary = db.supermarket_summary().expect("query should run");
+        assert!(!summary.is_empty(), "expected at least one supermarket chain");
+    }
+
     fn product(chain: StoreBrand, shelf: &str, member: Option<&str>) -> ProductPrice {
         ProductPrice {
             chain,
@@ -386,10 +383,7 @@ mod tests {
     fn card_price_only_applies_when_that_card_is_on() {
         let nw = product(StoreBrand::Newworld, "5.00", Some("4.00"));
         let off = LoyaltyCards::default();
-        let on = LoyaltyCards {
-            clubcard: true,
-            everyday_rewards: false,
-        };
+        let on = LoyaltyCards { clubcard: true, everyday_rewards: false };
         assert_eq!(nw.price_with(off), nw.price);
         assert_eq!(nw.price_with(on), *nw.member_price.as_ref().unwrap());
 
@@ -399,10 +393,7 @@ mod tests {
 
         // Pak'nSave never has a card price
         let pak = product(StoreBrand::Paknsave, "5.00", Some("1.00"));
-        let both = LoyaltyCards {
-            clubcard: true,
-            everyday_rewards: true,
-        };
+        let both = LoyaltyCards { clubcard: true, everyday_rewards: true };
         assert_eq!(pak.price_with(both), pak.price);
     }
 }

@@ -8,7 +8,7 @@
 //! Run from the crate root with:
 //!     cargo run --bin fr04_demo
 
-use database::{Database, chain_name};
+use database::{chain_name, Database};
 use std::process::ExitCode;
 use util::coordinate::Coordinate;
 use util::cost::Cost;
@@ -69,10 +69,7 @@ fn main() -> ExitCode {
     ];
 
     let item = "weet-bix";
-    println!(
-        "[2] Looking up '{item}' across {} chains in range:",
-        in_range_stores.len()
-    );
+    println!("[2] Looking up '{item}' across {} chains in range:", in_range_stores.len());
     println!();
     match db.find_products(item, &in_range_stores) {
         Ok(results) => {
@@ -111,11 +108,7 @@ fn main() -> ExitCode {
     );
     println!("    {:-<16}{:->12}{:->12}{:->12}", "", "", "", "");
 
-    let chains = [
-        StoreBrand::Paknsave,
-        StoreBrand::Woolworths,
-        StoreBrand::Newworld,
-    ];
+    let chains = [StoreBrand::Paknsave, StoreBrand::Woolworths, StoreBrand::Newworld];
     let mut totals: [Cost; 3] = [Cost::default(), Cost::default(), Cost::default()];
 
     for item in &shopping_list {
@@ -146,9 +139,7 @@ fn main() -> ExitCode {
 
     println!("[4] FR-12 signal - searching for an item that doesn't exist:");
     match db.cheapest_at("xyzzy_not_a_real_product", &[StoreBrand::Paknsave]) {
-        Ok(None) => println!(
-            "    -> returned None, as expected. Price Calculator can\n      forward this as an 'item unavailable' notification."
-        ),
+        Ok(None) => println!("    -> returned None, as expected. Price Calculator can\n      forward this as an 'item unavailable' notification."),
         Ok(Some(_)) => println!("    -> unexpectedly matched something"),
         Err(e) => eprintln!("    error: {e}"),
     }

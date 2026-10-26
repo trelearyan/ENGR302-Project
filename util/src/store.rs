@@ -17,8 +17,11 @@ pub enum StoreBrand {
     Woolworths,
 }
 
-#[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, PartialOrd, Clone, Serialize, Deserialize)]
 pub struct Store {
+    pub id: u32,
+    pub name: String,
+    pub address: String,
     pub brand: StoreBrand,
     pub location: Coordinate,
 }

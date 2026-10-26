@@ -1,3 +1,4 @@
+
 use crate::gui::ShowableWidget;
 
 pub mod filehandling;
@@ -5,6 +6,7 @@ pub mod filehandling;
 pub mod gui;
 pub mod price_calculator;
 pub mod route_planner;
+pub mod database;
 
 use eframe::egui;
 use gui::AppData;
@@ -18,14 +20,7 @@ impl eframe::App for AppData {
 // desktop app
 #[cfg(not(target_arch = "wasm32"))]
 fn main() -> eframe::Result {
-    use simple_logger::SimpleLogger;
-
     let options = eframe::NativeOptions::default();
-
-    SimpleLogger::new()
-        .with_level(log::LevelFilter::Debug)
-        .init()
-        .unwrap();
 
     eframe::run_native(
         "ShopWise",
