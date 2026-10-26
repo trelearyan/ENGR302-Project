@@ -1,14 +1,14 @@
 use bigdecimal::ToPrimitive;
 use itertools::Itertools;
 use routx::{
-    DEFAULT_STEP_LIMIT, Graph, KDTree, find_route_without_turn_around,
+    DEFAULT_STEP_LIMIT, Graph, find_route_without_turn_around,
     osm::{CAR_PROFILE, FileFormat, Options},
 };
 use std::{
     fmt::Debug,
-    iter::{self, Once},
+    iter,
     rc::Rc,
-    sync::{Arc, LazyLock, OnceLock},
+    sync::{Arc, OnceLock},
     time::Duration,
 };
 

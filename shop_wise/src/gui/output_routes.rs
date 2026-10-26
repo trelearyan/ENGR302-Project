@@ -1,6 +1,6 @@
 use eframe::egui;
 use egui_extras::{Column, TableBuilder};
-use routx::{Graph, KDTree, osm::Options};
+use routx::{Graph, KDTree};
 use std::ops::Deref;
 
 use crate::{
