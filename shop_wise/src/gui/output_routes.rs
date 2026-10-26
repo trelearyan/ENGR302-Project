@@ -293,20 +293,22 @@ impl OutputRoutesData {
             return;
         }
 
-        let per_row = if ui.available_width() < STACK_BELOW_WIDTH {
+        let column_count = if ui.available_width() < STACK_BELOW_WIDTH {
             1
         } else {
             scenario.stops.len().min(2)
         };
-        for (row, stops) in scenario.stops.chunks(per_row).enumerate() {
-            ui.columns(per_row, |columns| {
-                for (offset, (column, stop)) in columns.iter_mut().zip(stops).enumerate() {
-                    let number = row * per_row + offset + 1;
-                    column.push_id(number, |ui| Self::store_card(ui, number, stop));
+        let item_counts: Vec<usize> = scenario.stops.iter().map(|stop| stop.items.len()).collect();
+        let stacks = stack_stops(&item_counts, column_count);
+        ui.columns(column_count, |columns| {
+            for (column, stack) in columns.iter_mut().zip(&stacks) {
+                for &index in stack {
+                    let number = index + 1;
+                    column.push_id(number, |ui| Self::store_card(ui, number, &scenario.stops[index]));
+                    column.add_space(12.0);
                 }
-            });
-            ui.add_space(12.0);
-        }
+            }
+        });
 
         if let Some(note) = results.trade_off(kind) {
             egui::Frame::group(ui.style())
@@ -349,11 +351,14 @@ impl OutputRoutesData {
         egui::Frame::group(ui.style())
             .corner_radius(6)
             .show(ui, |ui| {
+                let item_width = (ui.available_width()
+                    - 3.0 * (MONEY_COLUMN_WIDTH + ui.spacing().item_spacing.x))
+                    .max(0.0);
                 TableBuilder::new(ui)
                     .striped(true)
                     .vscroll(false)
                     .cell_layout(egui::Layout::left_to_right(egui::Align::Center))
-                    .column(Column::remainder().clip(true))
+                    .column(Column::exact(item_width))
                     .columns(Column::exact(MONEY_COLUMN_WIDTH), 3)
                     .header(row_height, |mut header| {
                         header.col(|ui| {
@@ -483,4 +488,38 @@ fn stop_name(stop: &StoreStop) -> &str {
     stop.store_name
         .as_deref()
         .unwrap_or(brand_label(stop.chain))
+}
+
+fn stack_stops(item_counts: &[usize], column_count: usize) -> Vec<Vec<usize>> {
+    // Each card also has a store name row, an address row and a table header.
+    const CARD_EXTRA_ROWS: usize = 3;
+
+    let mut stacks = vec![Vec::new(); column_count];
+    let mut rows = vec![0; column_count];
+    for (index, count) in item_counts.iter().enumerate() {
+        let shortest = (0..column_count).min_by_key(|&c| rows[c]).unwrap_or(0);
+        rows[shortest] += count + CARD_EXTRA_ROWS;
+        stacks[shortest].push(index);
+    }
+    stacks
+}
+
+#[cfg(test)]
+mod tests {
+    use super::stack_stops;
+
+    #[test]
+    fn long_first_stop_stacks_others_beside_it() {
+        assert_eq!(stack_stops(&[11, 6, 7], 2), vec![vec![0], vec![1, 2]]);
+    }
+
+    #[test]
+    fn short_first_stop_takes_the_third() {
+        assert_eq!(stack_stops(&[3, 10, 4], 2), vec![vec![0, 2], vec![1]]);
+    }
+
+    #[test]
+    fn one_column_keeps_order() {
+        assert_eq!(stack_stops(&[5, 2, 8], 1), vec![vec![0, 1, 2]]);
+    }
 }
