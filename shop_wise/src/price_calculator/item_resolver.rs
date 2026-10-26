@@ -171,7 +171,7 @@ pub fn resolve(item_query: &ShoppingItemQuery,
                 multiplier: best_mul.unwrap(),
                 quantity: best.quantity,
                 unit: best.unit.clone(),
-                price: Cost::from_cents(best.price),
+                price: Cost::from_cents(best_price),
             },
         );
     }
@@ -276,7 +276,7 @@ fn query_db(search_terms: &[&str]) -> Result<HashMap<usize, HashMap<u32, Vec<Sea
             for i in 1..=3 {
                 let _shop_id = &i.to_string();
                 let sql_query = "
-                    SELECT id, supermarket_id, name, price, volume_size
+                    SELECT id, supermarket_id, name, price, volume_size, member_price
                     FROM products p
                     WHERE p.supermarket_id = ?1
                     AND LOWER(p.name) LIKE ?2
@@ -287,11 +287,13 @@ fn query_db(search_terms: &[&str]) -> Result<HashMap<usize, HashMap<u32, Vec<Sea
                     rusqlite::params! {i, search_pattern,},
                     |row: &rusqlite::Row<'_>|->Result<SearchResult, Error>{
                         let amt = get_unit(row.get(4).unwrap_or("ea".to_owned()));
+                        let p: u32 = (row.get::<usize,f32>(3)? * 100.0) as u32;
+                        let mp: Option<f32> = row.get::<usize,f32>(5).ok();
                         Ok(SearchResult {
                             item_id: row.get(0)?,
                             name: row.get(2)?,
-                            price: (row.get::<usize,f32>(3)? * 100.0) as u32,
-                            member_price: 1,//(row.get::<usize,f32>(5)? * 100.00) as u32,
+                            price: p,
+                            member_price: if mp.is_some() {(mp.unwrap() * 100.00) as u32} else {p},
                             store: match_sid_to_brand(row.get(1)?).unwrap(),
                             quantity: amt.0,
                             unit: amt.1,
@@ -337,7 +339,7 @@ fn get_unit(unit_text: String) -> (u32, SearchUnits) {
         return DEFAULT_UNIT;
     }
     let mut quantity: f32 = *values.get(0).unwrap();
-    let mulre = Regex::new(r"[0-9]+ x [0-9]+.*").unwrap();
+    let mulre = Regex::new(r"[0-9]+.*x.*[0-9]+.*").unwrap();
     // If follows the 2 x 4pk pattern, multiply the two numbers together
     if mulre.is_match(sanitised.as_ref()) {
         let temp: f32 = *values.get(1).unwrap();
@@ -514,10 +516,22 @@ mod tests {
             .for_each(|x|->(){get_unit(x);});
     }
 
-    // #[test]
-    // fn test_rand() {
-    //     simple_query("SELECT name FROM products p WHERE LOWER(p.name) LIKE '%Chocolate%'").into_iter()
-    //         .take(500)
-    //         .for_each(|x|->(){println!("{:?}", x)});
-    // }
+    #[test]
+    fn test_unit_bad() {
+        println!("{:?}", get_unit("24x600mL".to_owned()));
+    }
+
+/*     #[test]
+    fn test_member() {
+        simple_query("SELECT name FROM products WHERE member_price IS NOT NULL").into_iter()
+            .take(500)
+            .for_each(|x|->(){println!("{:?}", x);});
+    }
+
+    #[test]
+    fn test_rand() {
+        simple_query("SELECT name FROM products p WHERE LOWER(p.name) LIKE '%Chocolate%'").into_iter()
+            .take(500)
+            .for_each(|x|->(){println!("{:?}", x)});
+    } */
 }

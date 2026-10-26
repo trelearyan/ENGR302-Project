@@ -109,7 +109,61 @@ struct LocalRoute {
     route_time: u64,
 }
 
-// Given the parsed shopping list, perform price optimisation
+/// Given the parsed shopping list, perform price optimisation
+///
+/// It takes a shopping list with each item a best representation of the item and quantity the user desires,
+/// a StoreFilters to filter to the relevant shops (passed to Route Planner),
+/// a mileage rate for distance cost calculations,
+/// and a boolean flag for the Everyday Rewards card and Club+ rewards card
+/// (which are applied to the database search if selected).
+/// 
+/// If the search succeeds, a CalculationTotal (consisting of best, cheapest and fastest plans) is returned,
+/// else the identified error.
+/// 
+/// This function is quite slow by nature, and should be called only when necessary.
+/// 
+/// # Examples
+/// ```
+/// let shopping_items = [
+///     ShoppingItemQuery {
+///         name: "Simply Milk Lite Milk".to_owned(),
+///         quantity: 3,
+///         unit: SearchUnits::LITRE.to_str().to_owned(),
+///     },
+///     ShoppingItemQuery {
+///         name: "Castello Blue Cheese".to_owned(),
+///         quantity: 200,
+///         unit: SearchUnits::GRAM.to_str().to_owned(),
+///     },
+///     ShoppingItemQuery {
+///         name: "Sanitarium Weet-Bix Breakfast Cereal".to_owned(),
+///         quantity: 1,
+///         unit: SearchUnits::KILOGRAM.to_str().to_owned(),
+///     },
+///     ShoppingItemQuery {
+///         name: "chocolate block hokey pokey".to_owned(),
+///         quantity: 1,
+///         unit: SearchUnits::EACH.to_str().to_owned(),
+///     },
+/// ];
+/// let filters = StoreFilters::builder()
+///             .location(Coordinate::wellington())
+///             .range(d.clone())
+///             .max_store_visits(maxs)
+///             .disallow_brands(&[StoreBrand::Paknsave])
+///             .build();
+/// let mileage = MileageOptions::Petrol;
+/// // Run calculation with no loyalty cards
+/// let res = calculate(
+///         &shopping_items,
+///         &filters,
+///         &mileage,
+///         false,
+///         false
+///     );
+/// res.except("Calculation failed");
+/// ```
+///
 #[must_use]
 pub fn calculate(
     shop_list: &[ShoppingItemQuery],
@@ -436,6 +490,10 @@ fn calculate_minimised(
 
 #[cfg(test)]
 mod tests {
+    // use std::time::Instant;
+
+    // use util::{coordinate::Coordinate, search::SearchUnits, store::StoreBrand};
+
     use super::*;
 
     #[test]
@@ -613,4 +671,73 @@ mod tests {
                     .to_u32()
                     .unwrap());
     }
+
+    /* #[test]
+    fn test_performance() {
+        // With demo list, filters, and mileage
+        let shopping_items_blank = [
+            ShoppingItemQuery {
+                name: "Simply Milk Lite Milk".to_owned(),
+                quantity: 1,
+                unit: SearchUnits::EACH.to_str().to_owned(),
+            },
+            ShoppingItemQuery {
+                name: "Castello Blue Cheese".to_owned(),
+                quantity: 1,
+                unit: SearchUnits::EACH.to_str().to_owned(),
+            },
+            ShoppingItemQuery {
+                name: "Sanitarium Weet-Bix Breakfast Cereal".to_owned(),
+                quantity: 1,
+                unit: SearchUnits::EACH.to_str().to_owned(),
+            },
+            ShoppingItemQuery {
+                name: "whittakers chocolate block hokey pokey".to_owned(),
+                quantity: 1,
+                unit: SearchUnits::EACH.to_str().to_owned(),
+            },
+        ];
+        let mut big: Vec<ShoppingItemQuery> = Vec::new();
+        for _i in 0..25 {
+            for j in &shopping_items_blank {
+                big.push(j.clone());
+            }
+        }
+        let shopping_items: &[ShoppingItemQuery] = big.as_ref();
+        let d: Distance = Distance::from_kilometres_f64(25.0);
+        let maxs = 3;
+        let runs = 3;
+        //println!("Calculations: {:?}km, {:?} items, {:?} max ({:?} runs)", &d.kilometres(), shopping_items.len(), maxs, runs);
+        let filters = StoreFilters::builder()
+                    .location(Coordinate::wellington())
+                    .range(d.clone())
+                    .max_store_visits(maxs)
+                    .disallow_brands(&[StoreBrand::Paknsave])
+                    .build();
+        let mileage = MileageOptions::Petrol;
+        // Warmup
+        let warmtime = Instant::now();
+        let _res = calculate(
+                &shopping_items,
+                &filters,
+                &mileage,
+                false,
+                false
+            );
+        assert!(warmtime.elapsed() < Duration::from_secs(60));
+        let starttime = Instant::now();
+        for _i in 0..runs {
+            let res = calculate(
+                    &shopping_items,
+                    &filters,
+                    &mileage,
+                    false,
+                    false,
+                );
+            res.expect("Performance default failed");
+        }
+        let elapsed = starttime.elapsed();
+        //println!("Took {:?}s for {:?} runs, avg {}s", elapsed.as_secs(), runs, (elapsed/runs).as_secs_f64());
+        assert!(elapsed/runs < Duration::from_secs(10));
+    } */
 }
