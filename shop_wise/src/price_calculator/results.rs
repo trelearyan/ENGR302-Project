@@ -1,9 +1,9 @@
+use crate::price_calculator::{Calculation, CalculationTotal};
 use bigdecimal::{BigDecimal, Zero};
 use serde::{Deserialize, Serialize};
 use util::cost::Cost;
 use util::distance::Distance;
 use util::store::StoreBrand;
-use crate::price_calculator::{Calculation, CalculationTotal};
 
 //TODO: remove once all have values
 pub const UNAVAILABLE: &str = "not available";
@@ -203,11 +203,11 @@ impl Scenario {
         Self {
             kind,
             stops,
-            travel_cost: Some(calc.total_travel_cost.clone()),
-            distance_km: Some(calc.total_dist.clone()),
+            travel_cost: Some(calc.source.exact_travel_cost(&calc.mileage)),
+            distance_km: Some(calc.source.exact_travel_distance()),
             //TODO: once available, change
             //duration_min: Some((calc.total_time.as_secs() / 60) as f32),
-            duration_min: None,
+            duration_min: Some(calc.source.exact_travel_time(&calc.mileage).as_secs_f32() / 60f32),
         }
     }
 }
@@ -324,8 +324,14 @@ mod tests {
     #[test]
     fn delta_is_signed() {
         let base = Cost::from_cents(6140);
-        assert_eq!(format_delta(&Cost::from_cents(6890), &base).as_deref(), Some("+$7.50"));
-        assert_eq!(format_delta(&Cost::from_cents(5960), &base).as_deref(), Some("-$1.80"));
+        assert_eq!(
+            format_delta(&Cost::from_cents(6890), &base).as_deref(),
+            Some("+$7.50")
+        );
+        assert_eq!(
+            format_delta(&Cost::from_cents(5960), &base).as_deref(),
+            Some("-$1.80")
+        );
         assert_eq!(format_delta(&base, &base), None);
     }
 

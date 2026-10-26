@@ -72,6 +72,7 @@ impl CalculationError {
 
 #[derive(Debug)]
 pub struct Calculation {
+    pub mileage: MileageOptions,
     pub total_shop_cost: Cost,
     pub total_item_cost: Cost,
     pub total_travel_cost: Cost,
@@ -242,6 +243,7 @@ pub fn calculate(
         &item_lookup,
         &stores,
         &routes,
+        mileage,
     );
     // Calculate minimising only for travel time
     let fast = delocalise(
@@ -255,6 +257,7 @@ pub fn calculate(
         &item_lookup,
         &stores,
         &routes,
+        mileage,
     );
     // Calculate minimising for total cost, with a $30 hourly rate
     let best = delocalise(
@@ -271,6 +274,7 @@ pub fn calculate(
         &item_lookup,
         &stores,
         &routes,
+        mileage,
     );
     log::debug!(
         "Cheapest Plan:\n{:?}\n\n\nFastest Plan:\n{:?}\n\n\nBest Plan:\n{:?}",
@@ -291,6 +295,7 @@ fn delocalise(
     item_lookup: &Vec<HashMap<StoreId, ShoppingItem>>,
     stores: &Vec<Store>,
     routes: &Box<[OptimisedRoutePlan]>,
+    mileage: &MileageOptions,
 ) -> Calculation {
     // Compile shopping plan into Vec<StorePlan>
     let mut shopping_plan: Vec<StorePlan> = Vec::new();
@@ -328,6 +333,7 @@ fn delocalise(
         shopping_plan,
         msg_log: plan.1,
         source: rp.clone(),
+        mileage: mileage.clone(),
     }
 }
 
