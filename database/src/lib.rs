@@ -5,12 +5,13 @@
 //! Calculator (Samuel Smith) is the primary consumer; it calls these
 //! functions as part of fulfilling FR-04, FR-06, FR-07, and FR-08.
 
-use std::fmt;
+use std::fmt::{self};
 use std::str::FromStr;
 
 use bigdecimal::BigDecimal;
 use rusqlite::{params_from_iter, Connection, Result};
 use util::cost::Cost;
+use util::search::match_brand_to_sid;
 use util::store::{Store, StoreBrand};
 
 /// A unit of measure for a product's package size. Deliberately small —
@@ -343,7 +344,8 @@ impl Database {
     ) -> Result<Option<ProductPrice>> {
         let stores: Vec<Store> = chains
             .iter()
-            .map(|b| Store { brand: *b, location: util::coordinate::Coordinate::wellington(), id: 1, name: "Paknsave Wellington".to_owned(), address: "N/A".to_owned()})
+            .map(|b| Store { brand: *b, location: util::coordinate::Coordinate::wellington(), id: match_brand_to_sid(*b),
+                name: format!("Wellington {:?}", b), address: "N/A".to_owned() })
             .collect();
         Ok(self
             .find_products_with_cards(item_query, &stores, cards)?
