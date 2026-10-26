@@ -119,7 +119,7 @@ pub fn resolve(item_query: &ShoppingItemQuery,
         for j in 0..terms.len() {
             let _term = *terms.get(j).unwrap();
             let found = search.get_mut(&j)?.remove(&i);
-            if found.is_none()  {
+            if found.is_none() {
                 continue;
             }
             // Only add item if it wasn't already in the map
@@ -138,8 +138,12 @@ pub fn resolve(item_query: &ShoppingItemQuery,
         let mut best_price: u32 = u32::MAX;
         for key in itemlist.keys() {
             let item: &&SearchResult = &itemlist.get(key).unwrap();
-            let mul: Option<u32> = search_unit
-                .scale_to_match(item_query.quantity, &item.unit, item.quantity, item.price);
+            let mul: Option<u32> = search_unit.scale_to_match(
+                item_query.quantity,
+                &item.unit,
+                item.quantity,
+                item.price,
+            );
             if mul.is_none() {
                 continue;
             }
@@ -201,7 +205,6 @@ pub fn resolve(item_query: &ShoppingItemQuery,
 
 fn score_item(terms: &[&str], item: &&SearchResult) -> f32 {
     let mut score: f32 = 0.0;
-    //println!("---");
     // Score name based on search term matches and minimalism (might punish certain items - future)
     // density
     let parts: Vec<&str> = item.name.split(' ').collect();
@@ -276,7 +279,7 @@ fn query_db(search_terms: &[&str]) -> Result<HashMap<usize, HashMap<u32, Vec<Sea
             for i in 1..=3 {
                 let _shop_id = &i.to_string();
                 let sql_query = "
-                    SELECT id, supermarket_id, name, price, volume_size, member_price
+                    SELECT id, supermarket_id, name, price, volume_size, member_price, image_url
                     FROM products p
                     WHERE p.supermarket_id = ?1
                     AND LOWER(p.name) LIKE ?2
@@ -297,7 +300,7 @@ fn query_db(search_terms: &[&str]) -> Result<HashMap<usize, HashMap<u32, Vec<Sea
                             store: match_sid_to_brand(row.get(1)?).unwrap(),
                             quantity: amt.0,
                             unit: amt.1,
-                            image_url: "nada".to_owned(),
+                            image_url: row.get(6)?,
                         })
                 })?;
                 let shop_results: Vec<SearchResult> = res.map(|f: std::prelude::v1::Result<SearchResult, Error>|->SearchResult{f.unwrap()}).collect();
@@ -331,9 +334,10 @@ fn get_unit(unit_text: String) -> (u32, SearchUnits) {
     let sanitised: String = unit_text.trim().to_lowercase();
     // Seperate the number if it begins with one, or the two numbers if in the form 2 x 4pk
     let re = Regex::new(r"[0-9]+(?:\.[0-9]+)?").unwrap();
-    let values: Vec<f32> = re.find_iter(sanitised.as_ref())
+    let values: Vec<f32> = re
+        .find_iter(sanitised.as_ref())
         .take(2)
-        .map(|x|-> f32 {x.as_str().parse::<f32>().unwrap_or(f32::NAN)})
+        .map(|x| -> f32 { x.as_str().parse::<f32>().unwrap_or(f32::NAN) })
         .collect::<Vec<f32>>();
     if values.is_empty() || !values.get(0).unwrap().is_finite() {
         return DEFAULT_UNIT;
@@ -353,11 +357,14 @@ fn get_unit(unit_text: String) -> (u32, SearchUnits) {
     }
     // Replace all the digits with whitespace, then lower and strip again
     let rep_re = Regex::new(r"[0-9]+(?:[0-9]+)?").unwrap();
-    let stripped = rep_re.replace_all(sanitised.as_ref(), " ").trim().to_lowercase();
+    let stripped = rep_re
+        .replace_all(sanitised.as_ref(), " ")
+        .trim()
+        .to_lowercase();
     // Search for unit names, taking care to do 'kg' before 'g' and 'ml' before 'l'
     let text_bits = stripped.split(" ").collect::<Vec<&str>>();
     // kg
-    if text_bits.clone().into_iter().any(|x|->bool{x == "kg"}) {
+    if text_bits.clone().into_iter().any(|x| -> bool { x == "kg" }) {
         // If significant remainder do grams
         if quantity % 1.0 > 0.05 {
             let new_quantity = (quantity * 1000.0) as u32;
@@ -369,15 +376,15 @@ fn get_unit(unit_text: String) -> (u32, SearchUnits) {
         return (quantity as u32, SearchUnits::KILOGRAM);
     }
     // ml
-    if text_bits.clone().into_iter().any(|x|->bool{x == "ml"}) {
+    if text_bits.clone().into_iter().any(|x| -> bool { x == "ml" }) {
         return (quantity as u32, SearchUnits::MILLILITRE);
     }
     // g
-    if text_bits.clone().into_iter().any(|x|->bool{x == "g"}) {
+    if text_bits.clone().into_iter().any(|x| -> bool { x == "g" }) {
         return (quantity as u32, SearchUnits::GRAM);
     }
     // l
-    if text_bits.into_iter().any(|x|->bool{x == "l"}) {
+    if text_bits.into_iter().any(|x| -> bool { x == "l" }) {
         // If significant remainder do grams
         if quantity % 1.0 > 0.05 {
             let new_quantity = (quantity * 1000.0) as u32;
@@ -514,11 +521,6 @@ mod tests {
         simple_query("SELECT volume_size FROM products").into_iter()
             .take(500)
             .for_each(|x|->(){get_unit(x);});
-    }
-
-    #[test]
-    fn test_unit_bad() {
-        println!("{:?}", get_unit("24x600mL".to_owned()));
     }
 
 /*     #[test]

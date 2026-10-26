@@ -1,13 +1,15 @@
-use std::ops::Deref;
 use eframe::egui;
 use egui_extras::{Column, TableBuilder};
+use routx::{Graph, KDTree};
+use std::ops::Deref;
 
 use crate::{
     gui::ShowableWidget,
     price_calculator::results::{
-        Results, ResultsState, Scenario, ScenarioKind, StoreStop, UNAVAILABLE, UnresolvedItem, brand_label,
-        format_delta, format_distance, format_duration, format_money,
+        Results, ResultsState, Scenario, ScenarioKind, StoreStop, UNAVAILABLE, UnresolvedItem,
+        brand_label, format_delta, format_distance, format_duration, format_money,
     },
+    route_planner::{OPTIONS, make_graph},
 };
 
 impl ShowableWidget for OutputRoutesData {
@@ -23,7 +25,6 @@ const BADGE_SIZE: f32 = 22.0;
 const TICK_SIZE: f32 = 18.0;
 const ORANGE: egui::Color32 = egui::Color32::from_rgb(0xFF, 0x7A, 0x3D);
 
-
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum PanelLayout {
     #[default]
@@ -36,14 +37,27 @@ pub struct OutputRoutesData {
     pub selected: ScenarioKind,
     pub layout: PanelLayout,
     pub results: ResultsState,
+    pub graph: Graph,
+    pub tree: KDTree,
 }
 
 impl Default for OutputRoutesData {
     fn default() -> Self {
+        log::debug!("route graph initialization begin");
+
+        let graph = make_graph(&OPTIONS);
+        let tree = KDTree::build_from_graph(&graph).unwrap();
+
+        log::debug!("route graph initialized");
+
+        log::debug!("route graph has {:?} nodes", graph.len());
+
         Self {
             selected: ScenarioKind::Best,
             layout: PanelLayout::Cards,
             results: ResultsState::Idle,
+            graph,
+            tree,
         }
     }
 }
@@ -79,20 +93,20 @@ impl OutputRoutesData {
         let error_colour = ui.visuals().error_fg_color;
 
         match self.results.clone() {
-                ResultsState::Idle => Self::message(
-                    ui,
-                    "Nothing to show yet",
-                    "Add at least one item to your shopping list, set your location, then run a search.",
-                    weak_colour,
-                ),
-                ResultsState::Loading => Self::loading(ui),
-                ResultsState::Failed(reason) => Self::message(
-                    ui,
-                    "That search could not be completed",
-                    reason.as_str(),
-                    error_colour,
-                ),
-                ResultsState::Ready(results) => self.ready(ui, results.deref()),
+            ResultsState::Idle => Self::message(
+                ui,
+                "Nothing to show yet",
+                "Add at least one item to your shopping list, set your location, then run a search.",
+                weak_colour,
+            ),
+            ResultsState::Loading => Self::loading(ui),
+            ResultsState::Failed(reason) => Self::message(
+                ui,
+                "That search could not be completed",
+                reason.as_str(),
+                error_colour,
+            ),
+            ResultsState::Ready(results) => self.ready(ui, results.deref()),
         }
     }
 
@@ -192,7 +206,10 @@ impl OutputRoutesData {
                 let mut clicked = false;
                 ui.horizontal(|ui| {
                     clicked = ui
-                        .button(egui::RichText::new(format!("{} {}", kind.icon(), kind.label())).strong())
+                        .button(
+                            egui::RichText::new(format!("{} {}", kind.icon(), kind.label()))
+                                .strong(),
+                        )
                         .clicked();
                     ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                         if is_selected {
@@ -249,8 +266,8 @@ impl OutputRoutesData {
         let scenario = results.scenario(kind);
         let _heading = ui.label(
             egui::RichText::new(format!("{} plan", kind.label()))
-            .size(20.0)
-            .strong(),
+                .size(20.0)
+                .strong(),
         );
         ui.add_space(12.0);
 

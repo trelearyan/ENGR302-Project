@@ -1,8 +1,14 @@
+use bigdecimal::ToPrimitive;
 use itertools::Itertools;
+use routx::{
+    DEFAULT_STEP_LIMIT, Graph, find_route_without_turn_around,
+    osm::{CAR_PROFILE, FileFormat, Options},
+};
 use std::{
     fmt::Debug,
     iter,
     rc::Rc,
+    sync::{Arc, OnceLock},
     time::Duration,
 };
 
@@ -10,7 +16,7 @@ use util::{
     coordinate::Coordinate,
     cost::Cost,
     distance::Distance,
-    store::Store,
+    store::{Store, StoreBrand},
 };
 
 use crate::{
@@ -18,78 +24,249 @@ use crate::{
     route_planner::filters::{StoreFilters, filter_stores},
 };
 
-pub mod filters;
-pub mod loc_resolver;
+pub static OPTIONS: Options = routx::osm::Options {
+    profile: &CAR_PROFILE,
+    file_format: FileFormat::Pbf,
+    bbox: [166.086_32, -47.447_61, 178.679_81, -32.975_4], // tightly bound around nz north and south islands
+};
 
-#[derive(Debug, PartialEq)]
+pub fn make_graph(options: &Options) -> Graph {
+    let mut graph = routx::Graph::new();
+    println!("adding features");
+    routx::osm::add_features_from_buffer(
+        &mut graph,
+        options,
+        include_bytes!("../../nz2-pruned.osm.pbf"),
+    )
+    .expect("failed to load nz2-pruned.osm.pbf");
+    graph
+}
+
+pub mod filters;
+
+#[derive(Clone, Eq, PartialEq, Hash, Debug, Default)]
 /// An incomplete shopping plan. Note that the stop order should only include
 /// stops and has not been optimised for the visit order yet.
 pub struct RoutePlan {
-    pub unordered_stops: Rc<[Coordinate]>,
-    pub start_stop: Coordinate,
-    pub end_stop: Coordinate,
-    pub mileage: MileageOptions,
+    pub start_position: Coordinate,
+    pub end_position: Coordinate,
+    pub unordered_stops: Box<[Rc<Store>]>,
 }
 
-/// Complete shopping plan. Note `ordered_stops` includes the start and end stop
-/// (the user location)
-pub struct RoutePath {
-    pub ordered_stops: Rc<[Coordinate]>,
-    pub mileage: MileageOptions,
-    pub travel_distance: Distance,
-    pub travel_cost: Cost,
-    pub travel_time: Duration,
+#[derive(Clone, PartialEq, Debug, Default)]
+pub struct OptimisedRoutePlan {
+    pub start_position: Coordinate,
+    pub end_position: Coordinate,
+    pub ordered_stops: Box<[Rc<Store>]>,
+    pub expensive_calculated_route: OnceLock<Arc<[Coordinate]>>,
 }
 
 impl RoutePlan {
     #[must_use]
-    pub fn calculate(&self) -> RoutePath {
+    pub fn optimise(&self) -> Option<OptimisedRoutePlan> {
         // let ordered_stops = iter::onceself.start_stopself.optimise_order();
 
-        let ordered_stops: Rc<[Coordinate]> = iter::once(&self.start_stop)
-            .chain(&*self.optimise_order())
-            .chain(iter::once(&self.end_stop))
-            .map(std::clone::Clone::clone)
-            .collect_vec()
+        let ordered_stops: Box<[Rc<Store>]> = self
+            .unordered_stops
+            .clone()
+            .into_iter()
+            .permutations(self.unordered_stops.len())
+            .map(|stoplist| {
+                (
+                    stoplist.clone(),
+                    iter::once(&self.start_position)
+                        .chain(stoplist.iter().map(|stop| &stop.location))
+                        .chain(iter::once(&self.end_position))
+                        .tuple_windows::<(_, _)>() // map A,B,C,D,E to AB, BC, CD, DE
+                        .map(|(a, b)| a.distance_to(b.clone())) // map AB, BC, to A -> B, B -> C,
+                        .sum::<Distance>(),
+                )
+            })
+            .min_by(|(_a_store, a_score), (_b_store, b_score)| a_score.cmp(b_score))
+            .map(|(stores, _score)| stores)?
             .into();
 
-        let travel_distance: Distance = ordered_stops
-            .array_windows::<2>()
-            .map(|a| a[0].distance_to(a[1].clone()))
-            .reduce(|acc, next| acc + next)
-            .expect("Expected there to be more than 0 stops");
+        log::debug!(
+            "optimise called, unordered stop count = {:?}",
+            self.unordered_stops.len()
+        );
+        log::debug!("optimise called, stop count = {:?}", ordered_stops.len());
 
-        let travel_time: Duration = travel_distance.clone() / self.mileage.average_speed();
-
-        let travel_cost = Cost::from(self.mileage.clone()) * travel_distance.inner();
-
-        RoutePath {
+        Some(OptimisedRoutePlan {
+            start_position: self.start_position.clone(),
+            end_position: self.end_position.clone(),
             ordered_stops,
-            mileage: self.mileage.clone(),
-            travel_distance,
-            travel_cost,
-            travel_time,
-        }
-    }
-
-    fn optimise_order(&self) -> Rc<[Coordinate]> {
-        // TODO: implement stop order optimisation
-        self.unordered_stops.clone()
+            expensive_calculated_route: OnceLock::new(),
+        })
     }
 }
+
+impl OptimisedRoutePlan {
+    #[must_use]
+    pub fn estimate_travel_cost(&self, mileage: &MileageOptions) -> Cost {
+        Cost::from(mileage.clone()) * self.estimate_travel_distance().inner()
+    }
+
+    #[must_use]
+    pub fn estimate_travel_time(&self, mileage: &MileageOptions) -> Duration {
+        self.estimate_travel_distance().clone() / mileage.average_speed()
+    }
+
+    #[must_use]
+    pub fn estimate_travel_distance(&self) -> Distance {
+        self.ordered_stops
+            .iter()
+            .tuple_windows::<(_, _)>()
+            .map(|a| a.0.location.distance_to(a.1.clone().location.clone()))
+            .reduce(|acc, next| acc + next)
+            .unwrap_or(Distance::default())
+    }
+
+    #[must_use]
+    pub fn exact_travel_cost(&self, graph: &Graph, mileage: &MileageOptions) -> Cost {
+        Cost::from(mileage.clone()) * (self.exact_travel_distance(graph).inner() / 1000)
+    }
+
+    #[must_use]
+    pub fn exact_travel_time(&self, graph: &Graph, mileage: &MileageOptions) -> Duration {
+        log::debug!(
+            "travel time call, {:?} / {:?} = {:?}",
+            self.exact_travel_distance(graph).clone(),
+            mileage.average_speed(),
+            self.exact_travel_distance(graph).clone() / mileage.average_speed()
+        );
+
+        self.exact_travel_distance(graph).clone() / mileage.average_speed()
+    }
+
+    pub fn path(&self, graph: &Graph) -> Arc<[Coordinate]> {
+        log::debug!(
+            "path called, ordered stops count = {:?}",
+            self.ordered_stops.len()
+        );
+        self.expensive_calculated_route
+            .get_or_init(|| {
+                Arc::<[Coordinate]>::from(
+                    iter::once(&self.start_position)
+                        .chain(self.ordered_stops.iter().map(|a| &a.location))
+                        .chain(iter::once(&self.start_position))
+                        .map(|a| {
+                            graph.find_nearest_node(
+                                a.latitude.to_f32().unwrap(),
+                                a.longitude.to_f32().unwrap(),
+                            )
+                        })
+                        .tuple_windows::<(_, _)>()
+                        .flat_map(|(a, b)| {
+                            find_route_without_turn_around(
+                                &graph,
+                                a.unwrap().id,
+                                b.unwrap().id,
+                                DEFAULT_STEP_LIMIT,
+                            )
+                            .unwrap()
+                        })
+                        .map(|id| {
+                            let node = graph.get_node(id).unwrap();
+                            Coordinate::from_lat_long_f32(node.lat, node.lon)
+                        })
+                        .collect_vec(),
+                )
+            })
+            .clone()
+    }
+
+    #[must_use]
+    pub fn exact_travel_distance(&self, graph: &Graph) -> Distance {
+        log::debug!(
+            "exact routefind start {:?} end {:?}",
+            self.start_position,
+            self.end_position
+        );
+        let result = self
+            .path(graph)
+            .iter()
+            .tuple_windows::<(_, _)>()
+            .map(|(a, b)| a.distance_to(b))
+            .sum::<Distance>();
+        log::debug!("exact travel distance call results in {result:?}");
+        log::debug!("number of nodes {:?}", self.path(graph).iter().count());
+        result
+    }
+}
+
+// fn find_best_route_between_two_nodes(
+//     start: impl Borrow<Coordinate>,
+//     end: impl Borrow<Coordinate>,
+// ) -> Box<[Coordinate]> {
+//     let start_node = GRAPH.wait().1.find_nearest_node(
+//         start
+//             .borrow()
+//             .latitude
+//             .to_f32()
+//             .expect("lat or long to be in range of f32"),
+//         start
+//             .borrow()
+//             .longitude
+//             .to_f32()
+//             .expect("lat or long to be in range of f32"),
+//     );
+//     let end_node = GRAPH
+//         .wait()
+//         .find_nearest_node(
+//             end.borrow()
+//                 .latitude
+//                 .to_f32()
+//                 .expect("lat or long to be in range of f32"),
+//             end.borrow()
+//                 .longitude
+//                 .to_f32()
+//                 .expect("lat or long to be in range of f32"),
+//         )
+//         .expect("end location out of range");
+//     routx::find_route_without_turn_around(
+//         &GRAPH.wait().0,
+//         start_node.id,
+//         end_node.id,
+//         routx::DEFAULT_STEP_LIMIT,
+//     )
+//     .unwrap()
+//     .iter()
+//     .map(|id| {
+//         let node = GRAPH
+//             .wait()
+//             .0
+//             .get_node(*id)
+//             .expect("node id to be valid after construction");
+//         Coordinate::from_lat_long_f32(node.lat, node.lon)
+//     })
+//     .collect()
+// }
 
 // Returns every possible route the user could take between supermarkets based
 // on their filters.
 #[must_use]
 pub fn all_stores() -> Box<[Store]> {
-    let stores = loc_resolver::load_store_locations().unwrap();
-    stores.into_boxed_slice()
+    Box::new([
+        Store {
+            brand: StoreBrand::Paknsave,
+            location: Coordinate::from_lat_long_f32(-41.28552007226365, 174.76680529344077),
+        },
+        Store {
+            brand: StoreBrand::Newworld,
+            location: Coordinate::from_lat_long_f32(-41.2882757120501, 174.76293970444345),
+        },
+        Store {
+            brand: StoreBrand::Woolworths,
+            location: Coordinate::from_lat_long_f32(-41.288907210767995, 174.76136254547123),
+        },
+    ])
 }
 
 // Returns every possible route the user could take between supermarkets based
 // on their filters.
 #[must_use]
-pub fn all_possible_routes(filters: &StoreFilters, mileage: &MileageOptions) -> Box<[RoutePath]> {
+pub fn all_possible_routes(filters: &StoreFilters) -> Box<[OptimisedRoutePlan]> {
     let stores = filter_stores(&all_stores(), filters);
 
     (1..=filters.max_store_visits)
@@ -97,15 +274,13 @@ pub fn all_possible_routes(filters: &StoreFilters, mileage: &MileageOptions) -> 
         .map(|stores| RoutePlan {
             unordered_stops: stores
                 .iter()
-                .map(|a| a.location.clone())
+                .map(|store| Rc::new(store.clone()))
                 .collect_vec()
-                .as_slice()
-                .into(),
-            start_stop: filters.location.clone(),
-            end_stop: filters.location.clone(),
-            mileage: mileage.clone(),
+                .into_boxed_slice(),
+            start_position: filters.location.clone(),
+            end_position: filters.location.clone(),
         })
-        .map(|plan| plan.calculate())
+        .filter_map(|plan| plan.optimise())
         .collect_vec()
         .into_boxed_slice()
 }
