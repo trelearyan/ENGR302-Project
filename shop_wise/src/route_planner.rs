@@ -154,11 +154,14 @@ impl OptimisedRoutePlan {
             self.start_position,
             self.end_position
         );
-        self.path()
+        let result = self
+            .path()
             .iter()
             .tuple_windows::<(_, _)>()
             .map(|(a, b)| a.distance_to(b))
-            .sum::<Distance>()
+            .sum::<Distance>();
+        log::debug!("exact travel distance call results in {result:?}");
+        result
     }
 }
 

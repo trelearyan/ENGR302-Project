@@ -200,6 +200,10 @@ impl Scenario {
             })
             .collect();
 
+        log::debug!(
+            "travel distance is {:?}",
+            calc.source.exact_travel_distance()
+        );
         Self {
             kind,
             stops,
