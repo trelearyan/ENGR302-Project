@@ -46,7 +46,7 @@ impl Default for OutputRoutesData {
 
             let graph = make_graph(&OPTIONS);
             let tree = KDTree::build_from_graph(&graph).unwrap();
-            &GRAPH.set((graph, tree));
+            let _ = &GRAPH.set((graph, tree));
 
             log::debug!("route graph initialized");
         });

@@ -5,7 +5,6 @@ use routx::{
     osm::{CAR_PROFILE, FileFormat, Options},
 };
 use std::{
-    borrow::Borrow,
     fmt::Debug,
     iter,
     rc::Rc,
@@ -161,13 +160,6 @@ impl OptimisedRoutePlan {
             .map(|(a, b)| a.distance_to(b))
             .sum::<Distance>()
     }
-}
-
-fn find_distance_of_path(stops: impl ExactSizeIterator<Item = Coordinate>) -> Distance {
-    stops
-        .tuple_windows::<(_, _)>()
-        .map(|(a, b)| a.distance_to(b))
-        .sum()
 }
 
 // fn find_best_route_between_two_nodes(

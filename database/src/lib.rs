@@ -371,12 +371,6 @@ impl Database {
 mod tests {
     use super::*;
 
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
-
     fn product(chain: StoreBrand, shelf: &str, member: Option<&str>) -> ProductPrice {
         ProductPrice {
             chain,

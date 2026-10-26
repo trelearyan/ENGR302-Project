@@ -1,9 +1,9 @@
-use eframe::egui::{CentralPanel, Color32, Panel, ScrollArea, Stroke, Ui};
+use eframe::egui::{CentralPanel, Panel, ScrollArea, Ui};
 use std::cell::RefCell;
 use std::rc::Rc;
 use util::coordinate::Coordinate;
 
-use crate::gui::location_search::{LocationData, LocationStatus};
+use crate::gui::location_search::LocationData;
 use crate::gui::output_routes::OutputRoutesData;
 use crate::gui::preferences::PreferencesData;
 use crate::gui::shopping_list::ShoppingListData;
@@ -22,7 +22,6 @@ pub mod supermarkets;
 pub mod transit;
 
 const SECTION_MAX_HEIGHT: f32 = 300.0;
-const LEFT_PANEL_WIDTH: f32 = 300.0;
 
 #[derive(Default, Clone)]
 pub struct AppData {

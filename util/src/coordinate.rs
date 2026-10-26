@@ -1,9 +1,7 @@
 use std::borrow::Borrow;
-use std::iter::Sum;
 use std::str::FromStr;
 
 use bigdecimal::BigDecimal;
-use itertools::Itertools;
 use num_traits::FromPrimitive;
 use num_traits::ToPrimitive;
 use serde::{Deserialize, Serialize};
@@ -95,8 +93,4 @@ impl Coordinate {
     pub fn auckland() -> Self {
         Coordinate::from_lat_long_str("-36.848461", "174.763336").unwrap()
     }
-}
-#[cfg(test)]
-mod coordinate_tests {
-    use crate::float_absolute_compare;
 }
