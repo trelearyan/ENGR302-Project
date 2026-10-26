@@ -1,18 +1,18 @@
-use std::collections::HashMap;
-use std::time::Duration;
-use itertools::Itertools;
-use util::distance::Distance;
-use util::{cost::Cost, store::{Store, StoreBrand}};
-use bigdecimal::ToPrimitive;
-use util::{search::{ShoppingItem, ShoppingItemQuery}};
 use crate::{
     gui::transit::MileageOptions,
     price_calculator::item_resolver::resolve,
     route_planner::{
-        RoutePath, all_possible_routes, all_stores,
+        OptimisedRoutePlan, all_possible_routes, all_stores,
         filters::{StoreFilters, filter_stores},
     },
 };
+use bigdecimal::ToPrimitive;
+use itertools::Itertools;
+use std::collections::HashMap;
+use std::time::Duration;
+use util::distance::Distance;
+use util::search::{ShoppingItem, ShoppingItemQuery};
+use util::{cost::Cost, store::Store};
 
 // Public types
 
@@ -40,6 +40,7 @@ pub struct Message {
 #[derive(Debug, PartialEq)]
 pub enum CalculationErrorType {
     InternalError,
+    RouteError,
     CouldNotResolveItem,
     NoPlanFound,
     CommonItemFailure,
@@ -56,15 +57,22 @@ impl CalculationError {
     pub fn pretty(&self) -> String {
         match self.err_type {
             CalculationErrorType::InternalError => "Unknown Error",
+            CalculationErrorType::RouteError => "Route Error",
             CalculationErrorType::CouldNotResolveItem => "Item Resolution Error: ",
             CalculationErrorType::NoPlanFound => "No Complete Shopping Route Found: ",
-            CalculationErrorType::CommonItemFailure => "No Shopping Route Found - Common Item cause of Failure: ",
-        }.to_owned() + ": " + &self.err_msg
+            CalculationErrorType::CommonItemFailure => {
+                "No Shopping Route Found - Common Item cause of Failure: "
+            }
+        }
+        .to_owned()
+            + ": "
+            + &self.err_msg
     }
 }
 
 #[derive(Debug)]
 pub struct Calculation {
+    pub mileage: MileageOptions,
     pub total_shop_cost: Cost,
     pub total_item_cost: Cost,
     pub total_travel_cost: Cost,
@@ -72,6 +80,7 @@ pub struct Calculation {
     pub total_dist: Distance,
     pub shopping_plan: Vec<StorePlan>,
     pub msg_log: Vec<Message>,
+    pub source: OptimisedRoutePlan,
 }
 
 #[derive(Debug)]
@@ -120,17 +129,17 @@ pub fn calculate(
         .map(|a: &Store| -> Store { a.to_owned() })
         .collect();
     // Fetch all (2^n-1) routes for the n stores in range
-    let routes: Box<[RoutePath]> = all_possible_routes(filters, mileage);
+    let routes: Box<[OptimisedRoutePlan]> = all_possible_routes(filters);
     let mut local_routes: Vec<LocalRoute> = Vec::new();
     for route_id in 0..routes.len() {
-        let route: &RoutePath = routes.get(route_id).unwrap();
+        let route: &OptimisedRoutePlan = routes.get(route_id).unwrap();
         // Calculate set of StoreIds for visited stores
         let mut visited: Vec<RouteId> = Vec::new();
         for stop in route.ordered_stops.iter() {
             let mut found_id: Option<StoreId> = None;
             for i in 0..stores.len() {
                 let store = &stores[i];
-                if store.location == *stop {
+                if *store == **stop {
                     found_id = Some(i);
                     break;
                 }
@@ -144,14 +153,17 @@ pub fn calculate(
         local_routes.push(LocalRoute {
             shops: visited,
             route_travel_cost: route
-                .travel_cost
+                .estimate_travel_cost(mileage)
                 .clone()
                 .round()
                 .inner()
                 .with_scale(2)
                 .to_u32()
-                .unwrap(),
-            route_time: route.travel_time.as_secs(),
+                .ok_or_else(|| CalculationError {
+                    err_type: CalculationErrorType::RouteError,
+                    err_msg: "Route cost was not able to be represented in cents".to_owned(),
+                })?,
+            route_time: route.estimate_travel_time(mileage).as_secs(),
             route_id,
         });
     }
@@ -166,38 +178,45 @@ pub fn calculate(
         item_lookup.push(HashMap::new());
         // Resolve query
         let query: &ShoppingItemQuery = shop_list.get(item_key).unwrap();
-        let Some(mut res) = resolve(query) else {
+        let Some(res) = resolve(query) else {
             return Err(CalculationError {
                 err_type: CalculationErrorType::CouldNotResolveItem,
                 err_msg: "Could not find item ".to_owned() + &query.name,
-            })};
+            });
+        };
         // Record resolution at each visited store
         for store_id in 0..stores.len() {
             // Mock store specific availability by just assuming same
             // among all stores within a brand
-            let global_store_key = match stores.get(store_id).unwrap().brand {
-                StoreBrand::Paknsave => 1,
-                StoreBrand::Woolworths => 2,
-                StoreBrand::Newworld => 3,
-            };
+            let store = stores.get(store_id).unwrap();
             // If this store has an entry for the item add it
-            if res.contains_key(&global_store_key) {
-                let Some(item) = res.remove(&global_store_key) else {
-            return Err(CalculationError {
-                err_type: CalculationErrorType::CouldNotResolveItem,
-                err_msg: "Could not find item ".to_owned() + &shop_list.get(item_key).unwrap().name,
-            })};
+            if res.iter().any(|a| a.1.store.brand == store.brand) {
+                let Some(item) = res.iter().find(|a| a.1.store.brand == store.brand) else {
+                    return Err(CalculationError {
+                        err_type: CalculationErrorType::CouldNotResolveItem,
+                        err_msg: "Could not find item ".to_owned()
+                            + &shop_list.get(item_key).unwrap().name,
+                    });
+                };
                 // Convert to cents for efficient copying
-                let price = item
-                    .price
-                    .clone()
-                    .round()
+                let price = (item.1.price.clone().round() * 100)
                     .inner()
-                    .with_scale(2)
                     .to_u32()
-                    .unwrap()*item.multiplier;
-                // Add item to item lookup table
-                item_lookup.get_mut(item_key).unwrap().insert(store_id, item);
+                    .unwrap()
+                    * item.1.multiplier;
+                // Create item to add to item lookup table
+                let real_item = ShoppingItem {
+                    name: item.1.name.clone(),
+                    multiplier: item.1.multiplier,
+                    quantity: item.1.quantity,
+                    unit: item.1.unit.clone(),
+                    price: item.1.price.clone(),
+                    store: store.clone(),
+                };
+                item_lookup
+                    .get_mut(item_key)
+                    .unwrap()
+                    .insert(store_id, real_item);
                 // Add price to short database
                 short_database.get_mut(store_id).unwrap().push(Some(price));
             } else {
@@ -206,6 +225,12 @@ pub fn calculate(
             }
         }
     }
+    log::debug!(
+        "Local Routes:\n{:?}\n\n\nShort Database:\n{:?}\n\n\nItem Lookup:\n{:?}",
+        local_routes,
+        short_database,
+        item_lookup
+    );
     // Calculate minimising for combined item and travel cost
     let cheap = delocalise(
         calculate_minimised(
@@ -213,11 +238,12 @@ pub fn calculate(
             &local_routes,
             &short_database,
             |a: &u32, b: &LocalRoute| -> u32 { a + b.route_travel_cost },
-            &shop_list
+            &shop_list,
         )?,
         &item_lookup,
         &stores,
         &routes,
+        mileage,
     );
     // Calculate minimising only for travel time
     let fast = delocalise(
@@ -226,11 +252,12 @@ pub fn calculate(
             &local_routes,
             &short_database,
             |_a: &u32, b: &LocalRoute| -> u32 { b.route_time as u32 },
-            &shop_list
+            &shop_list,
         )?,
         &item_lookup,
         &stores,
         &routes,
+        mileage,
     );
     // Calculate minimising for total cost, with a $30 hourly rate
     let best = delocalise(
@@ -242,11 +269,18 @@ pub fn calculate(
                 // Assume people would drive an hour to save 30 dollars for now (5/6 cents per second)
                 a + b.route_travel_cost + ((5 * b.route_time) / 6) as u32
             },
-            &shop_list
+            &shop_list,
         )?,
         &item_lookup,
         &stores,
         &routes,
+        mileage,
+    );
+    log::debug!(
+        "Cheapest Plan:\n{:?}\n\n\nFastest Plan:\n{:?}\n\n\nBest Plan:\n{:?}",
+        cheap,
+        fast,
+        best
     );
     // Return the result
     Ok(CalculationTotal {
@@ -260,7 +294,8 @@ fn delocalise(
     plan: (BestPlan, Vec<Message>),
     item_lookup: &Vec<HashMap<StoreId, ShoppingItem>>,
     stores: &Vec<Store>,
-    routes: &Box<[RoutePath]>,
+    routes: &Box<[OptimisedRoutePlan]>,
+    mileage: &MileageOptions,
 ) -> Calculation {
     // Compile shopping plan into Vec<StorePlan>
     let mut shopping_plan: Vec<StorePlan> = Vec::new();
@@ -288,16 +323,17 @@ fn delocalise(
             });
         }
     }
-    let rp: &RoutePath = routes.get(plan.0.route_id).unwrap();
+    let rp: &OptimisedRoutePlan = routes.get(plan.0.route_id).unwrap();
     Calculation {
         total_shop_cost: Cost::from_cents(plan.0.total_shop_cost),
         total_item_cost: Cost::from_cents(plan.0.total_item_cost),
         total_travel_cost: Cost::from_cents(plan.0.total_travel_cost),
         total_time: Duration::from_secs(plan.0.total_time),
-        total_dist: rp.travel_distance.clone(),
+        total_dist: rp.estimate_travel_distance().clone(),
         shopping_plan,
         msg_log: plan.1,
-        //route: rp,
+        source: rp.clone(),
+        mileage: mileage.clone(),
     }
 }
 
@@ -306,7 +342,7 @@ fn calculate_minimised(
     routes: &[LocalRoute],
     short_database: &[Vec<Option<u32>>],
     cost_fn: fn(ic: &u32, lr: &LocalRoute) -> u32,
-    list_context: &[ShoppingItemQuery]
+    list_context: &[ShoppingItemQuery],
 ) -> Result<(BestPlan, Vec<Message>), CalculationError> {
     let mut current_shop_plan: ShoppingPlan;
     let mut best_plan: Option<BestPlan> = None;
@@ -315,7 +351,8 @@ fn calculate_minimised(
     let mut or_missed_items: Option<Vec<ItemId>> = None;
 
     // Run through every possible route
-    for route in routes { //'outer: - see below
+    for route in routes {
+        //'outer: - see below
         // Clear current plan
         current_shop_plan = Vec::new();
         // For each item pick the best store on the route
@@ -326,7 +363,8 @@ fn calculate_minimised(
             let mut best_cost: u32 = u32::MAX;
             for shop in &route.shops {
                 let temp_cost: Option<u32> = *short_database.get(*shop).unwrap().get(item).unwrap();
-                if (temp_cost.is_some()) && (best_place.is_none() || temp_cost.unwrap() < best_cost) {
+                if (temp_cost.is_some()) && (best_place.is_none() || temp_cost.unwrap() < best_cost)
+                {
                     best_cost = temp_cost.unwrap();
                     best_place = Some(*shop);
                 }
@@ -350,7 +388,7 @@ fn calculate_minimised(
                 for item_i in 0..all_missed_items.as_ref().unwrap().len() {
                     let value = all_missed_items.as_ref().unwrap().get(item_i).unwrap();
                     if !AsRef::<Vec<ItemId>>::as_ref(&missed_items).contains(&value) {
-                        all_missed_items.as_mut().unwrap().remove(item_i-removed);
+                        all_missed_items.as_mut().unwrap().remove(item_i - removed);
                         removed += 1;
                     }
                 }
@@ -392,31 +430,46 @@ fn calculate_minimised(
         } else {
             let all_missed = all_missed_items.unwrap();
             if all_missed.is_empty() {
-                let info = or_missed_items.unwrap().iter()
-                    .map(|i: &ItemId|->String{ return list_context.get(*i).unwrap().name.clone();})
+                let info = or_missed_items
+                    .unwrap()
+                    .iter()
+                    .map(|i: &ItemId| -> String {
+                        return list_context.get(*i).unwrap().name.clone();
+                    })
                     .join(", ");
                 Err(CalculationError {
                     err_type: CalculationErrorType::NoPlanFound,
-                    err_msg: " Reason too complex to state. NOTE: Items ".to_owned() + &info +
-                    &" were absent from one or more stores in the search.",
+                    err_msg: " Reason too complex to state. NOTE: Items ".to_owned()
+                        + &info
+                        + &" were absent from one or more stores in the search.",
                 })
             } else {
-                let err_msg_content: String  = all_missed.iter()
-                    .map(|i: &ItemId|->String{ return list_context.get(*i).unwrap().name.clone(); })
+                let err_msg_content: String = all_missed
+                    .iter()
+                    .map(|i: &ItemId| -> String {
+                        return list_context.get(*i).unwrap().name.clone();
+                    })
                     .join(", ");
                 Err(CalculationError {
                     err_type: CalculationErrorType::CommonItemFailure,
-                    err_msg: "No route was able to fulfill the following items ".to_owned() + &err_msg_content,
+                    err_msg: "No route was able to fulfill the following items ".to_owned()
+                        + &err_msg_content,
                 })
-        }}
+            }
+        };
     }
-    let log_msg_content: Vec<Message> = or_missed_items.clone().unwrap_or(Vec::new()).iter()
-        .map(|i: &ItemId|->Message{ return Message {
-            msg_type: MessageType::NOTICE,
-            msg: "Item ".to_owned() +
-                &list_context.get(*i).unwrap().name +
-                &" was absent from one or more stores in the search.",
-        };})
+    let log_msg_content: Vec<Message> = or_missed_items
+        .clone()
+        .unwrap_or(Vec::new())
+        .iter()
+        .map(|i: &ItemId| -> Message {
+            return Message {
+                msg_type: MessageType::NOTICE,
+                msg: "Item ".to_owned()
+                    + &list_context.get(*i).unwrap().name
+                    + &" was absent from one or more stores in the search.",
+            };
+        })
         .collect::<Vec<Message>>();
     Ok((best_plan.unwrap(), log_msg_content))
 }
@@ -427,25 +480,24 @@ mod tests {
 
     #[test]
     fn test_cheapest_demo() {
-        assert_eq!(3, 1 + 2);
         let items = [0, 1, 2];
         let mut routes: Vec<LocalRoute> = Vec::new();
         routes.push(LocalRoute {
             shops: [0].to_vec(),
             route_travel_cost: 196,
-            route_time: 0,
+            route_time: 196,
             route_id: 0,
         });
         routes.push(LocalRoute {
             shops: [1].to_vec(),
             route_travel_cost: 190,
-            route_time: 0,
+            route_time: 190,
             route_id: 1,
         });
         routes.push(LocalRoute {
             shops: [0, 1].to_vec(),
             route_travel_cost: 295,
-            route_time: 0,
+            route_time: 295,
             route_id: 2,
         });
         let mut database: Vec<Vec<Option<u32>>> = Vec::new();
@@ -468,13 +520,13 @@ mod tests {
             },
             &Vec::new(),
         );
-        let correct_result= BestPlan {
+        let correct_result = BestPlan {
             best_shop_plan: vec![0, 0, 1],
             best_cost: 2913,
             total_item_cost: 2618,
             total_travel_cost: 295,
             total_shop_cost: 2913,
-            total_time: 0,
+            total_time: 295,
             route_id: 2,
         };
         assert!(result.is_ok());
