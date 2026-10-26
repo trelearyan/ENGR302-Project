@@ -34,6 +34,7 @@ Work on branches that are not yet merged into `main`.
 
 ### Fixed
 - Very large mileage values now show a proper error instead of failing (#110)
+- Bug where speed values were calculated incorrectly (#118)
 - Items were removed from the results for a whole brand instead of a single store (#110)
 - Web (WASM) build failed to compile (#81)
 ## [Unreleased]
