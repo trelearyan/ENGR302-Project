@@ -33,7 +33,7 @@ pub fn format_distance(distance: &Distance) -> String {
 pub fn format_duration(minutes: f32) -> String {
     let total = minutes.round().max(0.0) as u32;
     if total < 60 {
-        format!("{total} min")
+        format!("{total:.1} min")
     } else {
         format!("{} h {:02} min", total / 60, total % 60)
     }
