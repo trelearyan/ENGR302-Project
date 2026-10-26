@@ -205,6 +205,18 @@ impl Scenario {
             "travel distance is {:?}",
             calc.source.exact_travel_distance(graph)
         );
+
+        log::debug!(
+            "travel time is {:?}s or {:?}m",
+            calc.source
+                .exact_travel_time(graph, &calc.mileage)
+                .as_secs_f32(),
+            calc.source
+                .exact_travel_time(graph, &calc.mileage)
+                .as_secs_f32()
+                / 60f32,
+        );
+
         Self {
             kind,
             stops,
