@@ -146,21 +146,20 @@ fn term<R>(ui: &mut Ui, width: f32, term: &str, add_contents: impl FnOnce(&mut U
 fn about(ui: &mut Ui) {
     paragraph(
         ui,
-        "ShopWise prices your shopping list across Pak'nSave, New World and \
-         Woolworths near you, including your petrol costs.",
+        "ShopWise prices your whole shopping list across Pak'nSave, New World and \
+         Woolworths near you, and counts the petrol it costs to get there.",
     );
-    heading(ui, "Our 3 Shopping Scenarios:");
+    heading(ui, "Our three shopping scenarios:");
     term(ui, TERM_WIDTH, "Cheapest:", |ui| {
-        ui.label("The lowest cost, even if it means visiting more than one store.")
+        ui.label("The lowest total, even if it means visiting more than one store.")
     });
     term(ui, TERM_WIDTH, "Fastest:", |ui| {
         ui.label("The shortest trip that still covers your entire shopping list.")
     });
     term(ui, TERM_WIDTH, "Best Value:", |ui| {
         ui.label(
-            "A balance of the two. It weighs the total cost against travel time. \
-            It recommends the store, or combination of stores, that offers the \
-            best balance between value for money and time spent shopping.",
+            "A balance of the two. It can cost a little more than Cheapest when it \
+             saves you a stop or a noticeable amount of driving.",
         )
     });
 }
