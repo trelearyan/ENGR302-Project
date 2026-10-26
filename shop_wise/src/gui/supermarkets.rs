@@ -56,7 +56,7 @@ fn all_stores() -> &'static [Store] {
 fn stores_in_range(
     brand: StoreBrand,
     origin: Option<&Coordinate>,
-    max_range: &Distance,
+    max_range: Option<&Distance>,
 ) -> Vec<&'static Store> {
     let Some(origin) = origin else {
         return Vec::new();
@@ -65,7 +65,7 @@ fn stores_in_range(
     let mut found: Vec<&'static Store> = all_stores()
         .iter()
         .filter(|store| store.brand == brand)
-        .filter(|store| origin.within_range(store.coordinate(), max_range))
+        .filter(|store| max_range.is_none_or(|range| origin.within_range(store.coordinate(), range)))
         .collect();
 
     found.sort_by(|a, b| a.name.cmp(&b.name));
@@ -147,7 +147,7 @@ impl SupermarketsData {
         &mut self,
         ui: &mut Ui,
         origin: Option<&Coordinate>,
-        max_range: &Distance,
+        max_range: Option<&Distance>,
     ) {
         ui.heading("Supermarkets")
             .on_hover_text("Select the Supermarket chains you want to be included in your search");
@@ -223,7 +223,7 @@ impl SupermarketsData {
 
 impl ShowableWidget for SupermarketsData {
     fn show(&mut self, ui: &mut Ui) {
-        self.show_in_range(ui, None, &Distance::from_kilometres_f64(0.0));
+        self.show_in_range(ui, None, None);
     }
 }
 

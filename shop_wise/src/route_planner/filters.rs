@@ -292,15 +292,12 @@ pub fn filter_stores(stores: &[Store], filters: &StoreFilters) -> Vec<Store> {
     stores
         .iter()
         .filter(|&store| !filters.disallowed_brands.contains(&store.brand))
-        .filter(|&store| match filters.max_range_metres.clone() {
-            // TODO: fix this
-            Some(range) => {
-                // dbg!(filters.max_range_metres);
-                filters
-                    .location
-                    .within_range(store.location.clone(), &range)
-            }
-            None => panic!(),
+        // No range means every store is in range.
+        .filter(|&store| {
+            filters
+                .max_range_metres
+                .as_ref()
+                .is_none_or(|range| filters.location.within_range(store.location.clone(), range))
         })
         .cloned()
         .collect::<Vec<_>>()
@@ -308,7 +305,21 @@ pub fn filter_stores(stores: &[Store], filters: &StoreFilters) -> Vec<Store> {
 
 #[cfg(test)]
 mod tests {
-    use serde_json::Deserializer;
-
     use super::*;
+
+    #[test]
+    fn no_range_keeps_every_store() {
+        let far_away = Store {
+            brand: StoreBrand::Paknsave,
+            location: Coordinate::auckland(),
+        };
+        let stores = [far_away];
+        let nearby = StoreFilters::builder()
+            .location(Coordinate::wellington())
+            .range(Distance::from_kilometres_f64(50.0))
+            .build();
+
+        assert!(filter_stores(&stores, &nearby).is_empty());
+        assert_eq!(filter_stores(&stores, &StoreFilters::default()), stores);
+    }
 }

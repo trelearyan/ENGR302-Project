@@ -85,7 +85,7 @@ impl ShowableWidget for AppData {
                                 self.supermarkets.show_in_range(
                                     ui,
                                     origin.as_ref(),
-                                    &self.preferences.max_range,
+                                    self.preferences.range(),
                                 );
                             });
                         ui.separator();
@@ -125,14 +125,16 @@ impl AppData {
         // TODO: Fix this up once we have a better format of all the stores and individual location blacklisting
         let banned_stores = self.supermarkets.banned_stores();
 
-        let filters_builder = StoreFilters::builder()
+        let mut filters_builder = StoreFilters::builder()
             .location(Coordinate::from_lat_long_f64(
                 self.location_search.borrow().latitude.unwrap(),
                 self.location_search.borrow().longitude.unwrap(),
             ))
-            .range(self.preferences.max_range.clone())
             .max_store_visits(self.preferences.max_stores)
             .disallow_brands(&banned_stores);
+        if let Some(range) = self.preferences.range() {
+            filters_builder = filters_builder.range(range.clone());
+        }
         let filters = filters_builder.build();
 
         let _origin_label = self.location_search.borrow().address.clone();
