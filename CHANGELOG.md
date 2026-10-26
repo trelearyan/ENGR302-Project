@@ -22,6 +22,9 @@ Work on branches that are not yet merged into `main`.
 - Masthead and filters panel switch to dark colours in dark mode, with light arrow icons (#113)
 
 ### Changed
+- Redesigned results panel: a card for each plan (Best value, Cheapest, Fastest) with the total, groceries, travel, distance and time; the selected card has an orange border and a tick, and the others show +/- cost ()
+- Plan details show a summary (groceries, total, items, travel, distance, driving time), numbered stops side by side, and each stop's items with Qty, Unit and Line total ()
+- Search bar puts the address, "Use my location", and Search in one row ()
 - Price calculator uses the real scraped product database instead of demo data, with caching (#110)
 - Distances follow real roads between stops, using OpenStreetMap routing data instead of straight lines (#81)
 - Updated eframe to 0.36; routing data is stored with Git LFS (#75)
@@ -46,6 +49,54 @@ Work on branches that are not yet merged into `main`.
 - Travel distance and speed calculations (#110)
 - Very large mileage values now show a proper error instead of failing (#110)
 - Items were removed from the results for a whole brand instead of a single store (#110)
+- Web (WASM) build failed to compile (#81)
+## [Unreleased]
+
+Work on branches that are not yet merged into `main`.
+
+### [Unreleased]
+
+Work on branches that are not yet merged into `main`.
+
+### Added
+- Map showing the planned route (#75)
+- Store locations loaded from the database (#110)
+
+### Changed
+- Price calculator uses the real scraped product database instead of demo data, with caching (#110)
+- Distances follow real roads between stops, using OpenStreetMap routing data instead of straight lines (#81)
+- Updated eframe to 0.36 (#75)
+- Redesigned results panel: a card for each plan (Best value, Cheapest, Fastest) with the total, groceries, travel, distance and time; the selected card has an orange border and a tick, and the others show +/- cost ()
+- Plan details show a summary (groceries, total, items, travel, distance, driving time), numbered stops side by side, and each stop's items with Qty, Unit and Line total ()
+- Search bar puts the address, "Use my location", and Search in one row ()
+
+### Fixed
+- Travel distance and speed calculations (#110)
+- Very large mileage values now show a proper error instead of failing (#110)
+- Items were removed from the results for a whole brand instead of a single store (#110)
+
+## [0.9.0] - 2026-10-08
+
+### Added
+- Dark mode for the masthead: it uses the same dark background as the rest of the app, with light arrow icons and a light version of the logo (#113)
+
+### Changed
+- Browser tab icon uses the 40px logo, the unused 80px icon was removed (#113)
+
+### Fixed
+- Filters panel opened too narrow and squashed its text, it now starts 250px wide (#113)
+
+## [0.8.0] - 2026-10-02
+
+### Added
+- Store dropdown only lists stores within the maximum range (#85)
+- Clear error messages when the price calculator can't find a plan (#82)
+- Footer with privacy and data source information (#109)
+- CI checks that failed merge requests that don't add a changelog entry, and keeps the Cargo.toml version in sync with the changelog (NFR-15)
+
+### Changed
+- Redesigned logo and browser tab icon (#109)
+- The item search field is always visible in the shopping list, replacing the Add Item button (#112)
 
 ## [0.7.0] - 2026-09-30
 
