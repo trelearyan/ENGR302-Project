@@ -6,7 +6,7 @@ use routx::{
 };
 use std::{
     fmt::Debug,
-    iter,
+    iter::{self, Once},
     rc::Rc,
     sync::{Arc, LazyLock, OnceLock},
     time::Duration,
@@ -140,12 +140,13 @@ impl OptimisedRoutePlan {
         self.expensive_calculated_route
             .get_or_init(|| {
                 Arc::<[Coordinate]>::from(
-                    self.ordered_stops
-                        .iter()
+                    iter::once(&self.start_position)
+                        .chain(self.ordered_stops.iter().map(|a| &a.location))
+                        .chain(iter::once(&self.start_position))
                         .map(|a| {
                             graph.find_nearest_node(
-                                a.location.latitude.to_f32().unwrap(),
-                                a.location.longitude.to_f32().unwrap(),
+                                a.latitude.to_f32().unwrap(),
+                                a.longitude.to_f32().unwrap(),
                             )
                         })
                         .tuple_windows::<(_, _)>()
