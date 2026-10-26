@@ -168,7 +168,10 @@ impl Scenario {
                     .iter()
                     .map(|info| ItemLine {
                         name: info.name.clone(),
-                        quantity: info.multiplier.to_string() + "x " + &info.quantity.to_string() + info.unit.to_str(),
+                        quantity: info.multiplier.to_string()
+                            + "x "
+                            + &info.quantity.to_string()
+                            + info.unit.to_str(),
                         unit_price: info.price.clone(),
                         // TODO: loyalty pricing
                         on_special: false,
@@ -314,8 +317,6 @@ mod tests {
         assert_eq!(scenario.total_cost(), Cost::from_cents(1278));
         assert_eq!(scenario.item_count(), 1);
     }
-
-    
 
     #[test]
     fn total_is_groceries_plus_travel2() {

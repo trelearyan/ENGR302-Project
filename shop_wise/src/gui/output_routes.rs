@@ -1,5 +1,6 @@
-use std::ops::Deref;
 use eframe::egui;
+use routx::{Graph, KDTree, osm::Options};
+use std::ops::Deref;
 
 use crate::{
     gui::ShowableWidget,
@@ -7,6 +8,7 @@ use crate::{
         Results, ResultsState, Scenario, ScenarioKind, StoreStop, UNAVAILABLE, UnresolvedItem,
         brand_label, format_distance, format_duration, format_money,
     },
+    route_planner::{GRAPH, OPTIONS},
 };
 
 impl ShowableWidget for OutputRoutesData {
@@ -34,12 +36,34 @@ pub struct OutputRoutesData {
 
 impl Default for OutputRoutesData {
     fn default() -> Self {
+        std::thread::spawn(|| {
+            log::debug!("route graph initialization begin");
+
+            let graph = make_graph(&OPTIONS);
+            let tree = KDTree::build_from_graph(&graph).unwrap();
+            &GRAPH.set((graph, tree));
+
+            log::debug!("route graph initialized");
+        });
+
         Self {
             selected: ScenarioKind::Best,
             layout: PanelLayout::Cards,
             results: ResultsState::Idle,
         }
     }
+}
+
+fn make_graph(options: &Options) -> Graph {
+    let mut graph = routx::Graph::new();
+    println!("adding features");
+    routx::osm::add_features_from_buffer(
+        &mut graph,
+        &options,
+        include_bytes!("../../../nz2-pruned.osm.pbf"),
+    )
+    .expect("failed to load nz2-pruned.osm.pbf");
+    graph
 }
 
 impl OutputRoutesData {
@@ -73,20 +97,20 @@ impl OutputRoutesData {
         let error_colour = ui.visuals().error_fg_color;
 
         match self.results.clone() {
-                ResultsState::Idle => Self::message(
-                    ui,
-                    "Nothing to show yet",
-                    "Add at least one item to your shopping list, set your location, then run a search.",
-                    weak_colour,
-                ),
-                ResultsState::Loading => Self::loading(ui),
-                ResultsState::Failed(reason) => Self::message(
-                    ui,
-                    "That search could not be completed",
-                    reason.as_str(),
-                    error_colour,
-                ),
-                ResultsState::Ready(results) => self.ready(ui, results.deref()),
+            ResultsState::Idle => Self::message(
+                ui,
+                "Nothing to show yet",
+                "Add at least one item to your shopping list, set your location, then run a search.",
+                weak_colour,
+            ),
+            ResultsState::Loading => Self::loading(ui),
+            ResultsState::Failed(reason) => Self::message(
+                ui,
+                "That search could not be completed",
+                reason.as_str(),
+                error_colour,
+            ),
+            ResultsState::Ready(results) => self.ready(ui, results.deref()),
         }
     }
 

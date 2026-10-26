@@ -79,6 +79,7 @@ pub struct Calculation {
     pub total_dist: Distance,
     pub shopping_plan: Vec<StorePlan>,
     pub msg_log: Vec<Message>,
+    pub source: OptimisedRoutePlan,
 }
 
 #[derive(Debug)]
@@ -326,7 +327,7 @@ fn delocalise(
         total_dist: rp.estimate_travel_distance().clone(),
         shopping_plan,
         msg_log: plan.1,
-        //route: rp,
+        source: rp.clone(),
     }
 }
 
