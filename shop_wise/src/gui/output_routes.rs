@@ -1,5 +1,6 @@
 use eframe::egui;
 use egui_extras::{Column, TableBuilder};
+use log::logger;
 use routx::{Graph, KDTree, osm::Options};
 use std::ops::Deref;
 
@@ -41,6 +42,7 @@ pub struct OutputRoutesData {
 
 impl Default for OutputRoutesData {
     fn default() -> Self {
+        log::debug!("test");
         std::thread::spawn(|| {
             log::debug!("route graph initialization begin");
 
