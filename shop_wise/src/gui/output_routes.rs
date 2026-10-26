@@ -66,7 +66,7 @@ impl Default for OutputRoutesData {
 impl Default for OutputRoutesData {
     fn default() -> Self {
         log::debug!("route graph initialization dispatch");
-        wasm_bindgen_futures::spawn_local(async move || {
+        wasm_bindgen_futures::spawn_local(async move {
             log::debug!("route graph initialization begin");
 
             let graph = make_graph(&OPTIONS);
