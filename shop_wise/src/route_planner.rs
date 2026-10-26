@@ -76,7 +76,11 @@ impl RoutePlan {
             .map(|(stores, _score)| stores)?
             .into();
 
-        log::debug!(target: "route", "optimise called, stop count = {:?}", ordered_stops.len());
+        log::debug!(
+            "optimise called, unordered stop count = {:?}",
+            self.unordered_stops.len()
+        );
+        log::debug!("optimise called, stop count = {:?}", ordered_stops.len());
 
         Some(OptimisedRoutePlan {
             start_position: self.start_position.clone(),
@@ -119,7 +123,10 @@ impl OptimisedRoutePlan {
     }
 
     pub fn path(&self) -> Arc<[Coordinate]> {
-        log::debug!(target: "route", "path called, ordered stops count = {:?}", self.ordered_stops.len());
+        log::debug!(
+            "path called, ordered stops count = {:?}",
+            self.ordered_stops.len()
+        );
         self.expensive_calculated_route
             .get_or_init(|| {
                 Arc::<[Coordinate]>::from(
