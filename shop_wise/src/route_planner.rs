@@ -242,15 +242,15 @@ pub fn all_stores() -> Box<[Store]> {
     Box::new([
         Store {
             brand: StoreBrand::Paknsave,
-            location: Coordinate::default(),
+            location: Coordinate::from_lat_long_f32(-41.28552007226365, 174.76680529344077),
         },
         Store {
             brand: StoreBrand::Newworld,
-            location: Coordinate::default(),
+            location: Coordinate::from_lat_long_f32(-41.2882757120501, 174.76293970444345),
         },
         Store {
             brand: StoreBrand::Woolworths,
-            location: Coordinate::default(),
+            location: Coordinate::from_lat_long_f32(-41.288907210767995, 174.76136254547123),
         },
     ])
 }
