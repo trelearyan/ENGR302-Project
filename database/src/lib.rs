@@ -240,9 +240,9 @@ impl Database {
         );
 
         let pattern = format!("%{item_query}%");
-        let mut params: Vec<&dyn rusqlite::ToSql> = chain_names
+        let mut params: Vec<&str> = chain_names
             .iter()
-            .map(|c| c as &dyn rusqlite::ToSql)
+            .map(|c| *c)
             .collect();
         params.push(&pattern);
 
@@ -294,9 +294,9 @@ impl Database {
         );
 
         let pattern = format!("%{item_query}%");
-        let mut params: Vec<&dyn rusqlite::ToSql> = chain_names
+        let mut params: Vec<&str> = chain_names
             .iter()
-            .map(|c| c as &dyn rusqlite::ToSql)
+            .map(|c| *c)
             .collect();
         params.push(&pattern);
 
