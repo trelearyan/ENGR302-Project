@@ -135,7 +135,11 @@ impl AppData {
         let origin_label = self.location_search.borrow().address.clone();
         self.output_routes.results = match res {
             Ok(calc) => ResultsState::Ready(Box::new(
-                price_calculator::results::Results::from_calculation(&calc, origin_label),
+                price_calculator::results::Results::from_calculation(
+                    &calc,
+                    origin_label,
+                    &self.output_routes.graph,
+                ),
             )),
             _ => ResultsState::Failed(res.unwrap_err().pretty()),
         };

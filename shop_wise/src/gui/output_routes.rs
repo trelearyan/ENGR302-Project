@@ -9,7 +9,7 @@ use crate::{
         Results, ResultsState, Scenario, ScenarioKind, StoreStop, UNAVAILABLE, UnresolvedItem,
         brand_label, format_delta, format_distance, format_duration, format_money,
     },
-    route_planner::{GRAPH, OPTIONS},
+    route_planner::{OPTIONS, make_graph},
 };
 
 impl ShowableWidget for OutputRoutesData {
@@ -37,14 +37,27 @@ pub struct OutputRoutesData {
     pub selected: ScenarioKind,
     pub layout: PanelLayout,
     pub results: ResultsState,
+    pub graph: Graph,
+    pub tree: KDTree,
 }
 
 impl Default for OutputRoutesData {
     fn default() -> Self {
+        log::debug!("route graph initialization begin");
+
+        let graph = make_graph(&OPTIONS);
+        let tree = KDTree::build_from_graph(&graph).unwrap();
+
+        log::debug!("route graph initialized");
+
+        log::debug!("route graph has {:?} nodes", graph.len());
+
         Self {
             selected: ScenarioKind::Best,
             layout: PanelLayout::Cards,
             results: ResultsState::Idle,
+            graph,
+            tree,
         }
     }
 }

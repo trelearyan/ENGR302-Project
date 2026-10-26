@@ -5,10 +5,8 @@ use routx::{
     osm::{CAR_PROFILE, FileFormat, Options},
 };
 use std::{
-    cell::{OnceCell, RefCell},
     fmt::Debug,
     iter,
-    ops::Deref,
     rc::Rc,
     sync::{Arc, LazyLock, OnceLock},
     time::Duration,
@@ -32,23 +30,7 @@ pub static OPTIONS: Options = routx::osm::Options {
     bbox: [166.086_32, -47.447_61, 178.679_81, -32.975_4], // tightly bound around nz north and south islands
 };
 
-pub static GRAPH: LazyLock<(Graph, KDTree)> = LazyLock::new(|| {
-    log::debug!("route graph initialization dispatch");
-    std::thread::spawn(move || {
-        log::debug!("route graph initialization begin");
-
-        let graph = make_graph(&OPTIONS);
-        let tree = KDTree::build_from_graph(&graph).unwrap();
-        log::debug!("route graph initialized");
-        (graph, tree)
-    })
-    .join()
-    .unwrap()
-    // log::debug!("route graph initialization dispatch complete");
-    // log::debug!("route graph has {:?} nodes", graph.len());
-});
-
-fn make_graph(options: &Options) -> Graph {
+pub fn make_graph(options: &Options) -> Graph {
     let mut graph = routx::Graph::new();
     println!("adding features");
     routx::osm::add_features_from_buffer(
@@ -141,16 +123,16 @@ impl OptimisedRoutePlan {
     }
 
     #[must_use]
-    pub fn exact_travel_cost(&self, mileage: &MileageOptions) -> Cost {
-        Cost::from(mileage.clone()) * self.exact_travel_distance().inner()
+    pub fn exact_travel_cost(&self, graph: &Graph, mileage: &MileageOptions) -> Cost {
+        Cost::from(mileage.clone()) * self.exact_travel_distance(graph).inner()
     }
 
     #[must_use]
-    pub fn exact_travel_time(&self, mileage: &MileageOptions) -> Duration {
-        self.exact_travel_distance().clone() / mileage.average_speed()
+    pub fn exact_travel_time(&self, graph: &Graph, mileage: &MileageOptions) -> Duration {
+        self.exact_travel_distance(graph).clone() / mileage.average_speed()
     }
 
-    pub fn path(&self) -> Arc<[Coordinate]> {
+    pub fn path(&self, graph: &Graph) -> Arc<[Coordinate]> {
         log::debug!(
             "path called, ordered stops count = {:?}",
             self.ordered_stops.len()
@@ -161,18 +143,23 @@ impl OptimisedRoutePlan {
                     self.ordered_stops
                         .iter()
                         .map(|a| {
-                            GRAPH.1.find_nearest_node(
+                            graph.find_nearest_node(
                                 a.location.latitude.to_f32().unwrap(),
                                 a.location.longitude.to_f32().unwrap(),
                             )
                         })
                         .tuple_windows::<(_, _)>()
                         .flat_map(|(a, b)| {
-                            find_route_without_turn_around(&GRAPH.0, a.id, b.id, DEFAULT_STEP_LIMIT)
-                                .unwrap()
+                            find_route_without_turn_around(
+                                &graph,
+                                a.unwrap().id,
+                                b.unwrap().id,
+                                DEFAULT_STEP_LIMIT,
+                            )
+                            .unwrap()
                         })
                         .map(|id| {
-                            let node = GRAPH.0.get_node(id).unwrap();
+                            let node = graph.get_node(id).unwrap();
                             Coordinate::from_lat_long_f32(node.lat, node.lon)
                         })
                         .collect_vec(),
@@ -182,20 +169,20 @@ impl OptimisedRoutePlan {
     }
 
     #[must_use]
-    pub fn exact_travel_distance(&self) -> Distance {
+    pub fn exact_travel_distance(&self, graph: &Graph) -> Distance {
         log::debug!(
             "exact routefind start {:?} end {:?}",
             self.start_position,
             self.end_position
         );
         let result = self
-            .path()
+            .path(graph)
             .iter()
             .tuple_windows::<(_, _)>()
             .map(|(a, b)| a.distance_to(b))
             .sum::<Distance>();
         log::debug!("exact travel distance call results in {result:?}");
-        log::debug!("number of nodes {:?}", self.path().iter().count());
+        log::debug!("number of nodes {:?}", self.path(graph).iter().count());
         result
     }
 }

@@ -1,5 +1,6 @@
 use crate::price_calculator::{Calculation, CalculationTotal};
 use bigdecimal::{BigDecimal, Zero};
+use routx::Graph;
 use serde::{Deserialize, Serialize};
 use util::cost::Cost;
 use util::distance::Distance;
@@ -166,7 +167,7 @@ impl Scenario {
             .join(" + ")
     }
 
-    fn from_calculation(kind: ScenarioKind, calc: &Calculation) -> Self {
+    fn from_calculation(kind: ScenarioKind, calc: &Calculation, graph: &Graph) -> Self {
         let store_plans = &calc.shopping_plan;
         //store_ids.sort();
 
@@ -202,16 +203,21 @@ impl Scenario {
 
         log::debug!(
             "travel distance is {:?}",
-            calc.source.exact_travel_distance()
+            calc.source.exact_travel_distance(graph)
         );
         Self {
             kind,
             stops,
-            travel_cost: Some(calc.source.exact_travel_cost(&calc.mileage)),
-            distance_km: Some(calc.source.exact_travel_distance()),
+            travel_cost: Some(calc.source.exact_travel_cost(graph, &calc.mileage)),
+            distance_km: Some(calc.source.exact_travel_distance(graph)),
             //TODO: once available, change
             //duration_min: Some((calc.total_time.as_secs() / 60) as f32),
-            duration_min: Some(calc.source.exact_travel_time(&calc.mileage).as_secs_f32() / 60f32),
+            duration_min: Some(
+                calc.source
+                    .exact_travel_time(graph, &calc.mileage)
+                    .as_secs_f32()
+                    / 60f32,
+            ),
         }
     }
 }
@@ -296,12 +302,12 @@ impl Results {
     }
 
     #[must_use]
-    pub fn from_calculation(calc: &CalculationTotal, origin_label: String) -> Self {
+    pub fn from_calculation(calc: &CalculationTotal, origin_label: String, graph: &Graph) -> Self {
         Self {
             origin_label,
-            best: Scenario::from_calculation(ScenarioKind::Best, &calc.best),
-            cheapest: Scenario::from_calculation(ScenarioKind::Cheapest, &calc.cheapest),
-            fastest: Scenario::from_calculation(ScenarioKind::Fastest, &calc.fastest),
+            best: Scenario::from_calculation(ScenarioKind::Best, &calc.best, graph),
+            cheapest: Scenario::from_calculation(ScenarioKind::Cheapest, &calc.cheapest, graph),
+            fastest: Scenario::from_calculation(ScenarioKind::Fastest, &calc.fastest, graph),
             unresolved: Vec::new(),
         }
     }
