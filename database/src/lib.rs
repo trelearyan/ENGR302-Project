@@ -95,6 +95,38 @@ pub struct ProductPrice {
     pub name: String,
     pub price: Cost,
     pub volume_size: Option<ProductQuantity>,
+    /// Link to the product photo (None if the chain had none).
+    pub image_url: Option<String>,
+    /// Loyalty card price, if the product has one (New World Clubcard,
+    /// Woolworths Everyday Rewards). `price` is always the shelf price.
+    pub member_price: Option<Cost>,
+}
+
+/// Which loyalty cards the shopper has switched on. Pak'nSave has no
+/// card scheme, so it has no toggle. Default is both off.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub struct LoyaltyCards {
+    /// New World Clubcard (Club+ from June 2026)
+    pub clubcard: bool,
+    /// Woolworths Everyday Rewards
+    pub everyday_rewards: bool,
+}
+
+impl ProductPrice {
+    /// The price the shopper actually pays: the card price if that
+    /// chain's card is on and the card price is lower, else the shelf price.
+    #[must_use]
+    pub fn price_with(&self, cards: LoyaltyCards) -> Cost {
+        let card_on = match self.chain {
+            StoreBrand::Newworld => cards.clubcard,
+            StoreBrand::Woolworths => cards.everyday_rewards,
+            StoreBrand::Paknsave => false,
+        };
+        match &self.member_price {
+            Some(m) if card_on && *m < self.price => m.clone(),
+            _ => self.price.clone(),
+        }
+    }
 }
 
 /// Maps a `StoreBrand` to the exact `chain` text stored in the database.
@@ -117,7 +149,7 @@ fn chain_name_to_brand(name: &str) -> Option<StoreBrand> {
     }
 }
 
-/// Converts a raw `(chain, name, price, volume_size)` row into a
+/// Converts a raw `(chain, name, price, volume_size, image_url, member_price)` row into a
 /// `ProductPrice`. Returns `None` if the chain text doesn't map to a
 /// known `StoreBrand` — that row is skipped rather than erroring the
 /// whole query out.
@@ -126,6 +158,8 @@ fn row_to_product_price(
     name: String,
     price_f64: f64,
     volume_size_text: Option<String>,
+    image_url: Option<String>,
+    member_price_f64: Option<f64>,
 ) -> Option<ProductPrice> {
     let chain = chain_name_to_brand(&chain_text)?;
 
@@ -136,7 +170,11 @@ fn row_to_product_price(
 
     let volume_size = volume_size_text.and_then(|s| ProductQuantity::parse(&s));
 
-    Some(ProductPrice { chain, name, price, volume_size })
+    let member_price = member_price_f64
+        .and_then(|m| BigDecimal::from_str(&format!("{m:.2}")).ok())
+        .map(Cost::new);
+
+    Some(ProductPrice { chain, name, price, volume_size, image_url, member_price })
 }
 
 /// Handle to an open SQLite database connection.
@@ -191,7 +229,7 @@ impl Database {
 
         let placeholders = vec!["?"; chain_names.len()].join(", ");
         let sql = format!(
-            "SELECT s.chain, p.name, p.price, p.volume_size
+            "SELECT s.chain, p.name, p.price, p.volume_size, p.image_url, p.member_price
              FROM products p
              JOIN supermarkets s ON s.id = p.supermarket_id
              WHERE s.chain IN ({placeholders})
@@ -215,13 +253,17 @@ impl Database {
                     row.get::<_, String>(1)?,
                     row.get::<_, f64>(2)?,
                     row.get::<_, Option<String>>(3)?,
+                    row.get::<_, Option<String>>(4)?,
+                    row.get::<_, Option<f64>>(5)?,
                 ))
             })?
             .collect::<Result<Vec<_>>>()?;
 
         Ok(rows
             .into_iter()
-            .filter_map(|(chain, name, price, vol)| row_to_product_price(chain, name, price, vol))
+            .filter_map(|(chain, name, price, vol, img, member)| {
+                row_to_product_price(chain, name, price, vol, img, member)
+            })
             .collect())
     }
 
@@ -241,7 +283,7 @@ impl Database {
         let chain_names: Vec<&str> = chains.iter().map(|b| chain_name(*b)).collect();
         let placeholders = vec!["?"; chain_names.len()].join(", ");
         let sql = format!(
-            "SELECT s.chain, p.name, p.price, p.volume_size
+            "SELECT s.chain, p.name, p.price, p.volume_size, p.image_url, p.member_price
              FROM products p
              JOIN supermarkets s ON s.id = p.supermarket_id
              WHERE s.chain IN ({placeholders})
@@ -264,16 +306,49 @@ impl Database {
                 row.get::<_, String>(1)?,
                 row.get::<_, f64>(2)?,
                 row.get::<_, Option<String>>(3)?,
+                row.get::<_, Option<String>>(4)?,
+                row.get::<_, Option<f64>>(5)?,
             ))
         })?;
 
         match rows.next() {
             Some(r) => {
-                let (chain, name, price, vol) = r?;
-                Ok(row_to_product_price(chain, name, price, vol))
+                let (chain, name, price, vol, img, member) = r?;
+                Ok(row_to_product_price(chain, name, price, vol, img, member))
             }
             None => Ok(None),
         }
+    }
+
+    /// Same as `find_products`, but ranked by what the shopper pays with
+    /// the given cards switched on (card price where it applies).
+    /// `find_products` itself is unchanged and still ranks by shelf price.
+    pub fn find_products_with_cards(
+        &self,
+        item_query: &str,
+        in_range_stores: &[Store],
+        cards: LoyaltyCards,
+    ) -> Result<Vec<ProductPrice>> {
+        let mut products = self.find_products(item_query, in_range_stores)?;
+        products.sort_by(|a, b| a.price_with(cards).cmp(&b.price_with(cards)));
+        Ok(products)
+    }
+
+    /// Same as `cheapest_at`, but the cheapest after card prices are applied.
+    pub fn cheapest_at_with_cards(
+        &self,
+        item_query: &str,
+        chains: &[StoreBrand],
+        cards: LoyaltyCards,
+    ) -> Result<Option<ProductPrice>> {
+        let stores: Vec<Store> = chains
+            .iter()
+            .map(|b| Store { brand: *b, location: util::coordinate::Coordinate::wellington() })
+            .collect();
+        Ok(self
+            .find_products_with_cards(item_query, &stores, cards)?
+            .into_iter()
+            .next())
     }
 }
 
@@ -288,5 +363,34 @@ mod tests {
         let db = Database::open(TEST_DB).expect("database file should be readable");
         let summary = db.supermarket_summary().expect("query should run");
         assert!(!summary.is_empty(), "expected at least one supermarket chain");
+    }
+
+    fn product(chain: StoreBrand, shelf: &str, member: Option<&str>) -> ProductPrice {
+        ProductPrice {
+            chain,
+            name: "x".to_owned(),
+            price: Cost::new(BigDecimal::from_str(shelf).unwrap()),
+            volume_size: None,
+            image_url: None,
+            member_price: member.map(|m| Cost::new(BigDecimal::from_str(m).unwrap())),
+        }
+    }
+
+    #[test]
+    fn card_price_only_applies_when_that_card_is_on() {
+        let nw = product(StoreBrand::Newworld, "5.00", Some("4.00"));
+        let off = LoyaltyCards::default();
+        let on = LoyaltyCards { clubcard: true, everyday_rewards: false };
+        assert_eq!(nw.price_with(off), nw.price);
+        assert_eq!(nw.price_with(on), *nw.member_price.as_ref().unwrap());
+
+        // Wrong card for the chain: no discount
+        let wool = product(StoreBrand::Woolworths, "5.00", Some("4.00"));
+        assert_eq!(wool.price_with(on), wool.price);
+
+        // Pak'nSave never has a card price
+        let pak = product(StoreBrand::Paknsave, "5.00", Some("1.00"));
+        let both = LoyaltyCards { clubcard: true, everyday_rewards: true };
+        assert_eq!(pak.price_with(both), pak.price);
     }
 }
