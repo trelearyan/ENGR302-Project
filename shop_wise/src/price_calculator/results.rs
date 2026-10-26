@@ -203,8 +203,7 @@ impl Scenario {
             travel_cost: Some(calc.total_travel_cost.clone()),
             distance_km: Some(calc.total_dist.clone()),
             //TODO: once available, change
-            //duration_min: Some((calc.total_time.as_secs() / 60) as f32),
-            duration_min: None,
+            duration_min: Some((calc.total_time.as_secs() / 60) as f32),
         }
     }
 }
