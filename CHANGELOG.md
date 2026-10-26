@@ -32,6 +32,8 @@ Work on branches that are not yet merged into `main`.
 - Code documentation for the shopping list, stores and file handling (#103)
 
 ### Fixed
+- Long item names in a stop's table no longer push it over the stop beside it
+- With three stops, a long first stop sits on one side and the shorter two stack on the other
 - Travel distance and speed calculations (#110)
 - Very large mileage values now show a proper error instead of failing (#110)
 - Items were removed from the results for a whole brand instead of a single store (#110)
