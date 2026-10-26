@@ -171,7 +171,7 @@ pub fn resolve(item_query: &ShoppingItemQuery,
                 multiplier: best_mul.unwrap(),
                 quantity: best.quantity,
                 unit: best.unit.clone(),
-                price: Cost::from_cents(best.price),
+                price: Cost::from_cents(best_price),
             },
         );
     }
@@ -521,10 +521,17 @@ mod tests {
         println!("{:?}", get_unit("24x600mL".to_owned()));
     }
 
-    // #[test]
-    // fn test_rand() {
-    //     simple_query("SELECT name FROM products p WHERE LOWER(p.name) LIKE '%Chocolate%'").into_iter()
-    //         .take(500)
-    //         .for_each(|x|->(){println!("{:?}", x)});
-    // }
+/*     #[test]
+    fn test_member() {
+        simple_query("SELECT name FROM products WHERE member_price IS NOT NULL").into_iter()
+            .take(500)
+            .for_each(|x|->(){println!("{:?}", x);});
+    }
+
+    #[test]
+    fn test_rand() {
+        simple_query("SELECT name FROM products p WHERE LOWER(p.name) LIKE '%Chocolate%'").into_iter()
+            .take(500)
+            .for_each(|x|->(){println!("{:?}", x)});
+    } */
 }
