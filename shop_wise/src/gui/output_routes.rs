@@ -54,6 +54,9 @@ impl Default for OutputRoutesData {
         });
         log::debug!("route graph initialization dispatch complete");
 
+        log::debug!("route graph has {:?} nodes", GRAPH.wait().0.len());
+        log::debug!("route tree has {:?} nodes", GRAPH.wait().1.len());
+
         Self {
             selected: ScenarioKind::Best,
             layout: PanelLayout::Cards,
