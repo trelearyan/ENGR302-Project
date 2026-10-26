@@ -12,7 +12,7 @@ use crate::price_calculator::item_resolver::SantizedSearchResult;
 
 const DEBOUNCE_SECONDS: f64 = 0.4;
 const MIN_QUERY_LEN: usize = 3;
- 
+
 #[derive(Debug, Default, Clone, Copy, PartialEq)]
 enum AddItemStatus {
     #[default]
@@ -21,7 +21,7 @@ enum AddItemStatus {
     Suggesting,
     NotFound,
 }
- 
+
 #[derive(Debug, Default, Clone)]
 struct AddItemState {
     query: String,
@@ -58,10 +58,11 @@ impl ShowableWidget for ShoppingListData {
         ui.heading("Your shopping list");
 
         ui.horizontal(|ui| {
-
-            if ui.button("Load CSV")
+            if ui
+                .button("Load CSV")
                 .on_hover_text("Load in your own shopping list CSV file")
-                .clicked() {
+                .clicked()
+            {
                 self.load_csv();
             }
 
@@ -101,7 +102,8 @@ impl ShowableWidget for ShoppingListData {
                         .small()
                         .weak(),
                 );
-                if ui.button("Undo")
+                if ui
+                    .button("Undo")
                     .on_hover_text("Return your cleared items back to your shopping list")
                     .clicked()
                     && let Some(items) = self.cleared_items.take()
@@ -181,7 +183,8 @@ impl ShoppingListData {
     fn show_add_item_search(&mut self, ui: &mut Ui) {
         let state_rc = self
             .add_item_modal
-            .get_or_insert_with(|| Rc::new(RefCell::new(AddItemState::default()))).clone();
+            .get_or_insert_with(|| Rc::new(RefCell::new(AddItemState::default())))
+            .clone();
 
         let now = ui.input(|i| i.time);
         let mut picked: Option<SantizedSearchResult> = None;
@@ -189,27 +192,28 @@ impl ShoppingListData {
         {
             let mut state = state_rc.borrow_mut();
 
-            let response = ui.add(egui::TextEdit::singleline(&mut state.query).hint_text("Enter Your Item Name"),);
+            let response = ui.add(
+                egui::TextEdit::singleline(&mut state.query).hint_text("Enter Your Item Name"),
+            );
 
             if response.changed() {
                 state.status = AddItemStatus::Idle;
                 state.suggestions.clear();
                 state.last_edit_time = Some(now);
 
-                ui.ctx().request_repaint_after(
-                    std::time::Duration::from_secs_f64(DEBOUNCE_SECONDS),
-                );
+                ui.ctx()
+                    .request_repaint_after(std::time::Duration::from_secs_f64(DEBOUNCE_SECONDS));
             }
- 
+
             let should_fire = matches!(
                 state.last_edit_time,
                 Some(last_edit) if now - last_edit >= DEBOUNCE_SECONDS
             );
- 
+
             if should_fire {
                 let query = state.query.trim().to_string();
                 state.last_edit_time = None;
- 
+
                 if query.len() < MIN_QUERY_LEN {
                     state.status = AddItemStatus::Idle;
                 } else {
@@ -223,7 +227,7 @@ impl ShoppingListData {
                     }
                 }
             }
- 
+
             match state.status {
                 AddItemStatus::Searching => {
                     ui.label("Searching…");
@@ -236,23 +240,26 @@ impl ShoppingListData {
                 }
                 AddItemStatus::Idle | AddItemStatus::Suggesting => {}
             }
- 
+
             if state.status == AddItemStatus::Suggesting {
                 let suggestions = state.suggestions.clone();
                 egui::Frame::popup(ui.style()).show(ui, |ui| {
                     // .max_height(300.0) 300px fits roughly 14 text only suggestion items before scrolling. Once product images are added this value will likely need to be changed.
-                    egui::ScrollArea::vertical().max_height(300.0).show(ui, |ui|{
-                        for s in &suggestions {
-                            let label = format!("{}  ·  {} {}", s.name, s.quantity, s.unit.to_str());
-                            if ui.selectable_label(false, label).clicked() {
-                                picked = Some(s.clone());
+                    egui::ScrollArea::vertical()
+                        .max_height(300.0)
+                        .show(ui, |ui| {
+                            for s in &suggestions {
+                                let label =
+                                    format!("{}  ·  {} {}", s.name, s.quantity, s.unit.to_str());
+                                if ui.selectable_label(false, label).clicked() {
+                                    picked = Some(s.clone());
+                                }
                             }
-                        }
-                    });
+                        });
                 });
             }
         } // `state` (the RefMut borrow) drops here, before touching self.* below
- 
+
         if let Some(s) = picked {
             self.shopping_items.push(ShoppingItemQuery {
                 name: s.name.clone(),
@@ -265,8 +272,5 @@ impl ShoppingListData {
             state.suggestions.clear();
             state.status = AddItemStatus::Idle;
         }
-
     }
-
 }
-

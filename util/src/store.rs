@@ -17,7 +17,7 @@ pub enum StoreBrand {
     Woolworths,
 }
 
-#[derive(Debug, PartialEq, PartialOrd, Clone, Serialize, Deserialize)]
+#[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
 pub struct Store {
     pub brand: StoreBrand,
     pub location: Coordinate,

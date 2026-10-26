@@ -1,9 +1,10 @@
+use crate::price_calculator::{Calculation, CalculationTotal};
 use bigdecimal::{BigDecimal, Zero};
+use routx::Graph;
 use serde::{Deserialize, Serialize};
 use util::cost::Cost;
 use util::distance::Distance;
 use util::store::StoreBrand;
-use crate::price_calculator::{Calculation, CalculationTotal};
 
 //TODO: remove once all have values
 pub const UNAVAILABLE: &str = "not available";
@@ -32,7 +33,7 @@ pub fn format_distance(distance: &Distance) -> String {
 pub fn format_duration(minutes: f32) -> String {
     let total = minutes.round().max(0.0) as u32;
     if total < 60 {
-        format!("{total} min")
+        format!("{total:.1} min")
     } else {
         format!("{} h {:02} min", total / 60, total % 60)
     }
@@ -166,7 +167,7 @@ impl Scenario {
             .join(" + ")
     }
 
-    fn from_calculation(kind: ScenarioKind, calc: &Calculation) -> Self {
+    fn from_calculation(kind: ScenarioKind, calc: &Calculation, graph: &Graph) -> Self {
         let store_plans = &calc.shopping_plan;
         //store_ids.sort();
 
@@ -180,7 +181,10 @@ impl Scenario {
                     .iter()
                     .map(|info| ItemLine {
                         name: info.name.clone(),
-                        quantity: info.multiplier.to_string() + "x " + &info.quantity.to_string() + info.unit.to_str(),
+                        quantity: info.multiplier.to_string()
+                            + "x "
+                            + &info.quantity.to_string()
+                            + info.unit.to_str(),
                         unit_price: info.price.clone(),
                         on_special: false,
                         needs_loyalty_card: false,
@@ -197,14 +201,35 @@ impl Scenario {
             })
             .collect();
 
+        log::debug!(
+            "travel distance is {:?}",
+            calc.source.exact_travel_distance(graph)
+        );
+
+        log::debug!(
+            "travel time is {:?}s or {:?}m",
+            calc.source
+                .exact_travel_time(graph, &calc.mileage)
+                .as_secs_f32(),
+            calc.source
+                .exact_travel_time(graph, &calc.mileage)
+                .as_secs_f32()
+                / 60f32,
+        );
+
         Self {
             kind,
             stops,
-            travel_cost: Some(calc.total_travel_cost.clone()),
-            distance_km: Some(calc.total_dist.clone()),
+            travel_cost: Some(calc.source.exact_travel_cost(graph, &calc.mileage)),
+            distance_km: Some(calc.source.exact_travel_distance(graph)),
             //TODO: once available, change
             //duration_min: Some((calc.total_time.as_secs() / 60) as f32),
-            duration_min: None,
+            duration_min: Some(
+                calc.source
+                    .exact_travel_time(graph, &calc.mileage)
+                    .as_secs_f32()
+                    / 60f32,
+            ),
         }
     }
 }
@@ -289,12 +314,12 @@ impl Results {
     }
 
     #[must_use]
-    pub fn from_calculation(calc: &CalculationTotal, origin_label: String) -> Self {
+    pub fn from_calculation(calc: &CalculationTotal, origin_label: String, graph: &Graph) -> Self {
         Self {
             origin_label,
-            best: Scenario::from_calculation(ScenarioKind::Best, &calc.best),
-            cheapest: Scenario::from_calculation(ScenarioKind::Cheapest, &calc.cheapest),
-            fastest: Scenario::from_calculation(ScenarioKind::Fastest, &calc.fastest),
+            best: Scenario::from_calculation(ScenarioKind::Best, &calc.best, graph),
+            cheapest: Scenario::from_calculation(ScenarioKind::Cheapest, &calc.cheapest, graph),
+            fastest: Scenario::from_calculation(ScenarioKind::Fastest, &calc.fastest, graph),
             unresolved: Vec::new(),
         }
     }
@@ -389,8 +414,14 @@ mod tests {
     #[test]
     fn delta_is_signed() {
         let base = Cost::from_cents(6140);
-        assert_eq!(format_delta(&Cost::from_cents(6890), &base).as_deref(), Some("+$7.50"));
-        assert_eq!(format_delta(&Cost::from_cents(5960), &base).as_deref(), Some("-$1.80"));
+        assert_eq!(
+            format_delta(&Cost::from_cents(6890), &base).as_deref(),
+            Some("+$7.50")
+        );
+        assert_eq!(
+            format_delta(&Cost::from_cents(5960), &base).as_deref(),
+            Some("-$1.80")
+        );
         assert_eq!(format_delta(&base, &base), None);
     }
 
@@ -457,8 +488,6 @@ mod tests {
         assert_eq!(scenario.total_cost(), Cost::from_cents(1278));
         assert_eq!(scenario.item_count(), 1);
     }
-
-    
 
     #[test]
     fn total_is_groceries_plus_travel2() {

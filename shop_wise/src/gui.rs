@@ -1,4 +1,4 @@
-use eframe::egui::{CentralPanel, Color32, Panel, ScrollArea, Stroke, Ui};
+use eframe::egui::{CentralPanel, Panel, ScrollArea, Ui};
 use std::cell::RefCell;
 use std::rc::Rc;
 use util::coordinate::Coordinate;
@@ -14,16 +14,14 @@ use crate::price_calculator::{self};
 use crate::route_planner::filters::StoreFilters;
 
 pub mod location_search;
+pub mod masthead;
 pub mod output_routes;
 pub mod preferences;
 pub mod shopping_list;
 pub mod supermarkets;
 pub mod transit;
-pub mod masthead;
-pub mod footer;
 
 const SECTION_MAX_HEIGHT: f32 = 300.0;
-const LEFT_PANEL_WIDTH: f32 = 300.0;
 
 #[derive(Default, Clone)]
 pub struct AppData {
@@ -33,7 +31,6 @@ pub struct AppData {
     transit: TransitData,
     location_search: Rc<RefCell<LocationData>>,
     output_routes: OutputRoutesData,
-    footer: footer::FooterData,
     pub(crate) filters_collapsed: bool,
 }
 
@@ -45,19 +42,12 @@ impl ShowableWidget for AppData {
     fn show(&mut self, ui: &mut Ui) {
         self.masthead(ui);
 
-        if !self.filters_collapsed{
-            let panel = Panel::left("left_panel")
-                .default_size(LEFT_PANEL_WIDTH)
-                .show_inside(ui, |ui| {
-                Panel::bottom("left_footer")
-                    .resizable(false)
-                    .show_inside(ui, |ui| {
-                      self.footer.show(ui);
-                    });
+        if !self.filters_collapsed {
+            Panel::left("left_panel").show_inside(ui, |ui| {
                 ScrollArea::vertical()
                     .id_salt("left panel scroll")
                     .auto_shrink([false; 2])
-                    .show(ui, |ui|{
+                    .show(ui, |ui| {
                         ScrollArea::vertical()
                             .id_salt("shopping_list_scroll")
                             .max_height(SECTION_MAX_HEIGHT)
@@ -93,9 +83,6 @@ impl ShowableWidget for AppData {
                         ui.separator();
                     });
             });
-            let line_width = 1.0_f32;
-            let bar = panel.response.rect;
-            ui.painter().vline(bar.right(), bar.y_range(), Stroke::new(line_width, Color32::BLACK));
         }
 
         CentralPanel::default().show_inside(ui, |ui| {
@@ -158,11 +145,13 @@ impl AppData {
         let origin_label = self.location_search.borrow().address.clone();
         self.output_routes.results = match res {
             Ok(calc) => ResultsState::Ready(Box::new(
-                price_calculator::results::Results::from_calculation(&calc, origin_label),
+                price_calculator::results::Results::from_calculation(
+                    &calc,
+                    origin_label,
+                    &self.output_routes.graph,
+                ),
             )),
-            _ => ResultsState::Failed(
-                res.unwrap_err().pretty(),
-            ),
+            _ => ResultsState::Failed(res.unwrap_err().pretty()),
         };
     }
 }
