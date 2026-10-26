@@ -124,7 +124,7 @@ impl OptimisedRoutePlan {
 
     #[must_use]
     pub fn exact_travel_cost(&self, graph: &Graph, mileage: &MileageOptions) -> Cost {
-        Cost::from(mileage.clone()) * self.exact_travel_distance(graph).inner()
+        Cost::from(mileage.clone()) * (self.exact_travel_distance(graph).inner() / 1000)
     }
 
     #[must_use]
