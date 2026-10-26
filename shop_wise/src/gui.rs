@@ -139,47 +139,25 @@ impl AppData {
         let _origin_label = self.location_search.borrow().address.clone();
 
         // Sam
+        let edr: bool = self.supermarkets.has_loyalty_card(StoreBrand::Woolworths);
+        let club: bool = self.supermarkets.has_loyalty_card(StoreBrand::Newworld);
         let res = price_calculator::calculate(
             &self.shopping_list.shopping_items,
             &filters,
             &self.transit.mileage_option,
+            edr,
+            club
         );
         log::info!("{res:?}");
 
-                let filters_builder = StoreFilters::builder()
-                    .location(Coordinate::from_lat_long_f64(
-                        self.location_search.borrow().latitude.unwrap(),
-                        self.location_search.borrow().longitude.unwrap(),
-                    ))
-                    .range(self.preferences.max_range.clone())
-                    .max_store_visits(self.preferences.max_stores)
-                    .disallow_brands(&banned_stores);
-                let filters = filters_builder.build();
-
-                let _origin_label = self.location_search.borrow().address.clone();
-
-                // Sam
-                let edr: bool = self.supermarkets.has_loyalty_card(StoreBrand::Woolworths);
-                let club: bool = self.supermarkets.has_loyalty_card(StoreBrand::Newworld);
-                let res = price_calculator::calculate(
-                    &self.shopping_list.shopping_items,
-                    &filters,
-                    &self.transit.mileage_option,
-                    edr,
-                    club
-                );
-                log::info!("{res:?}");
-
-                let origin_label = self.location_search.borrow().address.clone();
-                self.output_routes.results = match res {
-                    Ok(calc) => ResultsState::Ready(Box::new(
-                        price_calculator::results::Results::from_calculation(&calc, origin_label),
-                    )),
-                    _ => ResultsState::Failed(
-                        res.unwrap_err().pretty(),
-                    ),
-                };
-            }
-        });
+        let origin_label = self.location_search.borrow().address.clone();
+        self.output_routes.results = match res {
+            Ok(calc) => ResultsState::Ready(Box::new(
+                price_calculator::results::Results::from_calculation(&calc, origin_label),
+            )),
+            _ => ResultsState::Failed(
+                res.unwrap_err().pretty(),
+            ),
+        };
     }
 }
