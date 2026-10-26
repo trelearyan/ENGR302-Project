@@ -129,6 +129,12 @@ impl OptimisedRoutePlan {
 
     #[must_use]
     pub fn exact_travel_time(&self, graph: &Graph, mileage: &MileageOptions) -> Duration {
+        log::debug!("travel time call, {:?} / {:?} = {:?}"
+
+        self.exact_travel_distance(graph).clone(),
+        mileage.average_speed(),
+        self.exact_travel_distance(graph).clone() / mileage.average_speed());
+
         self.exact_travel_distance(graph).clone() / mileage.average_speed()
     }
 
