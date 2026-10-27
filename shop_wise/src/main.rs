@@ -1,4 +1,3 @@
-
 use crate::gui::ShowableWidget;
 
 pub mod filehandling;
@@ -24,7 +23,7 @@ fn main() -> eframe::Result {
     eframe::run_native(
         "ShopWise",
         options,
-        Box::new(|_| Ok(Box::new(AppData::default()))),
+        Box::new(|ctx| Ok(Box::new(AppData::new(ctx)))),
     )
 }
 

@@ -1,9 +1,12 @@
+use std::sync::Arc;
+
+use crate::price_calculator::{Calculation, CalculationTotal};
 use bigdecimal::{BigDecimal, Zero};
 use serde::{Deserialize, Serialize};
+use util::coordinate::Coordinate;
 use util::cost::Cost;
 use util::distance::Distance;
 use util::store::StoreBrand;
-use crate::price_calculator::{Calculation, CalculationTotal};
 
 //TODO: remove once all have values
 pub const UNAVAILABLE: &str = "not available";
@@ -127,6 +130,7 @@ pub struct Scenario {
     pub travel_cost: Option<Cost>,
     pub distance_km: Option<Distance>,
     pub duration_min: Option<f32>,
+    pub ordered_stops: Arc<[Coordinate]>,
 }
 
 impl Scenario {
@@ -180,7 +184,10 @@ impl Scenario {
                     .iter()
                     .map(|info| ItemLine {
                         name: info.name.clone(),
-                        quantity: info.multiplier.to_string() + "x " + &info.quantity.to_string() + info.unit.to_str(),
+                        quantity: info.multiplier.to_string()
+                            + "x "
+                            + &info.quantity.to_string()
+                            + info.unit.to_str(),
                         unit_price: info.price.clone(),
                         on_special: false,
                         needs_loyalty_card: false,
@@ -203,8 +210,9 @@ impl Scenario {
             travel_cost: Some(calc.total_travel_cost.clone()),
             distance_km: Some(calc.total_dist.clone()),
             //TODO: once available, change
-            //duration_min: Some((calc.total_time.as_secs() / 60) as f32),
-            duration_min: None,
+            duration_min: Some((calc.total_time.as_secs() / 60) as f32),
+            ordered_stops: calc.
+            
         }
     }
 }
@@ -321,8 +329,14 @@ mod tests {
     #[test]
     fn delta_is_signed() {
         let base = Cost::from_cents(6140);
-        assert_eq!(format_delta(&Cost::from_cents(6890), &base).as_deref(), Some("+$7.50"));
-        assert_eq!(format_delta(&Cost::from_cents(5960), &base).as_deref(), Some("-$1.80"));
+        assert_eq!(
+            format_delta(&Cost::from_cents(6890), &base).as_deref(),
+            Some("+$7.50")
+        );
+        assert_eq!(
+            format_delta(&Cost::from_cents(5960), &base).as_deref(),
+            Some("-$1.80")
+        );
         assert_eq!(format_delta(&base, &base), None);
     }
 
@@ -389,8 +403,6 @@ mod tests {
         assert_eq!(scenario.total_cost(), Cost::from_cents(1278));
         assert_eq!(scenario.item_count(), 1);
     }
-
-    
 
     #[test]
     fn total_is_groceries_plus_travel2() {

@@ -1,9 +1,13 @@
-use eframe::egui::{CentralPanel, Color32, Panel, ScrollArea, Stroke, Ui};
+use eframe::CreationContext;
+use eframe::egui::{self, CentralPanel, Color32, Panel, ScrollArea, Stroke, Ui};
 use std::cell::RefCell;
 use std::rc::Rc;
 use util::coordinate::Coordinate;
+use walkers::sources::OpenStreetMap;
+use walkers::{HttpTiles, MapMemory};
 
 use crate::gui::location_search::LocationData;
+use crate::gui::map::MapData;
 use crate::gui::output_routes::OutputRoutesData;
 use crate::gui::preferences::PreferencesData;
 use crate::gui::shopping_list::ShoppingListData;
@@ -13,19 +17,90 @@ use crate::price_calculator::results::ResultsState;
 use crate::price_calculator::{self};
 use crate::route_planner::filters::StoreFilters;
 
+pub mod footer;
 pub mod location_search;
+pub mod masthead;
 pub mod output_routes;
 pub mod preferences;
 pub mod shopping_list;
 pub mod supermarkets;
 pub mod transit;
-pub mod masthead;
-pub mod footer;
+pub mod map {
+    use std::sync::Arc;
+
+    use eframe::{
+        CreationContext,
+        egui::{self, CentralPanel, Color32, Response, Ui},
+        epaint::PathStroke,
+    };
+    use util::coordinate::Coordinate;
+    use walkers::{HttpTiles, Map, MapMemory, Plugin, Position, Projector, sources::OpenStreetMap};
+
+    use crate::gui::ShowableWidget;
+
+    pub struct MapData {
+        tiles: HttpTiles,
+        memory: MapMemory,
+        pub route: Arc<[Coordinate]>,
+    }
+
+    impl ShowableWidget for MapData {
+        fn show(&mut self, ui: &mut egui::Ui) {
+            CentralPanel::default().show(ui, |ui| {
+                let mut map = Map::new(
+                    Some(&mut self.tiles),
+                    &mut self.memory,
+                    walkers::lon_lat(174.77643827862266, -41.288175480492), // Wellington
+                );
+                if self.route.len() > 1 {
+                    log::debug!("Route length greater than 1, showing map");
+                    map = map.with_plugin(RouteDrawingPlugin(self.route.clone()));
+                }
+                ui.add(map);
+            });
+        }
+    }
+
+    #[derive(Clone, PartialEq, PartialOrd, Debug)]
+    pub struct RouteDrawingPlugin(Arc<[Coordinate]>);
+
+    impl Plugin for RouteDrawingPlugin {
+        fn run(
+            self: Box<Self>,
+            ui: &mut egui::Ui,
+            response: &egui::Response,
+            projector: &Projector,
+            map_memory: &MapMemory,
+        ) {
+            ui.painter().line(
+                self.0
+                    .iter()
+                    .map(|coordinate| {
+                        let coord = projector
+                            .project(Position::from(coordinate.clone()))
+                            .to_pos2();
+                        coord
+                    })
+                    .collect(),
+                PathStroke::new(3.0, Color32::RED),
+            );
+        }
+    }
+
+    impl MapData {
+        pub fn new(ctx: &CreationContext) -> Self {
+            Self {
+                tiles: HttpTiles::new(OpenStreetMap, ctx.egui_ctx.clone()),
+                memory: MapMemory::default(),
+                route: Arc::new([]),
+            }
+        }
+    }
+}
 
 const SECTION_MAX_HEIGHT: f32 = 300.0;
 const LEFT_PANEL_WIDTH: f32 = 300.0;
 
-#[derive(Default, Clone)]
 pub struct AppData {
     shopping_list: ShoppingListData,
     preferences: PreferencesData,
@@ -33,8 +108,25 @@ pub struct AppData {
     transit: TransitData,
     location_search: Rc<RefCell<LocationData>>,
     output_routes: OutputRoutesData,
+    map: MapData,
     footer: footer::FooterData,
     pub(crate) filters_collapsed: bool,
+}
+
+impl AppData {
+    pub fn new(ctx: &CreationContext) -> Self {
+        Self {
+            map: MapData::new(ctx),
+            shopping_list: Default::default(),
+            preferences: Default::default(),
+            supermarkets: Default::default(),
+            transit: Default::default(),
+            location_search: Default::default(),
+            output_routes: Default::default(),
+            footer: Default::default(),
+            filters_collapsed: Default::default(),
+        }
+    }
 }
 
 pub trait ShowableWidget {
@@ -45,57 +137,61 @@ impl ShowableWidget for AppData {
     fn show(&mut self, ui: &mut Ui) {
         self.masthead(ui);
 
-        if !self.filters_collapsed{
+        if !self.filters_collapsed {
             let panel = Panel::left("left_panel")
                 .default_size(LEFT_PANEL_WIDTH)
                 .show_inside(ui, |ui| {
-                Panel::bottom("left_footer")
-                    .resizable(false)
-                    .show_inside(ui, |ui| {
-                      self.footer.show(ui);
-                    });
-                ScrollArea::vertical()
-                    .id_salt("left panel scroll")
-                    .auto_shrink([false; 2])
-                    .show(ui, |ui|{
-                        ScrollArea::vertical()
-                            .id_salt("shopping_list_scroll")
-                            .max_height(SECTION_MAX_HEIGHT)
-                            .auto_shrink([false, true])
-                            .show(ui, |ui| {
-                                self.shopping_list.show(ui);
-                            });
-                        ui.separator();
-                        self.preferences.show(ui);
-                        ui.separator();
-                        ScrollArea::vertical()
-                            .id_salt("supermarkets_scroll")
-                            .max_height(SECTION_MAX_HEIGHT)
-                            .auto_shrink([false, true])
-                            .show(ui, |ui| {
-                                let origin = {
-                                    let loc = self.location_search.borrow();
-                                    match (loc.latitude, loc.longitude) {
-                                        (Some(lat), Some(lon)) => {
-                                            Some(Coordinate::from_lat_long_f64(lat, lon))
+                    Panel::bottom("left_footer")
+                        .resizable(false)
+                        .show_inside(ui, |ui| {
+                            self.footer.show(ui);
+                        });
+                    ScrollArea::vertical()
+                        .id_salt("left panel scroll")
+                        .auto_shrink([false; 2])
+                        .show(ui, |ui| {
+                            ScrollArea::vertical()
+                                .id_salt("shopping_list_scroll")
+                                .max_height(SECTION_MAX_HEIGHT)
+                                .auto_shrink([false, true])
+                                .show(ui, |ui| {
+                                    self.shopping_list.show(ui);
+                                });
+                            ui.separator();
+                            self.preferences.show(ui);
+                            ui.separator();
+                            ScrollArea::vertical()
+                                .id_salt("supermarkets_scroll")
+                                .max_height(SECTION_MAX_HEIGHT)
+                                .auto_shrink([false, true])
+                                .show(ui, |ui| {
+                                    let origin = {
+                                        let loc = self.location_search.borrow();
+                                        match (loc.latitude, loc.longitude) {
+                                            (Some(lat), Some(lon)) => {
+                                                Some(Coordinate::from_lat_long_f64(lat, lon))
+                                            }
+                                            _ => None,
                                         }
-                                        _ => None,
-                                    }
-                                };
-                                self.supermarkets.show_in_range(
-                                    ui,
-                                    origin.as_ref(),
-                                    &self.preferences.max_range,
-                                );
-                            });
-                        ui.separator();
-                        self.transit.show(ui);
-                        ui.separator();
-                    });
-            });
+                                    };
+                                    self.supermarkets.show_in_range(
+                                        ui,
+                                        origin.as_ref(),
+                                        &self.preferences.max_range,
+                                    );
+                                });
+                            ui.separator();
+                            self.transit.show(ui);
+                            ui.separator();
+                        });
+                });
             let line_width = 1.0_f32;
             let bar = panel.response.rect;
-            ui.painter().vline(bar.right(), bar.y_range(), Stroke::new(line_width, Color32::BLACK));
+            ui.painter().vline(
+                bar.right(),
+                bar.y_range(),
+                Stroke::new(line_width, Color32::BLACK),
+            );
         }
 
         CentralPanel::default().show_inside(ui, |ui| {
@@ -113,6 +209,9 @@ impl ShowableWidget for AppData {
                     }
                     ui.add_space(12.0);
                     self.output_routes.show(ui);
+                    if self.map.route.len() > 1 {
+                        self.map.show(ui);
+                    }
                 })
         });
     }
@@ -150,9 +249,7 @@ impl AppData {
             Ok(calc) => ResultsState::Ready(Box::new(
                 price_calculator::results::Results::from_calculation(&calc, origin_label),
             )),
-            _ => ResultsState::Failed(
-                res.unwrap_err().pretty(),
-            ),
+            _ => ResultsState::Failed(res.unwrap_err().pretty()),
         };
     }
 }

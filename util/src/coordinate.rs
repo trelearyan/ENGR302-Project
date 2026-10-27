@@ -4,6 +4,7 @@ use bigdecimal::BigDecimal;
 use num_traits::FromPrimitive;
 use num_traits::ToPrimitive;
 use serde::{Deserialize, Serialize};
+use walkers::Position;
 
 use crate::distance::Distance;
 
@@ -93,6 +94,16 @@ impl Coordinate {
         Coordinate::from_lat_long_str("-36.848461", "174.763336").unwrap()
     }
 }
+
+impl From<Coordinate> for Position {
+    fn from(value: Coordinate) -> Self {
+        Self::new(
+            value.longitude.to_f64().unwrap(),
+            value.latitude.to_f64().unwrap(),
+        )
+    }
+}
+
 #[cfg(test)]
 mod coordinate_tests {
     use crate::float_absolute_compare;
