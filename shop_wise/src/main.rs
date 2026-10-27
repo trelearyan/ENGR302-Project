@@ -55,7 +55,7 @@ fn main() {
             .start(
                 canvas,
                 eframe::WebOptions::default(),
-                Box::new(|_| Ok(Box::new(AppData::default()))),
+                Box::new(|ctx| Ok(Box::new(AppData::new(ctx)))),
             )
             .await
             .unwrap();
