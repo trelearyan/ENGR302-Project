@@ -4,13 +4,7 @@ use routx::{
     DEFAULT_STEP_LIMIT, Graph, find_route_without_turn_around,
     osm::{CAR_PROFILE, FileFormat, Options},
 };
-use std::{
-    fmt::Debug,
-    iter,
-    rc::Rc,
-    sync::{Arc, OnceLock},
-    time::Duration,
-};
+use std::{fmt::Debug, iter, rc::Rc, sync::Arc, time::Duration};
 
 use util::{
     coordinate::Coordinate,

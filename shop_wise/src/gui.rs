@@ -143,7 +143,7 @@ impl ShowableWidget for AppData {
 
         if !self.filters_collapsed {
             const LEFT_PANEL_WIDTH: f32 = 300.0;
-            let panel = Panel::left("left_panel")
+            let _panel = Panel::left("left_panel")
                 .default_size(LEFT_PANEL_WIDTH)
                 .show(ui, |ui| {
                     Panel::bottom("left_footer")
