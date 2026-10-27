@@ -1,107 +1,107 @@
 # Changelog
 
+
 All notable changes to ShopWise are documented in this file (NFR-15).
+
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html),
 as recommended by the Rust API guidelines
 ([C-RELNOTES](https://rust-lang.github.io/api-guidelines/documentation.html#release-notes-document-all-significant-changes-c-relnotes)).
 
-## [Unreleased]
 
-Work on branches that are not yet merged into `main`.
+### [1.0.0] - 2026-10-27
 
-### Added
-- WCAG compliance reports (#94)
-- Map showing the planned route (#75)
-- Store locations loaded from the database (#110)
-- Store dropdown only lists stores within the maximum range (#85)
-- Clear error messages when the price calculator can't find a plan (#82)
-- Footer with privacy and data source information (#109)
-- CI checks that failed merge requests that don't add a changelog entry, and keeps the Cargo.toml version in sync with the changelog (NFR-15)
-- Masthead and filters panel switch to dark colours in dark mode, with light arrow icons (#113)
-
-### Changed
-- Improved accuracy of route calculations, travel cost (#81)
-- Redesigned results panel: a card for each plan (Best value, Cheapest, Fastest) with the total, groceries, travel, distance and time; the selected card has an orange border and a tick, and the others show +/- cost ()
-- Plan details show a summary (groceries, total, items, travel, distance, driving time), numbered stops side by side, and each stop's items with Qty, Unit and Line total ()
-- Search bar puts the address, "Use my location", and Search in one row ()
-- Price calculator uses the real scraped product database instead of demo data, with caching (#110)
-- Distances follow real roads between stops, using OpenStreetMap routing data instead of straight lines (#81)
-- Updated eframe to 0.36; routing data is stored with Git LFS (#75)
-- Redesigned logo and browser tab icon (#109)
-- Code documentation for the shopping list, stores and file handling (#103)
-
-### Fixed
-- Very large mileage values now show a proper error instead of failing (#110)
-- Bug where speed values were calculated incorrectly (#118)
-- Items were removed from the results for a whole brand instead of a single store (#110)
-- Web (WASM) build failed to compile (#81)
-## [Unreleased]
-
-Work on branches that are not yet merged into `main`.
-
-### [Unreleased]
-
-Work on branches that are not yet merged into `main`.
 
 ### Added
-- Map showing the planned route (#75)
 - Store locations loaded from the database (#110)
 
+
 ### Changed
-- Price calculator uses the real scraped product database instead of demo data, with caching (#110)
-- Distances follow real roads between stops, using OpenStreetMap routing data instead of straight lines (#81)
-- Updated eframe to 0.36 (#75)
-- Redesigned results panel: a card for each plan (Best value, Cheapest, Fastest) with the total, groceries, travel, distance and time; the selected card has an orange border and a tick, and the others show +/- cost ()
-- Plan details show a summary (groceries, total, items, travel, distance, driving time), numbered stops side by side, and each stop's items with Qty, Unit and Line total ()
-- Search bar puts the address, "Use my location", and Search in one row ()
+- Distances follow real roads between stops, using OpenStreetMap routing data instead of straight lines; the routing data is stored with Git LFS (#81)
+- Travel cost, distance and driving time are worked out along the actual route (#81)
+
 
 ### Fixed
+- Driving time showed speeds in km/h were converted to m/s incorrectly (#118)
+- The start and end of the trip were left out of the travel distance and time (#81)
 - Travel distance and speed calculations (#110)
 - Very large mileage values now show a proper error instead of failing (#110)
 - Items were removed from the results for a whole brand instead of a single store (#110)
 
+
+## [0.10.0] - 2026-10-15
+
+
+### Added
+- FR-04: product database with Pak'nSave, New World and Woolworths products, including product photos and loyalty card prices (New World Clubcard, Woolworths Everyday Rewards) (#71)
+- Scrapers and import tools for each chain's products and its Wellington store locations (#71)
+- WCAG compliance report for version 0.7.0 in `docs/WCAG/`, as Markdown and PDF (#94)
+
+
+### Changed
+- Redesigned results panel: a card for each plan (Best value, Cheapest, Fastest) with the total, groceries, travel, distance and driving time; the selected card has an orange border and a tick, and the others show how much more or less they cost (!77)
+- Plan details show a summary (groceries, total, items, travel, distance, driving time), numbered stops side by side, and a table of each stop's items with Qty, Unit and Line total (!77)
+- Search bar puts the address, "Use my location" and Search in one row (!77)
+- Filters panel starts 300px wide instead of 250px (!77)
+
+
+### Fixed
+- README link to the live site pointed to an old address (!75)
+
+
 ## [0.9.0] - 2026-10-08
+
 
 ### Added
 - Dark mode for the masthead: it uses the same dark background as the rest of the app, with light arrow icons and a light version of the logo (#113)
 
+
 ### Changed
 - Browser tab icon uses the 40px logo, the unused 80px icon was removed (#113)
 
+
 ### Fixed
-- Filters panel opened too narrow and squashed its text, it now starts 250px wide (#113)
+- Filters panel opened too narrow and squashed its text, it now starts at 250px wide (#113)
+
 
 ## [0.8.0] - 2026-10-02
+
 
 ### Added
 - Store dropdown only lists stores within the maximum range (#85)
 - Clear error messages when the price calculator can't find a plan (#82)
 - Footer with privacy and data source information (#109)
 - CI checks that failed merge requests that don't add a changelog entry, and keeps the Cargo.toml version in sync with the changelog (NFR-15)
+
 
 ### Changed
 - Redesigned logo and browser tab icon (#109)
 - The item search field is always visible in the shopping list, replacing the Add Item button (#112)
 
+
 ## [0.7.0] - 2026-09-30
+
 
 ### Added
 - Masthead with the ShopWise logo, a link to the GitLab repository and a browser tab icon (#83)
 - Masthead button that collapses and expands the filters panel (#84)
 - Product search when adding an item: the Add Item button opens a search box with a scrollable list of matching products from the database (#78)
 
+
 ### Changed
-- Shopping list rows are read-only, with the remove button at the start of each row; items are added through product search (#78)
+- Shopping list rows are read-only, with the remove button at the start of each row, items are added through product search (#78)
 - The filters panel and the output panel scroll, and the shopping list and supermarket sections have a fixed maximum height (#76)
 - Results show the pack size of each item, e.g. "2x 1L", and line totals use the number of packs (#86)
+
 
 ### Fixed
 - Unit was always shown as "each" in the results (#86)
 - Item resolver now uses the base unit when scaling quantities (#78)
 
+
 ## [0.6.0] - 2026-09-18
+
 
 ### Added
 - Loyalty card checkboxes (Clubcard for New World and Pak'nSave) so member pricing can be used (#28)
@@ -109,30 +109,37 @@ Work on branches that are not yet merged into `main`.
 - Item resolver matches units, including comparing weight with volume, with "each" as a universal unit (#73)
 - Item search function that returns the best matching products for a query (#73)
 
+
 ### Changed
 - Item resolver works from the selected item instead of a raw search term (#73)
-- Refactored the GUI and moved the location input to the side panel; applied Clippy lint fixes and removed dead code (#73)
+- Refactored the GUI and moved the location input to the side panel, applied Clippy lint fixes and removed dead code (#73)
+
 
 ### Fixed
 - Black screen caused by overflowing panels: the shopping list and location dropdown now scroll
 
+
 ## [0.5.0] - 2026-09-11
+
 
 ### Added
 - FR-09: output panel connected to the price calculator, showing results (#64)
 - FR-13: load and save the shopping list as a CSV file
 - FR-01: remove items from and clear the shopping list
 - Live address autocomplete and "use current location" with timeout and error handling (#53)
-- Distance and travel duration in the results; travel time calculated from mileage speed (#66)
+- Distance and travel duration in the results, travel time calculated from mileage speed (#66)
 - Hover text explaining the controls on every input panel
 
+
 ### Changed
-- Refactored the price calculator to take the transit mileage into account; added `RoutePlan` and `RoutePath` (#66)
+- Refactored the price calculator to take the transit mileage into account, added `RoutePlan` and `RoutePath` (#66)
 - Search button stays disabled until the shopping list and location are valid (#53)
 - Location input moved to the right-hand panel (#75)
 
+
 ### Removed
 - Filter route debug text (`print_filters()`) (#64)
+
 
 ### Fixed
 - Search results not displaying, and the search button failing to enable (#75)
@@ -141,7 +148,9 @@ Work on branches that are not yet merged into `main`.
 - GitLab Pages deploy URL (#75)
 - Contributor names in `.mailmap` (#79)
 
+
 ## [0.4.0] - 2026-08-28
+
 
 ### Added
 - Price calculation using the product database, which runs in the browser (WASM) from memory
@@ -149,29 +158,38 @@ Work on branches that are not yet merged into `main`.
 - Live website deployed to GitLab Pages on merge to `main`, plus a manual test page job (#60)
 - README instructions for running the desktop version (#61, #63)
 
+
 ### Fixed
 - Maximum range slider did not update (#37)
+
 
 ### Removed
 - Demo artefacts and Nix files that should not have been committed (#36)
 
+
 Note: the price calculation merge was reverted on 2026-08-23 and merged again on 2026-08-26.
 
+
 ## [0.3.0] - 2026-07-31
+
 
 ### Added
 - FR-01: shopping list input in the GUI (#26)
 - FR-02: manual location input and "use current location" (#26)
 - Mileage (transit cost) selector, with `Cost` arithmetic and formatting (#27)
 
+
 ### Changed
 - RACI matrix updated with new requirements after stakeholder validation (#32)
-- "ea" is the default unit; the "None" unit was removed (#26)
+- "ea" is the default unit, the "None" unit was removed (#26)
+
 
 ### Fixed
 - Items with the same name sharing one widget id (#26)
 
+
 ## [0.2.0] - 2026-07-21
+
 
 ### Added
 - CI pipeline that blocks merging code which fails to compile, fails tests or has warnings (#4)
@@ -181,7 +199,9 @@ Note: the price calculation merge was reverted on 2026-08-23 and merged again on
 - FR-06: price calculation draft (#13)
 - `.mailmap` for consistent contributor names (#6)
 
+
 ## [0.1.0] - 2026-05-06
+
 
 ### Added
 - RACI matrix (#1)
