@@ -1,10 +1,8 @@
 use eframe::CreationContext;
-use eframe::egui::{self, CentralPanel, Color32, Panel, ScrollArea, Stroke, Ui};
+use eframe::egui::{CentralPanel, Panel, ScrollArea, Ui};
 use std::cell::RefCell;
 use std::rc::Rc;
 use util::coordinate::Coordinate;
-use walkers::sources::OpenStreetMap;
-use walkers::{HttpTiles, MapMemory};
 
 use crate::gui::location_search::LocationData;
 use crate::gui::map::MapData;
@@ -31,7 +29,7 @@ pub mod map {
 
     use eframe::{
         CreationContext,
-        egui::{self, CentralPanel, Color32, Response, Ui},
+        egui::{self, CentralPanel, Color32},
         epaint::PathStroke,
     };
     use util::coordinate::Coordinate;
@@ -69,18 +67,17 @@ pub mod map {
         fn run(
             self: Box<Self>,
             ui: &mut egui::Ui,
-            response: &egui::Response,
+            _response: &egui::Response,
             projector: &Projector,
-            map_memory: &MapMemory,
+            _map_memory: &MapMemory,
         ) {
             ui.painter().line(
                 self.0
                     .iter()
                     .map(|coordinate| {
-                        let coord = projector
+                        projector
                             .project(Position::from(coordinate.clone()))
-                            .to_pos2();
-                        coord
+                            .to_pos2()
                     })
                     .collect(),
                 PathStroke::new(3.0, Color32::RED),
@@ -109,7 +106,7 @@ pub struct AppData {
     location_search: Rc<RefCell<LocationData>>,
     output_routes: OutputRoutesData,
     map: MapData,
-    footer: footer::FooterData,
+    _footer: footer::FooterData,
     pub(crate) filters_collapsed: bool,
 }
 
@@ -123,7 +120,7 @@ impl AppData {
             transit: Default::default(),
             location_search: Default::default(),
             output_routes: Default::default(),
-            footer: Default::default(),
+            _footer: Default::default(),
             filters_collapsed: Default::default(),
         }
     }
@@ -138,7 +135,7 @@ impl ShowableWidget for AppData {
         self.masthead(ui);
 
         if !self.filters_collapsed {
-            Panel::left("left_panel").show_inside(ui, |ui| {
+            Panel::left("left_panel").show(ui, |ui| {
                 ScrollArea::vertical()
                     .id_salt("left panel scroll")
                     .auto_shrink([false; 2])
@@ -180,7 +177,7 @@ impl ShowableWidget for AppData {
             });
         }
 
-        CentralPanel::default().show_inside(ui, |ui| {
+        CentralPanel::default().show(ui, |ui| {
             ScrollArea::vertical()
                 .id_salt("central panel scroll")
                 .auto_shrink([false; 2])

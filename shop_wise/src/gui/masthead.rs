@@ -1,6 +1,6 @@
-use std::sync::OnceLock;
-use eframe::egui::{self, Color32, Stroke, Ui};
 use super::AppData;
+use eframe::egui::{self, Color32, Stroke, Ui};
+use std::sync::OnceLock;
 
 const FILL: Color32 = Color32::from_rgb(0xF5, 0xF1, 0xE8);
 const LINE: Color32 = Color32::from_rgb(0, 0, 0);
@@ -13,7 +13,8 @@ const RIGHT_EDGE_MARGIN: f32 = 16.0;
 const ICON_REST_ALPHA: u8 = 200;
 const ICON_HOVER_ALPHA: u8 = 255;
 const ICON_PRESSED_ALPHA: u8 = 150;
-const REPO_URL: &str = "https://gitlab.ecs.vuw.ac.nz/course-work/engr301/2026/project1/team5/shopwise";
+const REPO_URL: &str =
+    "https://gitlab.ecs.vuw.ac.nz/course-work/engr301/2026/project1/team5/shopwise";
 const FULL_UV: egui::Rect = egui::Rect::from_min_max(egui::pos2(0.0, 0.0), egui::pos2(1.0, 1.0));
 
 macro_rules! cached_texture {
@@ -85,7 +86,7 @@ impl AppData {
                     })
                     .inner_margin(egui::Margin::symmetric(24, 0)),
             )
-            .show_inside(ui, |ui| {
+            .show(ui, |ui| {
                 let rect = ui.max_rect();
                 let centre_y = rect.center().y;
 
@@ -93,20 +94,23 @@ impl AppData {
 
                 // Left menu button
                 let menu_rect = egui::Rect::from_center_size(
-                    egui::pos2(rect.left() + LEFT_EDGE_MARGIN + button_size.x / 2.0, centre_y),
+                    egui::pos2(
+                        rect.left() + LEFT_EDGE_MARGIN + button_size.x / 2.0,
+                        centre_y,
+                    ),
                     button_size,
                 );
 
                 let menu_hover_text = if self.filters_collapsed {
                     "Show filters panel"
-                }else {
+                } else {
                     "Hide filters panel"
                 };
 
                 let menu = ui
                     .interact(
                         menu_rect,
-                        ui.id().with("filters-menu"),
+                        ui.scope_id().with("filters-menu"),
                         egui::Sense::click(),
                     )
                     .on_hover_cursor(egui::CursorIcon::PointingHand)
@@ -151,7 +155,7 @@ impl AppData {
                 let git_repo = ui
                     .interact(
                         gitlab_rect,
-                        ui.id().with("git-account"),
+                        ui.scope_id().with("git-account"),
                         egui::Sense::click(),
                     )
                     .on_hover_cursor(egui::CursorIcon::PointingHand)
@@ -183,7 +187,11 @@ impl AppData {
                     ui.ctx().open_url(egui::OpenUrl::new_tab(REPO_URL));
                 }
 
-                let logo = if ui.visuals().dark_mode {&logo_dark_mode} else { &logo };
+                let logo = if ui.visuals().dark_mode {
+                    &logo_dark_mode
+                } else {
+                    &logo
+                };
                 if let Some(logo) = &logo {
                     let [width, height] = logo.size();
                     let logo_width = LOGO_HEIGHT * width as f32 / height as f32;
@@ -199,16 +207,15 @@ impl AppData {
             });
         let line_width = 1.0_f32;
         let bar = panel.response.rect;
-        ui.painter()
-            .hline(bar.x_range(), bar.bottom()-line_width/2.0, Stroke::new(line_width, LINE));
+        ui.painter().hline(
+            bar.x_range(),
+            bar.bottom() - line_width / 2.0,
+            Stroke::new(line_width, LINE),
+        );
     }
 }
 
-fn decode_texture(
-    ctx: &egui::Context,
-    name: &str,
-    bytes: &[u8],
-) -> Option<egui::TextureHandle> {
+fn decode_texture(ctx: &egui::Context, name: &str, bytes: &[u8]) -> Option<egui::TextureHandle> {
     let decoded = match image::load_from_memory(bytes) {
         Ok(image) => image.to_rgba8(),
         Err(error) => {

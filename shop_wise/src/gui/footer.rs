@@ -9,7 +9,6 @@ const EVERYDAY_REWARDS_URL: &str = "https://www.woolworths.co.nz/help/everyday-r
 const OSM_COPYRIGHT_URL: &str = "https://www.openstreetmap.org/copyright";
 const IRD_URL: &str = "https://www.ird.govt.nz/income-tax/income-tax-for-businesses-and-organisations/types-of-business-expenses/claiming-vehicle-expenses/kilometre-rates-2025-2026";
 
-
 const POPUP_WIDTH: f32 = 450.0;
 const POPUP_MAX_HEIGHT: f32 = 450.0;
 const POPUP_SCREEN_MARGIN: f32 = 50.0;
@@ -102,7 +101,7 @@ impl FooterData {
         let width = POPUP_WIDTH.min(ctx.content_rect().width() - POPUP_SCREEN_MARGIN);
 
         egui::Window::new(page.title())
-            .id(egui::Id::new("footer_window"))
+            .id(egui::Id::unique("footer_window"))
             .open(&mut open)
             .collapsible(false)
             .resizable(false)
@@ -274,11 +273,17 @@ fn programme(ui: &mut Ui, name: &str, stores: &str, text: &str, (link, url): (&s
 }
 
 fn snake(ui: &mut Ui) {
-    paragraph(ui, "This project was built by Team 5 as a part of ENGR301/302, 2026.");
+    paragraph(
+        ui,
+        "This project was built by Team 5 as a part of ENGR301/302, 2026.",
+    );
     ui.add_space(4.0);
     for (team, names) in [
         ("Frontend:", &["Benjamin Khokgawe", "Ryan Treleaven"][..]),
-        ("Backend:", &["Alexander Worth", "Samuel Smith", "Syon Krishna"][..]),
+        (
+            "Backend:",
+            &["Alexander Worth", "Samuel Smith", "Syon Krishna"][..],
+        ),
     ] {
         term(ui, TERM_WIDTH, team, |ui| {
             for name in names {

@@ -484,7 +484,7 @@ fn selected_tick(ui: &mut egui::Ui) {
         vec![point(0.25, 0.52), point(0.43, 0.70), point(0.76, 0.32)],
         egui::Stroke::new(2.0f32, egui::Color32::WHITE),
     ));
-    response.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Label, true, "Selected"));
+    response.widget_info(|| egui::WidgetInfo::labeled(egui::Role::Label, true, "Selected"));
     response.on_hover_text("Selected");
 }
 fn card_row(ui: &mut egui::Ui, label: &str, value: String) {
