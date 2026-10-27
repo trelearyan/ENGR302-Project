@@ -142,8 +142,14 @@ impl ShowableWidget for AppData {
         self.masthead(ui);
 
         if !self.filters_collapsed {
-            Panel::left("left_panel").show(ui, |ui| {
-                Panel::top("top panel").show(ui, |ui| {
+            let panel = Panel::left("left_panel")
+                .default_size(LEFT_PANEL_WIDTH)
+                .show(ui, |ui| {
+                    Panel::bottom("left_footer")
+                        .resizable(false)
+                        .show(ui, |ui| {
+                            self.footer.show(ui);
+                        });
                     ScrollArea::vertical()
                         .id_salt("left panel scroll")
                         .auto_shrink([false; 2])
@@ -184,11 +190,10 @@ impl ShowableWidget for AppData {
                         });
                 });
 
-                Panel::bottom("bottom").show(ui, |ui| {
-                    self.footer.show(ui);
-                })
+            Panel::bottom("bottom").show(ui, |ui| {
+                self.footer.show(ui);
             });
-        }
+        };
 
         CentralPanel::default().show(ui, |ui| {
             ScrollArea::vertical()
