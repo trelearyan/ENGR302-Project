@@ -232,7 +232,7 @@ impl Scenario {
                     .as_secs_f32()
                     / 60f32,
             ),
-            ordered_stops: calc.source.expensive_calculated_route.wait().clone(),
+            ordered_stops: calc.source.expensive_calculated_route.clone(),
         }
     }
 }

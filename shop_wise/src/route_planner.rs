@@ -58,7 +58,7 @@ pub struct OptimisedRoutePlan {
     pub start_position: Coordinate,
     pub end_position: Coordinate,
     pub ordered_stops: Box<[Rc<Store>]>,
-    pub expensive_calculated_route: OnceLock<Arc<[Coordinate]>>,
+    pub expensive_calculated_route: Arc<[Coordinate]>,
 }
 
 impl RoutePlan {
@@ -96,7 +96,7 @@ impl RoutePlan {
             start_position: self.start_position.clone(),
             end_position: self.end_position.clone(),
             ordered_stops,
-            expensive_calculated_route: OnceLock::new(),
+            expensive_calculated_route: Arc::new([]),
         })
     }
 }
@@ -144,36 +144,37 @@ impl OptimisedRoutePlan {
             "path called, ordered stops count = {:?}",
             self.ordered_stops.len()
         );
-        self.expensive_calculated_route
-            .get_or_init(|| {
-                Arc::<[Coordinate]>::from(
-                    iter::once(&self.start_position)
-                        .chain(self.ordered_stops.iter().map(|a| &a.location))
-                        .chain(iter::once(&self.start_position))
-                        .map(|a| {
-                            graph.find_nearest_node(
-                                a.latitude.to_f32().unwrap(),
-                                a.longitude.to_f32().unwrap(),
-                            )
-                        })
-                        .tuple_windows::<(_, _)>()
-                        .flat_map(|(a, b)| {
-                            find_route_without_turn_around(
-                                &graph,
-                                a.unwrap().id,
-                                b.unwrap().id,
-                                DEFAULT_STEP_LIMIT,
-                            )
-                            .unwrap()
-                        })
-                        .map(|id| {
-                            let node = graph.get_node(id).unwrap();
-                            Coordinate::from_lat_long_f32(node.lat, node.lon)
-                        })
-                        .collect_vec(),
-                )
-            })
+        if self.expensive_calculated_route.is_empty() {
+            Arc::<[Coordinate]>::from(
+                iter::once(&self.start_position)
+                    .chain(self.ordered_stops.iter().map(|a| &a.location))
+                    .chain(iter::once(&self.start_position))
+                    .map(|a| {
+                        graph.find_nearest_node(
+                            a.latitude.to_f32().unwrap(),
+                            a.longitude.to_f32().unwrap(),
+                        )
+                    })
+                    .tuple_windows::<(_, _)>()
+                    .flat_map(|(a, b)| {
+                        find_route_without_turn_around(
+                            &graph,
+                            a.unwrap().id,
+                            b.unwrap().id,
+                            DEFAULT_STEP_LIMIT,
+                        )
+                        .unwrap()
+                    })
+                    .map(|id| {
+                        let node = graph.get_node(id).unwrap();
+                        Coordinate::from_lat_long_f32(node.lat, node.lon)
+                    })
+                    .collect_vec(),
+            )
             .clone()
+        } else {
+            self.expensive_calculated_route.clone()
+        }
     }
 
     #[must_use]

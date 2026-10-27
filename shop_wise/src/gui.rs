@@ -244,23 +244,13 @@ impl AppData {
             Ok(calc) => {
                 match self.output_routes.selected {
                     price_calculator::results::ScenarioKind::Best => {
-                        self.map.route = calc.best.source.expensive_calculated_route.wait().clone();
+                        self.map.route = calc.best.source.expensive_calculated_route.clone();
                     }
                     price_calculator::results::ScenarioKind::Cheapest => {
-                        self.map.route = calc
-                            .cheapest
-                            .source
-                            .expensive_calculated_route
-                            .wait()
-                            .clone();
+                        self.map.route = calc.cheapest.source.expensive_calculated_route.clone();
                     }
                     price_calculator::results::ScenarioKind::Fastest => {
-                        self.map.route = calc
-                            .fastest
-                            .source
-                            .expensive_calculated_route
-                            .wait()
-                            .clone();
+                        self.map.route = calc.fastest.source.expensive_calculated_route.clone();
                     }
                 }
                 ResultsState::Ready(Box::new(
