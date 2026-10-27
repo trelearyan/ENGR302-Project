@@ -12,6 +12,7 @@ as recommended by the Rust API guidelines
 Work on branches that are not yet merged into `main`.
 
 ### Added
+- Map interface (#59)
 - WCAG compliance reports (#94)
 - Map showing the planned route (#75)
 - Store locations loaded from the database (#110)
