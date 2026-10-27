@@ -10,7 +10,7 @@ as recommended by the Rust API guidelines
 ([C-RELNOTES](https://rust-lang.github.io/api-guidelines/documentation.html#release-notes-document-all-significant-changes-c-relnotes)).
 
 
-### [1.0.0] - 2026-10-27
+## [1.0.0] - 2026-10-27
 
 
 ### Added
