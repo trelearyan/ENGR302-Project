@@ -235,13 +235,36 @@ impl AppData {
 
         let origin_label = self.location_search.borrow().address.clone();
         self.output_routes.results = match res {
-            Ok(calc) => ResultsState::Ready(Box::new(
-                price_calculator::results::Results::from_calculation(
-                    &calc,
-                    origin_label,
-                    &self.output_routes.graph,
-                ),
-            )),
+            Ok(calc) => {
+                match self.output_routes.selected {
+                    price_calculator::results::ScenarioKind::Best => {
+                        self.map.route = calc.best.source.expensive_calculated_route.wait().clone();
+                    }
+                    price_calculator::results::ScenarioKind::Cheapest => {
+                        self.map.route = calc
+                            .cheapest
+                            .source
+                            .expensive_calculated_route
+                            .wait()
+                            .clone();
+                    }
+                    price_calculator::results::ScenarioKind::Fastest => {
+                        self.map.route = calc
+                            .fastest
+                            .source
+                            .expensive_calculated_route
+                            .wait()
+                            .clone();
+                    }
+                }
+                ResultsState::Ready(Box::new(
+                    price_calculator::results::Results::from_calculation(
+                        &calc,
+                        origin_label,
+                        &self.output_routes.graph,
+                    ),
+                ))
+            }
             _ => ResultsState::Failed(res.unwrap_err().pretty()),
         };
     }
