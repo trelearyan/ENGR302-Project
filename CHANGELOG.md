@@ -7,7 +7,7 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 as recommended by the Rust API guidelines
 ([C-RELNOTES](https://rust-lang.github.io/api-guidelines/documentation.html#release-notes-document-all-significant-changes-c-relnotes)).
 
-## [Unreleased]
+## [0.9]
 
 Work on branches that are not yet merged into `main`.
 
@@ -22,6 +22,7 @@ Work on branches that are not yet merged into `main`.
 - Masthead and filters panel switch to dark colours in dark mode, with light arrow icons (#113)
 
 ### Changed
+- Improved accuracy of item resolver (#110)
 - Improved accuracy of route calculations, travel cost (#81)
 - Redesigned results panel: a card for each plan (Best value, Cheapest, Fastest) with the total, groceries, travel, distance and time; the selected card has an orange border and a tick, and the others show +/- cost ()
 - Plan details show a summary (groceries, total, items, travel, distance, driving time), numbered stops side by side, and each stop's items with Qty, Unit and Line total ()
