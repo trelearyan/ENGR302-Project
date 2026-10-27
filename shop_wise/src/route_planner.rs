@@ -16,7 +16,7 @@ use util::{
     coordinate::Coordinate,
     cost::Cost,
     distance::Distance,
-    store::{Store, StoreBrand},
+    store::Store,
 };
 
 use crate::{
@@ -43,6 +43,7 @@ pub fn make_graph(options: &Options) -> Graph {
 }
 
 pub mod filters;
+pub mod loc_resolver;
 
 #[derive(Clone, Eq, PartialEq, Hash, Debug, Default)]
 /// An incomplete shopping plan. Note that the stop order should only include
@@ -247,20 +248,8 @@ impl OptimisedRoutePlan {
 // on their filters.
 #[must_use]
 pub fn all_stores() -> Box<[Store]> {
-    Box::new([
-        Store {
-            brand: StoreBrand::Paknsave,
-            location: Coordinate::from_lat_long_f32(-41.28552007226365, 174.76680529344077),
-        },
-        Store {
-            brand: StoreBrand::Newworld,
-            location: Coordinate::from_lat_long_f32(-41.2882757120501, 174.76293970444345),
-        },
-        Store {
-            brand: StoreBrand::Woolworths,
-            location: Coordinate::from_lat_long_f32(-41.288907210767995, 174.76136254547123),
-        },
-    ])
+    let stores = loc_resolver::load_store_locations().unwrap();
+    stores.into_boxed_slice()
 }
 
 // Returns every possible route the user could take between supermarkets based
