@@ -52,9 +52,16 @@ pub mod map {
                     walkers::lon_lat(174.77643827862266, -41.288175480492), // Wellington
                 );
                 if self.route.len() > 1 {
-                    log::debug!("Route length greater than 1, showing map");
+                    log::debug!(
+                        "Route length greater than 1 at {:?}, showing route",
+                        self.route.len()
+                    );
                     map = map.with_plugin(RouteDrawingPlugin(self.route.clone()));
                 }
+                log::debug!(
+                    "Route length less than 1, is {:?}, no show route",
+                    self.route
+                );
                 ui.add(map);
             });
         }
@@ -192,9 +199,8 @@ impl ShowableWidget for AppData {
                     }
                     ui.add_space(12.0);
                     self.output_routes.show(ui);
-                    if self.map.route.len() > 1 {
-                        self.map.show(ui);
-                    }
+                    ui.add_space(12.0);
+                    self.map.show(ui);
                 })
         });
     }
