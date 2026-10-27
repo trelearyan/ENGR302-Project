@@ -16,7 +16,7 @@ use util::{
     coordinate::Coordinate,
     cost::Cost,
     distance::Distance,
-    store::{Store, StoreBrand},
+    store::Store,
 };
 
 use crate::{
