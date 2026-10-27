@@ -246,8 +246,8 @@ pub fn calculate(
             // among all stores within a brand
             let store = stores.get(store_id).unwrap();
             // If this store has an entry for the item add it
-            if res.iter().any(|a| a.1.store.brand == store.brand) {
-                let Some(item) = res.iter().find(|a| a.1.store.brand == store.brand) else {
+            if res.iter().any(|a| *a.0 == store.brand) {
+                let Some(item) = res.iter().find(|a| *a.0 == store.brand) else {
                     return Err(CalculationError {
                         err_type: CalculationErrorType::CouldNotResolveItem,
                         err_msg: "Could not find item ".to_owned()
