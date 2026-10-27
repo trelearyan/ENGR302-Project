@@ -18,3 +18,4 @@ serde = {version= "1.0.228", features= ["derive"] }
 num-traits = "0.2.19"
 map_3d = "0.1.7"
 walkers = "0.63.0"
+itertools = "0.15.0"

@@ -1,3 +1,4 @@
+use std::borrow::Borrow;
 use std::str::FromStr;
 
 use bigdecimal::BigDecimal;
@@ -8,7 +9,7 @@ use walkers::Position;
 
 use crate::distance::Distance;
 
-#[derive(Debug, PartialEq, PartialOrd, Clone, Serialize, Deserialize)]
+#[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
 pub struct Coordinate {
     pub latitude: BigDecimal,
     pub longitude: BigDecimal,
@@ -61,7 +62,7 @@ impl Coordinate {
 
     #[must_use]
     /// Construct a
-    pub fn distance_to(&self, other: Self) -> Distance {
+    pub fn distance_to(&self, other: impl Borrow<Self>) -> Distance {
         const ERROR_MESSAGE: &str =
             "This shouldnt be a weird float, if this fails, Coordinate is implemented wrong";
         Distance::from_metres(
@@ -72,8 +73,8 @@ impl Coordinate {
                         self.longitude.to_f64().expect(ERROR_MESSAGE),
                     ),
                     (
-                        other.latitude.to_f64().expect(ERROR_MESSAGE),
-                        other.longitude.to_f64().expect(ERROR_MESSAGE),
+                        other.borrow().latitude.to_f64().expect(ERROR_MESSAGE),
+                        other.borrow().longitude.to_f64().expect(ERROR_MESSAGE),
                     ),
                 )
             ).expect("This shouldnt be a weird float, if this fails, Coordinate or map_3d is implemented wrong")
@@ -81,7 +82,7 @@ impl Coordinate {
     }
 
     #[must_use]
-    pub fn within_range(&self, other: Self, range_metres: &Distance) -> bool {
+    pub fn within_range(&self, other: impl Borrow<Self>, range_metres: &Distance) -> bool {
         &self.distance_to(other) <= range_metres
     }
 
@@ -102,9 +103,4 @@ impl From<Coordinate> for Position {
             value.latitude.to_f64().unwrap(),
         )
     }
-}
-
-#[cfg(test)]
-mod coordinate_tests {
-    use crate::float_absolute_compare;
 }

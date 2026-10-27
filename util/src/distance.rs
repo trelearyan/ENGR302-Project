@@ -68,7 +68,7 @@ impl Div<Speed> for Distance {
     type Output = Duration;
 
     fn div(self, rhs: Speed) -> Self::Output {
-        Duration::from_millis((self.base_value_metres / rhs.inner()).to_u64().unwrap())
+        Duration::from_secs_f64((self.base_value_metres / rhs.inner()).to_f64().unwrap())
     }
 }
 

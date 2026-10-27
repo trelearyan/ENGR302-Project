@@ -25,6 +25,7 @@ pub mod preferences;
 pub mod shopping_list;
 pub mod supermarkets;
 pub mod transit;
+
 pub mod map {
     use std::sync::Arc;
 
@@ -61,7 +62,7 @@ pub mod map {
         }
     }
 
-    #[derive(Clone, PartialEq, PartialOrd, Debug)]
+    #[derive(Clone, PartialEq, Debug)]
     pub struct RouteDrawingPlugin(Arc<[Coordinate]>);
 
     impl Plugin for RouteDrawingPlugin {
@@ -99,7 +100,6 @@ pub mod map {
 }
 
 const SECTION_MAX_HEIGHT: f32 = 300.0;
-const LEFT_PANEL_WIDTH: f32 = 300.0;
 
 pub struct AppData {
     shopping_list: ShoppingListData,
@@ -138,60 +138,46 @@ impl ShowableWidget for AppData {
         self.masthead(ui);
 
         if !self.filters_collapsed {
-            let panel = Panel::left("left_panel")
-                .default_size(LEFT_PANEL_WIDTH)
-                .show_inside(ui, |ui| {
-                    Panel::bottom("left_footer")
-                        .resizable(false)
-                        .show_inside(ui, |ui| {
-                            self.footer.show(ui);
-                        });
-                    ScrollArea::vertical()
-                        .id_salt("left panel scroll")
-                        .auto_shrink([false; 2])
-                        .show(ui, |ui| {
-                            ScrollArea::vertical()
-                                .id_salt("shopping_list_scroll")
-                                .max_height(SECTION_MAX_HEIGHT)
-                                .auto_shrink([false, true])
-                                .show(ui, |ui| {
-                                    self.shopping_list.show(ui);
-                                });
-                            ui.separator();
-                            self.preferences.show(ui);
-                            ui.separator();
-                            ScrollArea::vertical()
-                                .id_salt("supermarkets_scroll")
-                                .max_height(SECTION_MAX_HEIGHT)
-                                .auto_shrink([false, true])
-                                .show(ui, |ui| {
-                                    let origin = {
-                                        let loc = self.location_search.borrow();
-                                        match (loc.latitude, loc.longitude) {
-                                            (Some(lat), Some(lon)) => {
-                                                Some(Coordinate::from_lat_long_f64(lat, lon))
-                                            }
-                                            _ => None,
+            Panel::left("left_panel").show_inside(ui, |ui| {
+                ScrollArea::vertical()
+                    .id_salt("left panel scroll")
+                    .auto_shrink([false; 2])
+                    .show(ui, |ui| {
+                        ScrollArea::vertical()
+                            .id_salt("shopping_list_scroll")
+                            .max_height(SECTION_MAX_HEIGHT)
+                            .auto_shrink([false, true])
+                            .show(ui, |ui| {
+                                self.shopping_list.show(ui);
+                            });
+                        ui.separator();
+                        self.preferences.show(ui);
+                        ui.separator();
+                        ScrollArea::vertical()
+                            .id_salt("supermarkets_scroll")
+                            .max_height(SECTION_MAX_HEIGHT)
+                            .auto_shrink([false, true])
+                            .show(ui, |ui| {
+                                let origin = {
+                                    let loc = self.location_search.borrow();
+                                    match (loc.latitude, loc.longitude) {
+                                        (Some(lat), Some(lon)) => {
+                                            Some(Coordinate::from_lat_long_f64(lat, lon))
                                         }
-                                    };
-                                    self.supermarkets.show_in_range(
-                                        ui,
-                                        origin.as_ref(),
-                                        &self.preferences.max_range,
-                                    );
-                                });
-                            ui.separator();
-                            self.transit.show(ui);
-                            ui.separator();
-                        });
-                });
-            let line_width = 1.0_f32;
-            let bar = panel.response.rect;
-            ui.painter().vline(
-                bar.right(),
-                bar.y_range(),
-                Stroke::new(line_width, Color32::BLACK),
-            );
+                                        _ => None,
+                                    }
+                                };
+                                self.supermarkets.show_in_range(
+                                    ui,
+                                    origin.as_ref(),
+                                    &self.preferences.max_range,
+                                );
+                            });
+                        ui.separator();
+                        self.transit.show(ui);
+                        ui.separator();
+                    });
+            });
         }
 
         CentralPanel::default().show_inside(ui, |ui| {
@@ -247,7 +233,11 @@ impl AppData {
         let origin_label = self.location_search.borrow().address.clone();
         self.output_routes.results = match res {
             Ok(calc) => ResultsState::Ready(Box::new(
-                price_calculator::results::Results::from_calculation(&calc, origin_label),
+                price_calculator::results::Results::from_calculation(
+                    &calc,
+                    origin_label,
+                    &self.output_routes.graph,
+                ),
             )),
             _ => ResultsState::Failed(res.unwrap_err().pretty()),
         };

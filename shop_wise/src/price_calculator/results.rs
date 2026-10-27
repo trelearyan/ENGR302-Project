@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use crate::price_calculator::{Calculation, CalculationTotal};
 use bigdecimal::{BigDecimal, Zero};
+use routx::Graph;
 use serde::{Deserialize, Serialize};
 use util::coordinate::Coordinate;
 use util::cost::Cost;
@@ -35,7 +36,7 @@ pub fn format_distance(distance: &Distance) -> String {
 pub fn format_duration(minutes: f32) -> String {
     let total = minutes.round().max(0.0) as u32;
     if total < 60 {
-        format!("{total} min")
+        format!("{total:.1} min")
     } else {
         format!("{} h {:02} min", total / 60, total % 60)
     }
@@ -170,7 +171,7 @@ impl Scenario {
             .join(" + ")
     }
 
-    fn from_calculation(kind: ScenarioKind, calc: &Calculation) -> Self {
+    fn from_calculation(kind: ScenarioKind, calc: &Calculation, graph: &Graph) -> Self {
         let store_plans = &calc.shopping_plan;
         //store_ids.sort();
 
@@ -204,15 +205,34 @@ impl Scenario {
             })
             .collect();
 
+        log::debug!(
+            "travel distance is {:?}",
+            calc.source.exact_travel_distance(graph)
+        );
+
+        log::debug!(
+            "travel time is {:?}s or {:?}m",
+            calc.source
+                .exact_travel_time(graph, &calc.mileage)
+                .as_secs_f32(),
+            calc.source
+                .exact_travel_time(graph, &calc.mileage)
+                .as_secs_f32()
+                / 60f32,
+        );
+
         Self {
             kind,
             stops,
-            travel_cost: Some(calc.total_travel_cost.clone()),
-            distance_km: Some(calc.total_dist.clone()),
-            //TODO: once available, change
-            duration_min: Some((calc.total_time.as_secs() / 60) as f32),
-            ordered_stops: calc.
-            
+            travel_cost: Some(calc.source.exact_travel_cost(graph, &calc.mileage)),
+            distance_km: Some(calc.source.exact_travel_distance(graph)),
+            duration_min: Some(
+                calc.source
+                    .exact_travel_time(graph, &calc.mileage)
+                    .as_secs_f32()
+                    / 60f32,
+            ),
+            ordered_stops: calc.source.expensive_calculated_route.wait().clone(),
         }
     }
 }
@@ -297,12 +317,12 @@ impl Results {
     }
 
     #[must_use]
-    pub fn from_calculation(calc: &CalculationTotal, origin_label: String) -> Self {
+    pub fn from_calculation(calc: &CalculationTotal, origin_label: String, graph: &Graph) -> Self {
         Self {
             origin_label,
-            best: Scenario::from_calculation(ScenarioKind::Best, &calc.best),
-            cheapest: Scenario::from_calculation(ScenarioKind::Cheapest, &calc.cheapest),
-            fastest: Scenario::from_calculation(ScenarioKind::Fastest, &calc.fastest),
+            best: Scenario::from_calculation(ScenarioKind::Best, &calc.best, graph),
+            cheapest: Scenario::from_calculation(ScenarioKind::Cheapest, &calc.cheapest, graph),
+            fastest: Scenario::from_calculation(ScenarioKind::Fastest, &calc.fastest, graph),
             unresolved: Vec::new(),
         }
     }
@@ -348,6 +368,7 @@ mod tests {
             travel_cost: Some(Cost::from_cents(cents)),
             distance_km: None,
             duration_min: Some(minutes),
+            ordered_stops: Arc::new([]),
         };
         let mut results = Results {
             origin_label: String::new(),
@@ -398,6 +419,7 @@ mod tests {
             travel_cost: Some(Cost::from_cents(380)),
             distance_km: Some(Distance::from_kilometres_f64(8.6)),
             duration_min: Some(19.0),
+            ordered_stops: Arc::new([]),
         };
         assert_eq!(scenario.grocery_cost(), Cost::from_cents(898));
         assert_eq!(scenario.total_cost(), Cost::from_cents(1278));
@@ -425,6 +447,7 @@ mod tests {
             travel_cost: Some(Cost::from_cents(380)),
             distance_km: Some(Distance::from_kilometres_f64(8.6)),
             duration_min: Some(19.0),
+            ordered_stops: Arc::new([]),
         };
         assert_eq!(scenario.grocery_cost(), Cost::from_cents(898));
         assert_eq!(scenario.total_cost(), Cost::from_cents(1278));

@@ -255,40 +255,6 @@ impl StoreFiltersBuilder {
 /// ```
 #[must_use]
 pub fn filter_stores(stores: &[Store], filters: &StoreFilters) -> Vec<Store> {
-    // stores
-    //     .iter()
-    //     .copied()
-    //     .filter(|store| {
-    //         if filters.disallowed_brands.contains(&store.brand) {
-    //             eprintln!(
-    //                 "store {store:?} is in banlist {:?}",
-    //                 filters.disallowed_brands
-    //             );
-    //             false
-    //         } else {
-    //             true
-    //         }
-    //     })
-    //     .filter(|store| match filters.max_range_metres {
-    //         Some(range) => {
-    //             if filters.location.within_range(store.location, range) {
-    //                 eprintln!(
-    //                     "store {store:?} is out of range of {:?} max range is {range:?}",
-    //                     filters.location
-    //                 );
-    //                 false
-    //             } else {
-    //                 eprintln!(
-    //                     "store {store:?} is in range of {:?} max range is {range:?}",
-    //                     filters.location
-    //                 );
-    //                 true
-    //             }
-    //         }
-    //         None => true,
-    //     })
-    //     .collect::<Vec<_>>()
-
     stores
         .iter()
         .filter(|&store| !filters.disallowed_brands.contains(&store.brand))
@@ -304,11 +270,4 @@ pub fn filter_stores(stores: &[Store], filters: &StoreFilters) -> Vec<Store> {
         })
         .cloned()
         .collect::<Vec<_>>()
-}
-
-#[cfg(test)]
-mod tests {
-    use serde_json::Deserializer;
-
-    use super::*;
 }
