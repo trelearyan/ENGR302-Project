@@ -2,6 +2,7 @@ use eframe::egui::{CentralPanel, Panel, ScrollArea, Ui};
 use std::cell::RefCell;
 use std::rc::Rc;
 use util::coordinate::Coordinate;
+use util::store::StoreBrand;
 
 use crate::gui::location_search::LocationData;
 use crate::gui::output_routes::OutputRoutesData;
@@ -125,10 +126,14 @@ impl AppData {
         let _origin_label = self.location_search.borrow().address.clone();
 
         // Sam
+        let edr: bool = self.supermarkets.has_loyalty_card(StoreBrand::Woolworths);
+        let club: bool = self.supermarkets.has_loyalty_card(StoreBrand::Newworld);
         let res = price_calculator::calculate(
             &self.shopping_list.shopping_items,
             &filters,
             &self.transit.mileage_option,
+            edr,
+            club
         );
         log::info!("{res:?}");
 

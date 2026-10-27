@@ -116,12 +116,68 @@ struct LocalRoute {
     route_time: u64,
 }
 
-// Given the parsed shopping list, perform price optimisation
+/// Given the parsed shopping list, perform price optimisation
+///
+/// It takes a shopping list with each item a best representation of the item and quantity the user desires,
+/// a StoreFilters to filter to the relevant shops (passed to Route Planner),
+/// a mileage rate for distance cost calculations,
+/// and a boolean flag for the Everyday Rewards card and Club+ rewards card
+/// (which are applied to the database search if selected).
+/// 
+/// If the search succeeds, a CalculationTotal (consisting of best, cheapest and fastest plans) is returned,
+/// else the identified error.
+/// 
+/// This function is quite slow by nature, and should be called only when necessary.
+/// 
+/// # Examples
+/// ```
+/// let shopping_items = [
+///     ShoppingItemQuery {
+///         name: "Simply Milk Lite Milk".to_owned(),
+///         quantity: 3,
+///         unit: SearchUnits::LITRE.to_str().to_owned(),
+///     },
+///     ShoppingItemQuery {
+///         name: "Castello Blue Cheese".to_owned(),
+///         quantity: 200,
+///         unit: SearchUnits::GRAM.to_str().to_owned(),
+///     },
+///     ShoppingItemQuery {
+///         name: "Sanitarium Weet-Bix Breakfast Cereal".to_owned(),
+///         quantity: 1,
+///         unit: SearchUnits::KILOGRAM.to_str().to_owned(),
+///     },
+///     ShoppingItemQuery {
+///         name: "chocolate block hokey pokey".to_owned(),
+///         quantity: 1,
+///         unit: SearchUnits::EACH.to_str().to_owned(),
+///     },
+/// ];
+/// let filters = StoreFilters::builder()
+///             .location(Coordinate::wellington())
+///             .range(d.clone())
+///             .max_store_visits(maxs)
+///             .disallow_brands(&[StoreBrand::Paknsave])
+///             .build();
+/// let mileage = MileageOptions::Petrol;
+/// // Run calculation with no loyalty cards
+/// let res = calculate(
+///         &shopping_items,
+///         &filters,
+///         &mileage,
+///         false,
+///         false
+///     );
+/// res.except("Calculation failed");
+/// ```
+///
 #[must_use]
 pub fn calculate(
     shop_list: &[ShoppingItemQuery],
     filters: &StoreFilters,
     mileage: &MileageOptions,
+    edr: bool,
+    club: bool,
 ) -> Result<CalculationTotal, CalculationError> {
     // Get all visitable stores, position in Vec is local ID (StoreId)
     let stores: Vec<Store> = filter_stores(&all_stores(), filters)
@@ -178,7 +234,7 @@ pub fn calculate(
         item_lookup.push(HashMap::new());
         // Resolve query
         let query: &ShoppingItemQuery = shop_list.get(item_key).unwrap();
-        let Some(res) = resolve(query) else {
+        let Some(res) = resolve(query, edr, club) else {
             return Err(CalculationError {
                 err_type: CalculationErrorType::CouldNotResolveItem,
                 err_msg: "Could not find item ".to_owned() + &query.name,
@@ -190,8 +246,8 @@ pub fn calculate(
             // among all stores within a brand
             let store = stores.get(store_id).unwrap();
             // If this store has an entry for the item add it
-            if res.iter().any(|a| a.1.store.brand == store.brand) {
-                let Some(item) = res.iter().find(|a| a.1.store.brand == store.brand) else {
+            if res.iter().any(|a| *a.0 == store.brand) {
+                let Some(item) = res.iter().find(|a| *a.0 == store.brand) else {
                     return Err(CalculationError {
                         err_type: CalculationErrorType::CouldNotResolveItem,
                         err_msg: "Could not find item ".to_owned()
@@ -476,6 +532,10 @@ fn calculate_minimised(
 
 #[cfg(test)]
 mod tests {
+    // use std::time::Instant;
+
+    // use util::{coordinate::Coordinate, search::SearchUnits, store::StoreBrand};
+
     use super::*;
 
     #[test]
@@ -532,4 +592,194 @@ mod tests {
         assert!(result.is_ok());
         assert_eq!(correct_result, result.unwrap().0);
     }
+    
+    #[test]
+    fn test_fastest_demo() {
+        let items = [0, 1, 2];
+        let mut routes: Vec<LocalRoute> = Vec::new();
+        routes.push(LocalRoute {
+            shops: [0].to_vec(),
+            route_travel_cost: 196,
+            route_time: 196,
+            route_id: 0,
+        });
+        routes.push(LocalRoute {
+            shops: [1].to_vec(),
+            route_travel_cost: 190,
+            route_time: 190,
+            route_id: 1,
+        });
+        routes.push(LocalRoute {
+            shops: [0, 1].to_vec(),
+            route_travel_cost: 295,
+            route_time: 295,
+            route_id: 2,
+        });
+        let mut database: Vec<Vec<Option<u32>>> = Vec::new();
+        let mut store0: Vec<Option<u32>> = Vec::new();
+        store0.push(Some(599));
+        store0.push(Some(720));
+        store0.push(Some(1450));
+        database.push(store0);
+        let mut store1: Vec<Option<u32>> = Vec::new();
+        store1.push(Some(620));
+        store1.push(Some(899));
+        store1.push(Some(1299));
+        database.push(store1);
+        let result = calculate_minimised(
+            items.len(),
+            routes.as_ref(),
+            &database,
+            |_a: &u32, b: &LocalRoute| -> u32 {
+                return b.route_time as u32;
+            },
+            &Vec::new(),
+        );
+        let correct_result= BestPlan {
+            best_shop_plan: vec![1, 1, 1],
+            best_cost: 190,
+            total_item_cost: 2818,
+            total_travel_cost: 190,
+            total_shop_cost: 3008,
+            total_time: 190,
+            route_id: 1,
+        };
+        assert!(result.is_ok());
+        assert_eq!(correct_result, result.unwrap().0);
+    }
+
+    
+    #[test]
+    fn test_best_demo() {
+        let items = [0, 1, 2];
+        let mut routes: Vec<LocalRoute> = Vec::new();
+        routes.push(LocalRoute {
+            shops: [0].to_vec(),
+            route_travel_cost: 196,
+            route_time: 196,
+            route_id: 0,
+        });
+        routes.push(LocalRoute {
+            shops: [1].to_vec(),
+            route_travel_cost: 190,
+            route_time: 190,
+            route_id: 1,
+        });
+        routes.push(LocalRoute {
+            shops: [0, 1].to_vec(),
+            route_travel_cost: 295,
+            route_time: 295,
+            route_id: 2,
+        });
+        let mut database: Vec<Vec<Option<u32>>> = Vec::new();
+        let mut store0: Vec<Option<u32>> = Vec::new();
+        store0.push(Some(599));
+        store0.push(Some(720));
+        store0.push(Some(1450));
+        database.push(store0);
+        let mut store1: Vec<Option<u32>> = Vec::new();
+        store1.push(Some(620));
+        store1.push(Some(899));
+        store1.push(Some(1299));
+        database.push(store1);
+        let result = calculate_minimised(
+            items.len(),
+            routes.as_ref(),
+            &database,
+            |a: &u32, b: &LocalRoute| -> u32 {
+                return a + b.route_travel_cost + ((5 * b.route_time) / 6) as u32;
+            },
+            &Vec::new(),
+        );
+        let correct_result= BestPlan {
+            best_shop_plan: vec![0, 0, 0],
+            best_cost: 3128,
+            total_item_cost: 2769,
+            total_travel_cost: 196,
+            total_shop_cost: 2965,
+            total_time: 196,
+            route_id: 0,
+        };
+        assert!(result.is_ok());
+        assert_eq!(correct_result, result.unwrap().0);
+    }
+
+    #[test]
+    fn test_assumptions() {
+        assert_eq!(11230, (Cost::from_cents(11231)
+                    .clone()
+                    .round()*100)
+                    .inner()
+                    .to_u32()
+                    .unwrap());
+    }
+
+    /* #[test]
+    fn test_performance() {
+        // With demo list, filters, and mileage
+        let shopping_items_blank = [
+            ShoppingItemQuery {
+                name: "Simply Milk Lite Milk".to_owned(),
+                quantity: 1,
+                unit: SearchUnits::EACH.to_str().to_owned(),
+            },
+            ShoppingItemQuery {
+                name: "Castello Blue Cheese".to_owned(),
+                quantity: 1,
+                unit: SearchUnits::EACH.to_str().to_owned(),
+            },
+            ShoppingItemQuery {
+                name: "Sanitarium Weet-Bix Breakfast Cereal".to_owned(),
+                quantity: 1,
+                unit: SearchUnits::EACH.to_str().to_owned(),
+            },
+            ShoppingItemQuery {
+                name: "whittakers chocolate block hokey pokey".to_owned(),
+                quantity: 1,
+                unit: SearchUnits::EACH.to_str().to_owned(),
+            },
+        ];
+        let mut big: Vec<ShoppingItemQuery> = Vec::new();
+        for _i in 0..25 {
+            for j in &shopping_items_blank {
+                big.push(j.clone());
+            }
+        }
+        let shopping_items: &[ShoppingItemQuery] = big.as_ref();
+        let d: Distance = Distance::from_kilometres_f64(25.0);
+        let maxs = 3;
+        let runs = 3;
+        //println!("Calculations: {:?}km, {:?} items, {:?} max ({:?} runs)", &d.kilometres(), shopping_items.len(), maxs, runs);
+        let filters = StoreFilters::builder()
+                    .location(Coordinate::wellington())
+                    .range(d.clone())
+                    .max_store_visits(maxs)
+                    .disallow_brands(&[StoreBrand::Paknsave])
+                    .build();
+        let mileage = MileageOptions::Petrol;
+        // Warmup
+        let warmtime = Instant::now();
+        let _res = calculate(
+                &shopping_items,
+                &filters,
+                &mileage,
+                false,
+                false
+            );
+        assert!(warmtime.elapsed() < Duration::from_secs(60));
+        let starttime = Instant::now();
+        for _i in 0..runs {
+            let res = calculate(
+                    &shopping_items,
+                    &filters,
+                    &mileage,
+                    false,
+                    false,
+                );
+            res.expect("Performance default failed");
+        }
+        let elapsed = starttime.elapsed();
+        //println!("Took {:?}s for {:?} runs, avg {}s", elapsed.as_secs(), runs, (elapsed/runs).as_secs_f64());
+        assert!(elapsed/runs < Duration::from_secs(10));
+    } */
 }
